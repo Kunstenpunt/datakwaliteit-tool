@@ -6,6 +6,7 @@ from PySide6.QtWidgets import (
     QApplication,
     QHeaderView,
     QMainWindow,
+    QProgressBar,
     QSplitter,
     QTextEdit,
     QVBoxLayout,
@@ -166,6 +167,14 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
         self.tab_widget.add_tab(ConstraintsTab(self.model), "Constraints")
         self.tab_widget.add_tab(QueryTab(self.model), "Query")
+        self.query_indicator = QProgressBar()
+        self.query_indicator.set_range(0, 0)
+        self.query_indicator.maximum_width = 128
+        self.statusbar.add_widget(self.query_indicator)
+        self.query_indicator.hide()
+
+        self.model.wikibase_helper.query_started.connect(self.query_indicator.show)
+        self.model.wikibase_helper.query_done.connect(self.query_indicator.hide)
 
 
 app = QApplication(sys.argv)
