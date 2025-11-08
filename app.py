@@ -66,6 +66,7 @@ class QueryTab(QWidget, Ui_QueryTab):
         self.model = model
 
         self.execute_button.clicked.connect(self.on_execute_button_clicked)
+        self.table_view.doubleClicked.connect(on_table_double_clicked)
 
     def on_execute_button_clicked(self):
         query = self.plain_text_edit.plain_text
