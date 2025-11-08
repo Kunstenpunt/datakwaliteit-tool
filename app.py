@@ -69,7 +69,12 @@ class QueryTab(QWidget, Ui_QueryTab):
 
     def on_execute_button_clicked(self):
         query = self.plain_text_edit.plain_text
-        result = self.model.wikibase_helper.execute_query(query)
+        result = self.model.wikibase_helper.execute_query(query, self.on_query_result)
+
+    def on_query_result(self):
+        result = self.model.wikibase_helper.query_result
+        if not result:
+            return
         result_model = QSortFilterProxyModel()
         result_model.set_source_model(SimpleTableModel(result))
         self.table_view.set_model(result_model)
@@ -136,7 +141,7 @@ class ConstraintsTab(QWidget, Ui_ConstraintTab):
         focused_property_constraint = (
             self.model.constraint_analyzer.focused_property_constraint
         )
-        focused_property_constraint.query_violations(self.model.wikibase_helper)
+        focused_property_constraint.query_violations()
 
     def update_violations_table_view(self):
         data = self.model.constraint_analyzer.focused_property_constraint.violations

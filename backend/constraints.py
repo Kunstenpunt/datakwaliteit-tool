@@ -16,12 +16,13 @@ class Property:
 class Constraint(QObject):
     violationsUpdated = pyqtSignal()
 
-    def __init__(self, identifier, label, prop):
+    def __init__(self, identifier, label, prop, wikibase_helper):
         super().__init__()
 
-        self.property = prop
         self.identifier = identifier
         self.label = label
+        self.property = prop
+        self.wikibase_helper = wikibase_helper
         self.violations = None
 
     def __str__(self):
@@ -30,19 +31,21 @@ class Constraint(QObject):
     def pretty(self):
         return f'"{self.label}" ({self.identifier}) on "{self.property.label}" ({self.property.identifier})'
 
-    def query_violations(self, wikibase_helper):
+    def query_violations(self):
         print(f"Querying violations not implemented for {self}")
 
 
 # https://www.wikidata.org/wiki/Help:Property_constraints_portal/Single_value
 class SingleValueConstraint(Constraint):
-    seperatorsUpdated = pyqtSignal()
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.separators = []
 
-    def _query_qualifiers(self, wikibase_helper):
+    def query_violations(self):
+        self._query_qualifiers()
+
+    def _query_qualifiers(self):
         query = f"""
             SELECT DISTINCT ?pq_obj ?pq_objLabel
             WHERE
@@ -53,13 +56,17 @@ class SingleValueConstraint(Constraint):
                 SERVICE wikibase:label {{ bd:serviceParam wikibase:language "nl" . }}
             }}
         """
-        result = wikibase_helper.execute_query(query)
+        self.wikibase_helper.execute_query(query, self._query_qualifiers_result)
+
+    def _query_qualifiers_result(self):
+        result = self.wikibase_helper.query_result
+        if not result:
+            return
         for [identifier, label] in result[1:]:
             self.separators.append(Property(strip_url_part(identifier), label))
-        self.seperatorsUpdated.emit()
+        self._query_violations()
 
-    def query_violations(self, wikibase_helper):
-        self._query_qualifiers(wikibase_helper)
+    def _query_violations(self):
         query = f"""
             SELECT ?entity (COUNT(?value) AS ?valueCount)
             WHERE
@@ -71,7 +78,12 @@ class SingleValueConstraint(Constraint):
             GROUP BY ?entity
             HAVING(?valueCount > 1)
         """
-        result = wikibase_helper.execute_query(query)
+        self.wikibase_helper.execute_query(query, self._query_violations_result)
+
+    def _query_violations_result(self):
+        result = self.wikibase_helper.query_result
+        if not result:
+            return
         self.violations = [[strip_url_part(e), v] for [e, v] in result]
         self.violationsUpdated.emit()
 
@@ -83,7 +95,10 @@ class ValueTypeConstraint(Constraint):
         self.classes = []
         self.relation = None
 
-    def _query_qualifiers(self, wikibase_helper):
+    def query_violations(self):
+        self._query_qualifiers()
+
+    def _query_qualifiers(self):
         query = f"""
             SELECT DISTINCT ?class ?classLabel ?relation ?relationLabel
             WHERE
@@ -95,7 +110,12 @@ class ValueTypeConstraint(Constraint):
                 SERVICE wikibase:label {{ bd:serviceParam wikibase:language "nl" . }}
             }}
         """
-        result = wikibase_helper.execute_query(query)
+        self.wikibase_helper.execute_query(query, self._query_qualifiers_result)
+
+    def _query_qualifiers_result(self):
+        result = self.wikibase_helper.query_result
+        if not result:
+            return
         for [class_id, class_label, relation_id, relation_label] in result[1:]:
             class_id = strip_url_part(class_id)
             relation_id = strip_url_part(relation_id)
@@ -106,9 +126,9 @@ class ValueTypeConstraint(Constraint):
                 self.relation = None
             self.classes.append(Property(class_id, class_label))
         self.relation = "P1"
+        self._query_violations()
 
-    def query_violations(self, wikibase_helper):
-        self._query_qualifiers(wikibase_helper)
+    def _query_violations(self):
         if self.relation != "P1":
             return
         query = f"""
@@ -119,7 +139,12 @@ class ValueTypeConstraint(Constraint):
                 {'\n'.join(f'MINUS {{ ?value kpt:{self.relation} kp:{c.identifier}}} .' for c in self.classes)}
             }}
         """
-        result = wikibase_helper.execute_query(query)
+        self.wikibase_helper.execute_query(query, self._query_violations_result)
+
+    def _query_violations_result(self):
+        result = self.wikibase_helper.query_result
+        if not result:
+            return
         self.violations = [[strip_url_part(e), strip_url_part(v)] for [e, v] in result]
         self.violationsUpdated.emit()
 
@@ -131,7 +156,10 @@ class SubjectTypeConstraint(Constraint):
         self.classes = []
         self.relation = None
 
-    def _query_qualifiers(self, wikibase_helper):
+    def query_violations(self):
+        self._query_qualifiers()
+
+    def _query_qualifiers(self):
         query = f"""
             SELECT DISTINCT ?class ?classLabel ?relation ?relationLabel
             WHERE
@@ -143,7 +171,12 @@ class SubjectTypeConstraint(Constraint):
                 SERVICE wikibase:label {{ bd:serviceParam wikibase:language "nl" . }}
             }}
         """
-        result = wikibase_helper.execute_query(query)
+        self.wikibase_helper.execute_query(query, self._query_qualifiers_result)
+
+    def _query_qualifiers_result(self):
+        result = self.wikibase_helper.query_result
+        if not result:
+            return
         for [class_id, class_label, relation_id, relation_label] in result[1:]:
             class_id = strip_url_part(class_id)
             relation_id = strip_url_part(relation_id)
@@ -154,9 +187,9 @@ class SubjectTypeConstraint(Constraint):
                 self.relation = None
             self.classes.append(Property(class_id, class_label))
         self.relation = "P1"
+        self._query_violations()
 
-    def query_violations(self, wikibase_helper):
-        self._query_qualifiers(wikibase_helper)
+    def _query_violations(self):
         if self.relation != "P1":
             return
         query = f"""
@@ -167,7 +200,12 @@ class SubjectTypeConstraint(Constraint):
                 {'\n'.join(f'MINUS {{ ?entity kpt:{self.relation} kp:{c.identifier}}} .' for c in self.classes)}
             }}
         """
-        result = wikibase_helper.execute_query(query)
+        self.wikibase_helper.execute_query(query, self._query_violations_result)
+
+    def _query_violations_result(self):
+        result = self.wikibase_helper.query_result
+        if not result:
+            return
         self.violations = [[strip_url_part(e)] for [e] in result]
         self.violationsUpdated.emit()
 
@@ -200,7 +238,14 @@ class ConstraintAnalyzer(QObject):
                 SERVICE wikibase:label { bd:serviceParam wikibase:language "nl" . }
             }
             """
-        query_result = self.wikibase_helper.execute_query(query)
+        self.wikibase_helper.execute_query(
+            query, self._update_constrained_properties_result
+        )
+
+    def _update_constrained_properties_result(self):
+        query_result = self.wikibase_helper.query_result
+        if not query_result:
+            return
         new_properties = {}
         for [prop_id, prop_label, cons_id, cons_label] in query_result[1:]:
             prop_id = strip_url_part(prop_id)
@@ -213,7 +258,9 @@ class ConstraintAnalyzer(QObject):
             if const_prop == None:
                 const_prop = Property(prop_id, prop_label)
                 new_properties[prop_id] = const_prop
-            const_prop.constraints.append(const_type(cons_id, cons_label, const_prop))
+            const_prop.constraints.append(
+                const_type(cons_id, cons_label, const_prop, self.wikibase_helper)
+            )
         self.constrained_properties = new_properties
         self.constrainedPropertiesUpdated.emit()
 

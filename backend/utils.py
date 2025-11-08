@@ -2,6 +2,8 @@ import re
 
 
 def query_result_to_list(query_result):
+    if not query_result:
+        return None
     # First row is the header
     variable_names = query_result["head"]["vars"]
     result = [variable_names]
