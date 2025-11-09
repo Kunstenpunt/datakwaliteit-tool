@@ -23,7 +23,7 @@ class QueryWorker(QObject):
     def run(self):
         result = None
         try:
-            result = execute_sparql_query(self.query, self.prefixes)
+            result = execute_sparql_query(self.query, self.prefixes, max_retries=1)
         except Exception as e:
             print(e)
         self.result_list = query_result_to_list(result)
