@@ -210,10 +210,60 @@ class SubjectTypeConstraint(Constraint):
         self.violationsUpdated.emit()
 
 
+class RequiredQualifierConstraint(Constraint):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.required_qualifier = None
+
+    def query_violations(self):
+        self._query_qualifiers()
+
+    def _query_qualifiers(self):
+        query = f"""
+            SELECT DISTINCT ?prop ?propLabel
+            WHERE
+            {{
+                ?statement kpps:P85 kp:Q1585540 .
+                kp:{self.property.identifier} kpp:P85 ?statement .
+                OPTIONAL {{ ?statement kppq:P88 ?prop }}
+                SERVICE wikibase:label {{ bd:serviceParam wikibase:language "nl" . }}
+            }}
+        """
+        self.wikibase_helper.execute_query(query, self._query_qualifiers_result)
+
+    def _query_qualifiers_result(self):
+        result = self.wikibase_helper.query_result
+        if not result:
+            return
+        for [prop_id, prop_label] in result[1:]:
+            prop_id = strip_url_part(prop_id)
+            self.required_qualifier = Property(prop_id, prop_label)
+        self._query_violations()
+
+    def _query_violations(self):
+        query = f"""
+            SELECT DISTINCT ?entity
+            WHERE
+            {{
+                ?entity kpp:{self.property.identifier} ?statement .
+                FILTER NOT EXISTS {{ ?statement kppq:{self.required_qualifier.identifier} ?val }}
+            }}
+        """
+        self.wikibase_helper.execute_query(query, self._query_violations_result)
+
+    def _query_violations_result(self):
+        result = self.wikibase_helper.query_result
+        if not result:
+            return
+        self.violations = [[strip_url_part(e)] for [e] in result]
+        self.violationsUpdated.emit()
+
+
 CONSTRAINT_MAP = {
     "Q1585537": SingleValueConstraint,
     "Q1585538": ValueTypeConstraint,
     "Q1585539": SubjectTypeConstraint,
+    "Q1585540": RequiredQualifierConstraint,
 }
 
 
