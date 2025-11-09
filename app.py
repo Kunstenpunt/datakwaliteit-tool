@@ -1,12 +1,13 @@
-import sys
+import sys, textwrap
 
 from PySide6.QtCore import QAbstractTableModel, QSortFilterProxyModel, Qt, QUrl
-from PySide6.QtGui import QDesktopServices, QPixmap
+from PySide6.QtGui import QDesktopServices, QGuiApplication, QPixmap
 from PySide6.QtWidgets import (
     QApplication,
     QHeaderView,
     QMainWindow,
     QProgressBar,
+    QPushButton,
     QSplitter,
     QTextEdit,
     QVBoxLayout,
@@ -173,8 +174,19 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.statusbar.add_widget(self.query_indicator)
         self.query_indicator.hide()
 
+        self.copy_query_button = QPushButton()
+        self.copy_query_button.text = "Copy Last Query to Clipboard"
+        self.copy_query_button.clicked.connect(self.copy_query_to_clipboard)
+        self.statusbar.add_permanent_widget(self.copy_query_button)
+
         self.model.wikibase_helper.query_started.connect(self.query_indicator.show)
         self.model.wikibase_helper.query_done.connect(self.query_indicator.hide)
+
+    def copy_query_to_clipboard(self):
+        prefixes = textwrap.dedent(self.model.wikibase_helper.query_prefixes).lstrip()
+        query = textwrap.dedent(self.model.wikibase_helper.most_recent_query).lstrip()
+        clipboard = QGuiApplication.clipboard()
+        clipboard.set_text(f"{prefixes}\n{query}")
 
 
 app = QApplication(sys.argv)

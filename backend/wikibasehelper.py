@@ -58,6 +58,7 @@ class WikibaseHelper(QObject):
 
         self.executing_query = False
         self.query_result = None
+        self.most_recent_query = None
 
     def login(self, user=user, password=password):
         # Login using the bot account username and password
@@ -87,6 +88,7 @@ class WikibaseHelper(QObject):
         self.query_thread.finished.connect(self.query_thread.deleteLater)
         self.query_thread.destroyed.connect(self.query_thread_destroyed)
 
+        self.most_recent_query = query_string
         self.query_started.emit()
         self.query_thread.start()
 
