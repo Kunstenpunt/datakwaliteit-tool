@@ -110,7 +110,7 @@ class ConstraintsTab(QWidget, Ui_ConstraintTab):
         self.model.constraint_analyzer.update_constrained_properties()
 
     def on_constrained_properties_updated(self):
-        header = ["Prop ID", "Prop label", "Constraint ID", "Constraint Label"]
+        header = ["Prop ID", "Prop label", "Constraint ID", "Constraint Label", "Implemented"]
         data = [
             header
         ] + self.model.constraint_analyzer.get_constrained_properties_list_full()
@@ -137,6 +137,7 @@ class ConstraintsTab(QWidget, Ui_ConstraintTab):
             self.update_violations_table_view
         )
         self.label_right.text = focused_property_constraint.pretty()
+        self.validate_button.enabled = focused_property_constraint.implemented
         self.update_violations_table_view()
         self.vertical_layout_widget_right.show()
 

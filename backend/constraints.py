@@ -20,6 +20,7 @@ class Constraint(QObject):
         super().__init__()
 
         self.identifier = identifier
+        self.implemented = False
         self.label = label
         self.property = prop
         self.wikibase_helper = wikibase_helper
@@ -40,6 +41,8 @@ class SingleValueConstraint(Constraint):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.implemented = True
+
         self.separators = []
 
     def query_violations(self):
@@ -92,6 +95,8 @@ class SingleValueConstraint(Constraint):
 class ValueTypeConstraint(Constraint):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.implemented = True
+
         self.classes = []
         self.relation = None
 
@@ -153,6 +158,8 @@ class ValueTypeConstraint(Constraint):
 class SubjectTypeConstraint(Constraint):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.implemented = True
+
         self.classes = []
         self.relation = None
 
@@ -213,6 +220,8 @@ class SubjectTypeConstraint(Constraint):
 class RequiredQualifierConstraint(Constraint):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.implemented = True
+
         self.required_qualifier = None
 
     def query_violations(self):
@@ -316,7 +325,7 @@ class ConstraintAnalyzer(QObject):
 
     def get_constrained_properties_list_full(self):
         return [
-            [p.identifier, p.label, c.identifier, c.label]
+            [p.identifier, p.label, c.identifier, c.label, c.implemented]
             for p in self.constrained_properties.values()
             for c in p.constraints
         ]
