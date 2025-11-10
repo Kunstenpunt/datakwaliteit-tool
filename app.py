@@ -92,7 +92,9 @@ class ConstraintsTab(QWidget, Ui_ConstraintTab):
         self.setupUi(self)
 
         self.model = model
-        self.vertical_layout_widget_right.hide()
+        self.splitter.set_stretch_factor(0, 2)
+        self.splitter.set_stretch_factor(1, 1)
+        self.validate_button.enabled = False
 
         self.reload_button.clicked.connect(self.on_reload_button_clicked)
         self.validate_button.clicked.connect(self.on_validate_button_clicked)
@@ -139,7 +141,6 @@ class ConstraintsTab(QWidget, Ui_ConstraintTab):
         self.label_right.text = focused_property_constraint.pretty()
         self.validate_button.enabled = focused_property_constraint.implemented
         self.update_violations_table_view()
-        self.vertical_layout_widget_right.show()
 
     def on_validate_button_clicked(self):
         focused_property_constraint = (

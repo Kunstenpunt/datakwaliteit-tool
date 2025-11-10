@@ -6,12 +6,12 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>697</width>
-    <height>584</height>
+    <width>1600</width>
+    <height>900</height>
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Kunstenpunt Datakwaliteit</string>
+   <string>Kunstenpunt Datakwaliteit Tool</string>
   </property>
   <widget class="QWidget" name="centralwidget">
    <property name="sizePolicy">

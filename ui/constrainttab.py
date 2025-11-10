@@ -23,7 +23,7 @@ class Ui_ConstraintTab(object):
     def setupUi(self, ConstraintTab):
         if not ConstraintTab.objectName():
             ConstraintTab.setObjectName(u"ConstraintTab")
-        ConstraintTab.resize(712, 403)
+        ConstraintTab.resize(980, 657)
         self.verticalLayout_3 = QVBoxLayout(ConstraintTab)
         self.verticalLayout_3.setObjectName(u"verticalLayout_3")
         self.splitter = QSplitter(ConstraintTab)
@@ -70,8 +70,14 @@ class Ui_ConstraintTab(object):
         self.vertical_layout_right.setContentsMargins(0, 0, 0, 0)
         self.horizontal_layout_right = QHBoxLayout()
         self.horizontal_layout_right.setObjectName(u"horizontal_layout_right")
+        self.horizontal_spacer_right_2 = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+
+        self.horizontal_layout_right.addItem(self.horizontal_spacer_right_2)
+
         self.label_right = QLabel(self.vertical_layout_widget_right)
         self.label_right.setObjectName(u"label_right")
+        self.label_right.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.label_right.setWordWrap(True)
 
         self.horizontal_layout_right.addWidget(self.label_right)
 
@@ -107,7 +113,8 @@ class Ui_ConstraintTab(object):
         ConstraintTab.setWindowTitle(QCoreApplication.translate("ConstraintTab", u"Form", None))
         self.label_left.setText(QCoreApplication.translate("ConstraintTab", u"Constrained Properties", None))
         self.reload_button.setText(QCoreApplication.translate("ConstraintTab", u"Reload", None))
-        self.label_right.setText(QCoreApplication.translate("ConstraintTab", u"TextLabel", None))
+        self.label_right.setText(QCoreApplication.translate("ConstraintTab", u"Selected Constrained Property\n"
+"will be displayed here", None))
         self.validate_button.setText(QCoreApplication.translate("ConstraintTab", u"Validate", None))
     # retranslateUi
 
