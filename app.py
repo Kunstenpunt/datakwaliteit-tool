@@ -1,7 +1,7 @@
 import sys, textwrap
 
 from PySide6.QtCore import QAbstractTableModel, QSortFilterProxyModel, Qt, QUrl
-from PySide6.QtGui import QDesktopServices, QGuiApplication, QPixmap
+from PySide6.QtGui import QBrush, QDesktopServices, QGuiApplication, QPixmap
 from PySide6.QtWidgets import (
     QApplication,
     QHeaderView,
@@ -39,7 +39,20 @@ class SimpleTableModel(QAbstractTableModel):
 
     def data(self, index, role):
         if role == Qt.ItemDataRole.DisplayRole:
-            return self._data[index.row() + 1][index.column()]
+            data = self._data[index.row() + 1][index.column()]
+            if type(data) == type(True):
+                return "✓" if data else "✗"
+            return data
+
+        if role == Qt.ItemDataRole.BackgroundRole:
+            data = self._data[index.row() + 1][index.column()]
+            if type(data) == type(True):
+                return QBrush(Qt.GlobalColor.darkGreen) if data else QBrush(Qt.GlobalColor.darkRed)
+
+        if role == Qt.ItemDataRole.ForegroundRole:
+            data = self._data[index.row() + 1][index.column()]
+            if type(data) == type(True):
+                return QBrush(Qt.GlobalColor.white)
 
     def row_count(self, index):
         return len(self._data) - 1
