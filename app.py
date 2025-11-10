@@ -107,6 +107,8 @@ class ConstraintsTab(QWidget, Ui_ConstraintTab):
         self.model.constraint_analyzer.focusedPropertyConstraintUpdated.connect(
             self.on_focused_property_constraint_updated
         )
+        # Automatically perform query for constrainted properties on startup
+        self.model.constraint_analyzer.update_constraints()
 
     def on_reload_button_clicked(self):
         self.model.constraint_analyzer.update_constraints()
