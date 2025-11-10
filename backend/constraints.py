@@ -7,10 +7,9 @@ class Property:
     def __init__(self, identifier, label):
         self.identifier = identifier
         self.label = label
-        self.constraints = []
 
     def __str__(self):
-        return f"{self.label} ({self.identifier}): {[str(c) for c in self.constraints]}"
+        return f"{self.label} ({self.identifier})"
 
 
 class Constraint(QObject):
@@ -285,10 +284,10 @@ class ConstraintAnalyzer(QObject):
         super().__init__()
 
         self.wikibase_helper = wikibase_helper
-        self.constrained_properties = {}
-        self.focused_property_constraint = None
+        self.constraints = {}
+        self.focused_constraint = None
 
-    def update_constrained_properties(self):
+    def update_constraints(self):
         query = """
             SELECT ?subject ?subjectLabel ?object ?objectLabel
             WHERE
@@ -297,43 +296,42 @@ class ConstraintAnalyzer(QObject):
                 SERVICE wikibase:label { bd:serviceParam wikibase:language "nl" . }
             }
             """
-        self.wikibase_helper.execute_query(
-            query, self._update_constrained_properties_result
-        )
+        self.wikibase_helper.execute_query(query, self._update_constraints_result)
 
-    def _update_constrained_properties_result(self):
-        query_result = self.wikibase_helper.query_result
-        if not query_result:
+    def _update_constraints_result(self):
+        result = self.wikibase_helper.query_result
+        if not result:
             return
-        new_properties = {}
-        for [prop_id, prop_label, cons_id, cons_label] in query_result[1:]:
+        self.constraints = {}
+        for [prop_id, prop_label, cons_id, cons_label] in result[1:]:
             prop_id = strip_url_part(prop_id)
             cons_id = strip_url_part(cons_id)
             const_type = CONSTRAINT_MAP.get(cons_id)
             if not const_type:
                 const_type = Constraint
 
-            const_prop = new_properties.get(prop_id)
-            if const_prop == None:
-                const_prop = Property(prop_id, prop_label)
-                new_properties[prop_id] = const_prop
-            const_prop.constraints.append(
-                const_type(cons_id, cons_label, const_prop, self.wikibase_helper)
+            constraint = const_type(
+                cons_id, cons_label, Property(prop_id, prop_label), self.wikibase_helper
             )
-        self.constrained_properties = new_properties
+
+            self.constraints[cons_id, prop_id] = constraint
+
         self.constrainedPropertiesUpdated.emit()
 
-    def get_constrained_properties_list_full(self):
+    def get_constraints_list_full(self):
         return [
-            [p.identifier, p.label, c.identifier, c.label, c.implemented]
-            for p in self.constrained_properties.values()
-            for c in p.constraints
+            [
+                c.property.identifier,
+                c.property.label,
+                c.identifier,
+                c.label,
+                c.implemented,
+            ]
+            for c in self.constraints.values()
         ]
 
-    def set_focused_property_constraint(self, prop_id, constraint_id):
-        prop = self.constrained_properties.get(prop_id)
-        if prop:
-            for c in prop.constraints:
-                if c.identifier == constraint_id:
-                    self.focused_property_constraint = c
-                    self.focusedPropertyConstraintUpdated.emit()
+    def set_focused_constraint(self, prop_id, constraint_id):
+        constraint = self.constraints.get((constraint_id, prop_id))
+        if constraint:
+            self.focused_constraint = constraint
+            self.focusedPropertyConstraintUpdated.emit()

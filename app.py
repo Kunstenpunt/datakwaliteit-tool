@@ -107,13 +107,13 @@ class ConstraintsTab(QWidget, Ui_ConstraintTab):
         )
 
     def on_reload_button_clicked(self):
-        self.model.constraint_analyzer.update_constrained_properties()
+        self.model.constraint_analyzer.update_constraints()
 
     def on_constrained_properties_updated(self):
         header = ["Prop ID", "Prop label", "Constraint ID", "Constraint Label", "Implemented"]
         data = [
             header
-        ] + self.model.constraint_analyzer.get_constrained_properties_list_full()
+        ] + self.model.constraint_analyzer.get_constraints_list_full()
         sortable_data_model = QSortFilterProxyModel()
         sortable_data_model.set_source_model(SimpleTableModel(data))
         self.properties_table_view.set_model(sortable_data_model)
@@ -125,13 +125,13 @@ class ConstraintsTab(QWidget, Ui_ConstraintTab):
         table_model = index.model()
         prop_id = table_model.data(table_model.index(index.row(), 0))
         constraint_id = table_model.data(table_model.index(index.row(), 2))
-        self.model.constraint_analyzer.set_focused_property_constraint(
+        self.model.constraint_analyzer.set_focused_constraint(
             prop_id, constraint_id
         )
 
     def on_focused_property_constraint_updated(self):
         focused_property_constraint = (
-            self.model.constraint_analyzer.focused_property_constraint
+            self.model.constraint_analyzer.focused_constraint
         )
         focused_property_constraint.violationsUpdated.connect(
             self.update_violations_table_view
@@ -143,12 +143,12 @@ class ConstraintsTab(QWidget, Ui_ConstraintTab):
 
     def on_validate_button_clicked(self):
         focused_property_constraint = (
-            self.model.constraint_analyzer.focused_property_constraint
+            self.model.constraint_analyzer.focused_constraint
         )
         focused_property_constraint.query_violations()
 
     def update_violations_table_view(self):
-        data = self.model.constraint_analyzer.focused_property_constraint.violations
+        data = self.model.constraint_analyzer.focused_constraint.violations
         if data == None:
             self.violations_table_view.set_model(None)
             return
