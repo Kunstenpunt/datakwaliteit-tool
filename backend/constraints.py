@@ -70,15 +70,22 @@ class SingleValueConstraint(Constraint):
 
     def _query_violations(self):
         query = f"""
-            SELECT ?entity (COUNT(?value) AS ?valueCount)
+            SELECT ?entity ?entityLabel ?valueCount
             WHERE
             {{
-                ?entity kpp:{self.property.identifier} ?statement .
-                ?statement kpps:{self.property.identifier} ?value .
-                {'\n'.join(f'MINUS {{ ?statement kppq:{s.identifier} ?seperator }} .' for s in self.separators)}             
+                {{
+                    SELECT ?entity (COUNT(?value) AS ?valueCount)
+                    WHERE
+                    {{
+                        ?entity kpp:{self.property.identifier} ?statement .
+                        ?statement kpps:{self.property.identifier} ?value .
+                        {'\n'.join(f'MINUS {{ ?statement kppq:{s.identifier} ?seperator }} .' for s in self.separators)}             
+                    }}
+                    GROUP BY ?entity
+                    HAVING(?valueCount > 1)
+                }}
+                SERVICE wikibase:label {{ bd:serviceParam wikibase:language "nl" . }}
             }}
-            GROUP BY ?entity
-            HAVING(?valueCount > 1)
         """
         self.wikibase_helper.execute_query(query, self._query_violations_result)
 
@@ -86,7 +93,7 @@ class SingleValueConstraint(Constraint):
         result = self.wikibase_helper.query_result
         if not result:
             return
-        self.violations = [[strip_url_part(e), v] for [e, v] in result]
+        self.violations = [[strip_url_part(e), e_l, v] for [e, e_l, v] in result]
         self.violationsUpdated.emit()
 
 
@@ -136,12 +143,20 @@ class ValueTypeConstraint(Constraint):
         if self.relation != "P1":
             return
         query = f"""
-            SELECT DISTINCT ?entity ?value
+            SELECT ?entity ?entityLabel ?value ?valueLabel
             WHERE
             {{
-                ?entity kpt:{self.property.identifier} ?value .
-                {'\n'.join(f'MINUS {{ ?value kpt:{self.relation} kp:{c.identifier}}} .' for c in self.classes)}
+                {{
+                    SELECT DISTINCT ?entity ?value
+                    WHERE
+                    {{
+                        ?entity kpt:{self.property.identifier} ?value .
+                        {'\n'.join(f'MINUS {{ ?value kpt:{self.relation} kp:{c.identifier}}} .' for c in self.classes)}
+                    }}
+                }}
+                SERVICE wikibase:label {{ bd:serviceParam wikibase:language "nl" . }}
             }}
+
         """
         self.wikibase_helper.execute_query(query, self._query_violations_result)
 
@@ -149,7 +164,7 @@ class ValueTypeConstraint(Constraint):
         result = self.wikibase_helper.query_result
         if not result:
             return
-        self.violations = [[strip_url_part(e), strip_url_part(v)] for [e, v] in result]
+        self.violations = [[strip_url_part(e), e_l, strip_url_part(v), v_l] for [e, e_l, v, v_l] in result]
         self.violationsUpdated.emit()
 
 
@@ -199,11 +214,18 @@ class SubjectTypeConstraint(Constraint):
         if self.relation != "P1":
             return
         query = f"""
-            SELECT DISTINCT ?entity
+            SELECT ?entity ?entityLabel
             WHERE
             {{
-                ?entity kpt:{self.property.identifier} ?value .
-                {'\n'.join(f'MINUS {{ ?entity kpt:{self.relation} kp:{c.identifier}}} .' for c in self.classes)}
+                {{
+                    SELECT DISTINCT ?entity
+                    WHERE
+                    {{
+                        ?entity kpt:{self.property.identifier} ?value .
+                        {'\n'.join(f'MINUS {{ ?entity kpt:{self.relation} kp:{c.identifier}}} .' for c in self.classes)}
+                    }}
+                }}
+                SERVICE wikibase:label {{ bd:serviceParam wikibase:language "nl" . }}
             }}
         """
         self.wikibase_helper.execute_query(query, self._query_violations_result)
@@ -212,7 +234,7 @@ class SubjectTypeConstraint(Constraint):
         result = self.wikibase_helper.query_result
         if not result:
             return
-        self.violations = [[strip_url_part(e)] for [e] in result]
+        self.violations = [[strip_url_part(e), e_l] for [e, e_l] in result]
         self.violationsUpdated.emit()
 
 
@@ -250,12 +272,20 @@ class RequiredQualifierConstraint(Constraint):
 
     def _query_violations(self):
         query = f"""
-            SELECT DISTINCT ?entity
+            SELECT DISTINCT ?entity ?entityLabel
             WHERE
             {{
-                ?entity kpp:{self.property.identifier} ?statement .
-                FILTER NOT EXISTS {{ ?statement kppq:{self.required_qualifier.identifier} ?val }}
+                {{
+                    SELECT DISTINCT ?entity
+                    WHERE
+                    {{
+                        ?entity kpp:{self.property.identifier} ?statement .
+                        FILTER NOT EXISTS {{ ?statement kppq:{self.required_qualifier.identifier} ?val }}
+                    }}
+                }}
+                SERVICE wikibase:label {{ bd:serviceParam wikibase:language "nl" . }}
             }}
+
         """
         self.wikibase_helper.execute_query(query, self._query_violations_result)
 
@@ -263,7 +293,7 @@ class RequiredQualifierConstraint(Constraint):
         result = self.wikibase_helper.query_result
         if not result:
             return
-        self.violations = [[strip_url_part(e)] for [e] in result]
+        self.violations = [[strip_url_part(e), e_l] for [e, e_l] in result]
         self.violationsUpdated.emit()
 
 
