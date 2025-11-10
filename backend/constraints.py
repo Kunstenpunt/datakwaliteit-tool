@@ -1,4 +1,4 @@
-from PyQt6.QtCore import pyqtSignal, QObject
+from PySide6.QtCore import Signal, QObject
 
 from .utils import strip_url_part
 
@@ -13,7 +13,7 @@ class Property:
 
 
 class Constraint(QObject):
-    violationsUpdated = pyqtSignal()
+    violationsUpdated = Signal()
 
     def __init__(self, identifier, label, prop, wikibase_helper):
         super().__init__()
@@ -307,8 +307,8 @@ CONSTRAINT_MAP = {
 
 class ConstraintAnalyzer(QObject):
 
-    constrainedPropertiesUpdated = pyqtSignal()
-    focusedPropertyConstraintUpdated = pyqtSignal()
+    constrainedPropertiesUpdated = Signal()
+    focusedPropertyConstraintUpdated = Signal()
 
     def __init__(self, wikibase_helper):
         super().__init__()

@@ -1,4 +1,4 @@
-from PyQt6.QtCore import pyqtSignal, QObject, QThread
+from PySide6.QtCore import Signal, QObject, QThread
 
 from wikibaseintegrator import WikibaseIntegrator
 from wikibaseintegrator.wbi_config import config
@@ -12,7 +12,7 @@ BASE_URL = "https://kg.kunsten.be"
 
 
 class QueryWorker(QObject):
-    finished = pyqtSignal()
+    finished = Signal()
 
     def __init__(self, query, prefixes):
         super().__init__()
@@ -31,9 +31,9 @@ class QueryWorker(QObject):
 
 
 class WikibaseHelper(QObject):
-    query_started = pyqtSignal()  # For loading indicator
-    query_done = pyqtSignal()  # For loading indicator
-    _ready_for_new_query = pyqtSignal()
+    query_started = Signal()  # For loading indicator
+    query_done = Signal()  # For loading indicator
+    _ready_for_new_query = Signal()
 
     def __init__(self):
         super().__init__()
