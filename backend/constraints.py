@@ -29,7 +29,7 @@ class Constraint(QObject):
         return f"{self.label} ({self.identifier})"
 
     def pretty(self):
-        return f'"{self.label}" ({self.identifier}) on "{self.property.label}" ({self.property.identifier})'
+        return f'"{self.label}" ({self.identifier})\non "{self.property.label}" ({self.property.identifier})'
 
     def query_violations(self):
         print(f"Querying violations not implemented for {self}")
