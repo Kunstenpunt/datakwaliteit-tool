@@ -1,7 +1,7 @@
 import os
 import subprocess
 
-ui_dir = r"/home/christophe/Projects/kunstenpunt-datakwaliteit/ui"
+ui_dir = r"./ui"
 ui_files = []
 
 for path, _, files in os.walk(ui_dir):
