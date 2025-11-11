@@ -20,9 +20,9 @@
       <enum>Qt::Orientation::Horizontal</enum>
      </property>
      <widget class="QWidget" name="verticalLayoutWidget">
-      <layout class="QVBoxLayout" name="vertical_layout_left">
+      <layout class="QVBoxLayout" name="verticalLayoutLeft">
        <item>
-        <widget class="QLabel" name="label">
+        <widget class="QLabel" name="labelLeft">
          <property name="text">
           <string>Fill in the SPARQL query you want to execute.</string>
          </property>
@@ -32,19 +32,19 @@
         </widget>
        </item>
        <item>
-        <widget class="QPlainTextEdit" name="plain_text_edit"/>
+        <widget class="QPlainTextEdit" name="plainTextEdit"/>
        </item>
        <item>
-        <layout class="QHBoxLayout" name="button_horizontal_layout">
+        <layout class="QHBoxLayout" name="buttonHorizontalLayout">
          <item>
-          <widget class="QPushButton" name="clear_button">
+          <widget class="QPushButton" name="clearButton">
            <property name="text">
             <string>Clear</string>
            </property>
           </widget>
          </item>
          <item>
-          <widget class="QPushButton" name="execute_button">
+          <widget class="QPushButton" name="executeButton">
            <property name="text">
             <string>Execute</string>
            </property>
@@ -54,10 +54,10 @@
        </item>
       </layout>
      </widget>
-     <widget class="QWidget" name="verticalLayoutWidget_2">
-      <layout class="QVBoxLayout" name="vertical_layout_right">
+     <widget class="QWidget" name="verticalLayoutWidget2">
+      <layout class="QVBoxLayout" name="verticalLayoutRight">
        <item>
-        <widget class="QTableView" name="table_view">
+        <widget class="QTableView" name="tableView">
          <property name="sortingEnabled">
           <bool>true</bool>
          </property>
@@ -73,5 +73,22 @@
   </layout>
  </widget>
  <resources/>
- <connections/>
+ <connections>
+  <connection>
+   <sender>clearButton</sender>
+   <signal>clicked()</signal>
+   <receiver>plainTextEdit</receiver>
+   <slot>clear()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>98</x>
+     <y>542</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>189</x>
+     <y>278</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
 </ui>

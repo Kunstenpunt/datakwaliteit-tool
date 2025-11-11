@@ -13,7 +13,7 @@
   <property name="windowTitle">
    <string>Form</string>
   </property>
-  <layout class="QVBoxLayout" name="verticalLayout_3">
+  <layout class="QVBoxLayout" name="verticalLayout">
    <item>
     <widget class="QSplitter" name="splitter">
      <property name="orientation">
@@ -22,19 +22,19 @@
      <property name="childrenCollapsible">
       <bool>false</bool>
      </property>
-     <widget class="QWidget" name="vertical_layout_widget_left">
-      <layout class="QVBoxLayout" name="vertical_layout_left">
+     <widget class="QWidget" name="verticalLayoutWidgetLeft">
+      <layout class="QVBoxLayout" name="verticalLayoutLeft">
        <item>
-        <layout class="QHBoxLayout" name="horizontal_layout_left" stretch="0,0,0">
+        <layout class="QHBoxLayout" name="horizontalLayoutLeft" stretch="0,0,0">
          <item>
-          <widget class="QLabel" name="label_left">
+          <widget class="QLabel" name="labelLeft">
            <property name="text">
             <string>Constrained Properties</string>
            </property>
           </widget>
          </item>
          <item>
-          <spacer name="horizontal_spacer_left">
+          <spacer name="horizontalSpacerLeft">
            <property name="orientation">
             <enum>Qt::Orientation::Horizontal</enum>
            </property>
@@ -47,7 +47,7 @@
           </spacer>
          </item>
          <item>
-          <widget class="QPushButton" name="reload_button">
+          <widget class="QPushButton" name="reloadButton">
            <property name="text">
             <string>Reload</string>
            </property>
@@ -56,7 +56,7 @@
         </layout>
        </item>
        <item>
-        <widget class="QTableView" name="properties_table_view">
+        <widget class="QTableView" name="propertiesTableView">
          <property name="selectionMode">
           <enum>QAbstractItemView::SelectionMode::SingleSelection</enum>
          </property>
@@ -70,12 +70,12 @@
        </item>
       </layout>
      </widget>
-     <widget class="QWidget" name="vertical_layout_widget_right">
-      <layout class="QVBoxLayout" name="vertical_layout_right">
+     <widget class="QWidget" name="verticalLayoutWidgetRight">
+      <layout class="QVBoxLayout" name="verticalLayoutRight">
        <item>
-        <layout class="QHBoxLayout" name="horizontal_layout_right">
+        <layout class="QHBoxLayout" name="horizontalLayoutRight">
          <item>
-          <spacer name="horizontal_spacer_right_2">
+          <spacer name="horizontalSpacerRight1">
            <property name="orientation">
             <enum>Qt::Orientation::Horizontal</enum>
            </property>
@@ -88,7 +88,7 @@
           </spacer>
          </item>
          <item>
-          <widget class="QLabel" name="label_right">
+          <widget class="QLabel" name="labelRight">
            <property name="text">
             <string>Selected Constrained Property
 will be displayed here</string>
@@ -102,7 +102,7 @@ will be displayed here</string>
           </widget>
          </item>
          <item>
-          <spacer name="horizontal_spacer_right">
+          <spacer name="horizontalSpacerRight2">
            <property name="orientation">
             <enum>Qt::Orientation::Horizontal</enum>
            </property>
@@ -115,7 +115,7 @@ will be displayed here</string>
           </spacer>
          </item>
          <item>
-          <widget class="QPushButton" name="validate_button">
+          <widget class="QPushButton" name="validateButton">
            <property name="text">
             <string>Validate</string>
            </property>
@@ -124,7 +124,7 @@ will be displayed here</string>
         </layout>
        </item>
        <item>
-        <widget class="QTableView" name="violations_table_view">
+        <widget class="QTableView" name="violationsTableView">
          <property name="sortingEnabled">
           <bool>true</bool>
          </property>

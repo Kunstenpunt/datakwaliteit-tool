@@ -31,62 +31,63 @@ class Ui_QueryTab(object):
         self.splitter.setOrientation(Qt.Orientation.Horizontal)
         self.verticalLayoutWidget = QWidget(self.splitter)
         self.verticalLayoutWidget.setObjectName(u"verticalLayoutWidget")
-        self.vertical_layout_left = QVBoxLayout(self.verticalLayoutWidget)
-        self.vertical_layout_left.setObjectName(u"vertical_layout_left")
-        self.vertical_layout_left.setContentsMargins(0, 0, 0, 0)
-        self.label = QLabel(self.verticalLayoutWidget)
-        self.label.setObjectName(u"label")
-        self.label.setWordWrap(True)
+        self.verticalLayoutLeft = QVBoxLayout(self.verticalLayoutWidget)
+        self.verticalLayoutLeft.setObjectName(u"verticalLayoutLeft")
+        self.verticalLayoutLeft.setContentsMargins(0, 0, 0, 0)
+        self.labelLeft = QLabel(self.verticalLayoutWidget)
+        self.labelLeft.setObjectName(u"labelLeft")
+        self.labelLeft.setWordWrap(True)
 
-        self.vertical_layout_left.addWidget(self.label)
+        self.verticalLayoutLeft.addWidget(self.labelLeft)
 
-        self.plain_text_edit = QPlainTextEdit(self.verticalLayoutWidget)
-        self.plain_text_edit.setObjectName(u"plain_text_edit")
+        self.plainTextEdit = QPlainTextEdit(self.verticalLayoutWidget)
+        self.plainTextEdit.setObjectName(u"plainTextEdit")
 
-        self.vertical_layout_left.addWidget(self.plain_text_edit)
+        self.verticalLayoutLeft.addWidget(self.plainTextEdit)
 
-        self.button_horizontal_layout = QHBoxLayout()
-        self.button_horizontal_layout.setObjectName(u"button_horizontal_layout")
-        self.clear_button = QPushButton(self.verticalLayoutWidget)
-        self.clear_button.setObjectName(u"clear_button")
+        self.buttonHorizontalLayout = QHBoxLayout()
+        self.buttonHorizontalLayout.setObjectName(u"buttonHorizontalLayout")
+        self.clearButton = QPushButton(self.verticalLayoutWidget)
+        self.clearButton.setObjectName(u"clearButton")
 
-        self.button_horizontal_layout.addWidget(self.clear_button)
+        self.buttonHorizontalLayout.addWidget(self.clearButton)
 
-        self.execute_button = QPushButton(self.verticalLayoutWidget)
-        self.execute_button.setObjectName(u"execute_button")
+        self.executeButton = QPushButton(self.verticalLayoutWidget)
+        self.executeButton.setObjectName(u"executeButton")
 
-        self.button_horizontal_layout.addWidget(self.execute_button)
+        self.buttonHorizontalLayout.addWidget(self.executeButton)
 
 
-        self.vertical_layout_left.addLayout(self.button_horizontal_layout)
+        self.verticalLayoutLeft.addLayout(self.buttonHorizontalLayout)
 
         self.splitter.addWidget(self.verticalLayoutWidget)
-        self.verticalLayoutWidget_2 = QWidget(self.splitter)
-        self.verticalLayoutWidget_2.setObjectName(u"verticalLayoutWidget_2")
-        self.vertical_layout_right = QVBoxLayout(self.verticalLayoutWidget_2)
-        self.vertical_layout_right.setObjectName(u"vertical_layout_right")
-        self.vertical_layout_right.setContentsMargins(0, 0, 0, 0)
-        self.table_view = QTableView(self.verticalLayoutWidget_2)
-        self.table_view.setObjectName(u"table_view")
-        self.table_view.setSortingEnabled(True)
-        self.table_view.horizontalHeader().setStretchLastSection(True)
+        self.verticalLayoutWidget2 = QWidget(self.splitter)
+        self.verticalLayoutWidget2.setObjectName(u"verticalLayoutWidget2")
+        self.verticalLayoutRight = QVBoxLayout(self.verticalLayoutWidget2)
+        self.verticalLayoutRight.setObjectName(u"verticalLayoutRight")
+        self.verticalLayoutRight.setContentsMargins(0, 0, 0, 0)
+        self.tableView = QTableView(self.verticalLayoutWidget2)
+        self.tableView.setObjectName(u"tableView")
+        self.tableView.setSortingEnabled(True)
+        self.tableView.horizontalHeader().setStretchLastSection(True)
 
-        self.vertical_layout_right.addWidget(self.table_view)
+        self.verticalLayoutRight.addWidget(self.tableView)
 
-        self.splitter.addWidget(self.verticalLayoutWidget_2)
+        self.splitter.addWidget(self.verticalLayoutWidget2)
 
         self.horizontalLayout.addWidget(self.splitter)
 
 
         self.retranslateUi(QueryTab)
+        self.clearButton.clicked.connect(self.plainTextEdit.clear)
 
         QMetaObject.connectSlotsByName(QueryTab)
     # setupUi
 
     def retranslateUi(self, QueryTab):
         QueryTab.setWindowTitle(QCoreApplication.translate("QueryTab", u"Form", None))
-        self.label.setText(QCoreApplication.translate("QueryTab", u"Fill in the SPARQL query you want to execute.", None))
-        self.clear_button.setText(QCoreApplication.translate("QueryTab", u"Clear", None))
-        self.execute_button.setText(QCoreApplication.translate("QueryTab", u"Execute", None))
+        self.labelLeft.setText(QCoreApplication.translate("QueryTab", u"Fill in the SPARQL query you want to execute.", None))
+        self.clearButton.setText(QCoreApplication.translate("QueryTab", u"Clear", None))
+        self.executeButton.setText(QCoreApplication.translate("QueryTab", u"Execute", None))
     # retranslateUi
 

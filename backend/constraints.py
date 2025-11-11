@@ -1,6 +1,6 @@
 from PySide6.QtCore import Signal, QObject
 
-from .utils import strip_url_part
+from .utils import stripUrlPart
 
 
 class Property:
@@ -15,14 +15,14 @@ class Property:
 class Constraint(QObject):
     violationsUpdated = Signal()
 
-    def __init__(self, identifier, label, prop, wikibase_helper):
+    def __init__(self, identifier, label, prop, wikibaseHelper):
         super().__init__()
 
         self.identifier = identifier
         self.implemented = False
         self.label = label
         self.property = prop
-        self.wikibase_helper = wikibase_helper
+        self.wikibaseHelper = wikibaseHelper
         self.violations = None
 
     def __str__(self):
@@ -31,7 +31,7 @@ class Constraint(QObject):
     def pretty(self):
         return f'"{self.label}" ({self.identifier})\non "{self.property.label}" ({self.property.identifier})'
 
-    def query_violations(self):
+    def queryViolations(self):
         print(f"Querying violations not implemented for {self}")
 
 
@@ -44,10 +44,10 @@ class SingleValueConstraint(Constraint):
 
         self.separators = []
 
-    def query_violations(self):
-        self._query_qualifiers()
+    def queryViolations(self):
+        self._queryQualifiers()
 
-    def _query_qualifiers(self):
+    def _queryQualifiers(self):
         query = f"""
             SELECT DISTINCT ?pq_obj ?pq_objLabel
             WHERE
@@ -58,17 +58,17 @@ class SingleValueConstraint(Constraint):
                 SERVICE wikibase:label {{ bd:serviceParam wikibase:language "nl" . }}
             }}
         """
-        self.wikibase_helper.execute_query(query, self._query_qualifiers_result)
+        self.wikibaseHelper.executeQuery(query, self._queryQualifiersResult)
 
-    def _query_qualifiers_result(self):
-        result = self.wikibase_helper.query_result
+    def _queryQualifiersResult(self):
+        result = self.wikibaseHelper.queryResult
         if not result:
             return
         for [identifier, label] in result[1:]:
-            self.separators.append(Property(strip_url_part(identifier), label))
-        self._query_violations()
+            self.separators.append(Property(stripUrlPart(identifier), label))
+        self._queryViolations()
 
-    def _query_violations(self):
+    def _queryViolations(self):
         query = f"""
             SELECT ?entity ?entityLabel ?valueCount
             WHERE
@@ -87,13 +87,13 @@ class SingleValueConstraint(Constraint):
                 SERVICE wikibase:label {{ bd:serviceParam wikibase:language "nl" . }}
             }}
         """
-        self.wikibase_helper.execute_query(query, self._query_violations_result)
+        self.wikibaseHelper.executeQuery(query, self._queryViolationsResult)
 
-    def _query_violations_result(self):
-        result = self.wikibase_helper.query_result
+    def _queryViolationsResult(self):
+        result = self.wikibaseHelper.queryResult
         if not result:
             return
-        self.violations = [[strip_url_part(e), e_l, v] for [e, e_l, v] in result]
+        self.violations = [[stripUrlPart(e), eL, v] for [e, eL, v] in result]
         self.violationsUpdated.emit()
 
 
@@ -106,10 +106,10 @@ class ValueTypeConstraint(Constraint):
         self.classes = []
         self.relation = None
 
-    def query_violations(self):
-        self._query_qualifiers()
+    def queryViolations(self):
+        self._queryQualifiers()
 
-    def _query_qualifiers(self):
+    def _queryQualifiers(self):
         query = f"""
             SELECT DISTINCT ?class ?classLabel ?relation ?relationLabel
             WHERE
@@ -121,25 +121,25 @@ class ValueTypeConstraint(Constraint):
                 SERVICE wikibase:label {{ bd:serviceParam wikibase:language "nl" . }}
             }}
         """
-        self.wikibase_helper.execute_query(query, self._query_qualifiers_result)
+        self.wikibaseHelper.executeQuery(query, self._queryQualifiersResult)
 
-    def _query_qualifiers_result(self):
-        result = self.wikibase_helper.query_result
+    def _queryQualifiersResult(self):
+        result = self.wikibaseHelper.queryResult
         if not result:
             return
-        for [class_id, class_label, relation_id, relation_label] in result[1:]:
-            class_id = strip_url_part(class_id)
-            relation_id = strip_url_part(relation_id)
-            if relation_id != "Q1585615":
+        for [classId, classLabel, relationId, relationLabel] in result[1:]:
+            classId = stripUrlPart(classId)
+            relationId = stripUrlPart(relationId)
+            if relationId != "Q1585615":
                 print(
-                    f'ValueTypeConstraint for relation "{relation_label}" is currently unsupported.'
+                    f'ValueTypeConstraint for relation "{relationLabel}" is currently unsupported.'
                 )
                 self.relation = None
-            self.classes.append(Property(class_id, class_label))
+            self.classes.append(Property(classId, classLabel))
         self.relation = "P1"
-        self._query_violations()
+        self._queryViolations()
 
-    def _query_violations(self):
+    def _queryViolations(self):
         if self.relation != "P1":
             return
         query = f"""
@@ -158,13 +158,13 @@ class ValueTypeConstraint(Constraint):
             }}
 
         """
-        self.wikibase_helper.execute_query(query, self._query_violations_result)
+        self.wikibaseHelper.executeQuery(query, self._queryViolationsResult)
 
-    def _query_violations_result(self):
-        result = self.wikibase_helper.query_result
+    def _queryViolationsResult(self):
+        result = self.wikibaseHelper.queryResult
         if not result:
             return
-        self.violations = [[strip_url_part(e), e_l, strip_url_part(v), v_l] for [e, e_l, v, v_l] in result]
+        self.violations = [[stripUrlPart(e), eL, stripUrlPart(v), vL] for [e, eL, v, vL] in result]
         self.violationsUpdated.emit()
 
 
@@ -177,10 +177,10 @@ class SubjectTypeConstraint(Constraint):
         self.classes = []
         self.relation = None
 
-    def query_violations(self):
-        self._query_qualifiers()
+    def queryViolations(self):
+        self._queryQualifiers()
 
-    def _query_qualifiers(self):
+    def _queryQualifiers(self):
         query = f"""
             SELECT DISTINCT ?class ?classLabel ?relation ?relationLabel
             WHERE
@@ -192,25 +192,25 @@ class SubjectTypeConstraint(Constraint):
                 SERVICE wikibase:label {{ bd:serviceParam wikibase:language "nl" . }}
             }}
         """
-        self.wikibase_helper.execute_query(query, self._query_qualifiers_result)
+        self.wikibaseHelper.executeQuery(query, self._queryQualifiersResult)
 
-    def _query_qualifiers_result(self):
-        result = self.wikibase_helper.query_result
+    def _queryQualifiersResult(self):
+        result = self.wikibaseHelper.queryResult
         if not result:
             return
-        for [class_id, class_label, relation_id, relation_label] in result[1:]:
-            class_id = strip_url_part(class_id)
-            relation_id = strip_url_part(relation_id)
-            if relation_id != "Q1585615":
+        for [classId, classLabel, relationId, relationLabel] in result[1:]:
+            classId = stripUrlPart(classId)
+            relationId = stripUrlPart(relationId)
+            if relationId != "Q1585615":
                 print(
-                    f'SubjectTypeConstraint for relation "{relation_label}" is currently unsupported.'
+                    f'SubjectTypeConstraint for relation "{relationLabel}" is currently unsupported.'
                 )
                 self.relation = None
-            self.classes.append(Property(class_id, class_label))
+            self.classes.append(Property(classId, classLabel))
         self.relation = "P1"
-        self._query_violations()
+        self._queryViolations()
 
-    def _query_violations(self):
+    def _queryViolations(self):
         if self.relation != "P1":
             return
         query = f"""
@@ -228,13 +228,13 @@ class SubjectTypeConstraint(Constraint):
                 SERVICE wikibase:label {{ bd:serviceParam wikibase:language "nl" . }}
             }}
         """
-        self.wikibase_helper.execute_query(query, self._query_violations_result)
+        self.wikibaseHelper.executeQuery(query, self._queryViolationsResult)
 
-    def _query_violations_result(self):
-        result = self.wikibase_helper.query_result
+    def _queryViolationsResult(self):
+        result = self.wikibaseHelper.queryResult
         if not result:
             return
-        self.violations = [[strip_url_part(e), e_l] for [e, e_l] in result]
+        self.violations = [[stripUrlPart(e), eL] for [e, eL] in result]
         self.violationsUpdated.emit()
 
 
@@ -243,12 +243,12 @@ class RequiredQualifierConstraint(Constraint):
         super().__init__(*args, **kwargs)
         self.implemented = True
 
-        self.required_qualifier = None
+        self.requiredQualifier = None
 
-    def query_violations(self):
-        self._query_qualifiers()
+    def queryViolations(self):
+        self._queryQualifiers()
 
-    def _query_qualifiers(self):
+    def _queryQualifiers(self):
         query = f"""
             SELECT DISTINCT ?prop ?propLabel
             WHERE
@@ -259,18 +259,18 @@ class RequiredQualifierConstraint(Constraint):
                 SERVICE wikibase:label {{ bd:serviceParam wikibase:language "nl" . }}
             }}
         """
-        self.wikibase_helper.execute_query(query, self._query_qualifiers_result)
+        self.wikibaseHelper.executeQuery(query, self._queryQualifiersResult)
 
-    def _query_qualifiers_result(self):
-        result = self.wikibase_helper.query_result
+    def _queryQualifiersResult(self):
+        result = self.wikibaseHelper.queryResult
         if not result:
             return
-        for [prop_id, prop_label] in result[1:]:
-            prop_id = strip_url_part(prop_id)
-            self.required_qualifier = Property(prop_id, prop_label)
-        self._query_violations()
+        for [propId, propLabel] in result[1:]:
+            propId = stripUrlPart(propId)
+            self.requiredQualifier = Property(propId, propLabel)
+        self._queryViolations()
 
-    def _query_violations(self):
+    def _queryViolations(self):
         query = f"""
             SELECT DISTINCT ?entity ?entityLabel
             WHERE
@@ -280,20 +280,20 @@ class RequiredQualifierConstraint(Constraint):
                     WHERE
                     {{
                         ?entity kpp:{self.property.identifier} ?statement .
-                        FILTER NOT EXISTS {{ ?statement kppq:{self.required_qualifier.identifier} ?val }}
+                        FILTER NOT EXISTS {{ ?statement kppq:{self.requiredQualifier.identifier} ?val }}
                     }}
                 }}
                 SERVICE wikibase:label {{ bd:serviceParam wikibase:language "nl" . }}
             }}
 
         """
-        self.wikibase_helper.execute_query(query, self._query_violations_result)
+        self.wikibaseHelper.executeQuery(query, self._queryViolationsResult)
 
-    def _query_violations_result(self):
-        result = self.wikibase_helper.query_result
+    def _queryViolationsResult(self):
+        result = self.wikibaseHelper.queryResult
         if not result:
             return
-        self.violations = [[strip_url_part(e), e_l] for [e, e_l] in result]
+        self.violations = [[stripUrlPart(e), eL] for [e, eL] in result]
         self.violationsUpdated.emit()
 
 
@@ -310,14 +310,14 @@ class ConstraintAnalyzer(QObject):
     constrainedPropertiesUpdated = Signal()
     focusedPropertyConstraintUpdated = Signal()
 
-    def __init__(self, wikibase_helper):
+    def __init__(self, wikibaseHelper):
         super().__init__()
 
-        self.wikibase_helper = wikibase_helper
+        self.wikibaseHelper = wikibaseHelper
         self.constraints = {}
-        self.focused_constraint = None
+        self.focusedConstraint = None
 
-    def update_constraints(self):
+    def updateConstraints(self):
         query = """
             SELECT ?subject ?subjectLabel ?object ?objectLabel
             WHERE
@@ -326,29 +326,29 @@ class ConstraintAnalyzer(QObject):
                 SERVICE wikibase:label { bd:serviceParam wikibase:language "nl" . }
             }
             """
-        self.wikibase_helper.execute_query(query, self._update_constraints_result)
+        self.wikibaseHelper.executeQuery(query, self._updateConstraintsResult)
 
-    def _update_constraints_result(self):
-        result = self.wikibase_helper.query_result
+    def _updateConstraintsResult(self):
+        result = self.wikibaseHelper.queryResult
         if not result:
             return
         self.constraints = {}
-        for [prop_id, prop_label, cons_id, cons_label] in result[1:]:
-            prop_id = strip_url_part(prop_id)
-            cons_id = strip_url_part(cons_id)
-            const_type = CONSTRAINT_MAP.get(cons_id)
-            if not const_type:
-                const_type = Constraint
+        for [propId, propLabel, consId, consLabel] in result[1:]:
+            propId = stripUrlPart(propId)
+            consId = stripUrlPart(consId)
+            constType = CONSTRAINT_MAP.get(consId)
+            if not constType:
+                constType = Constraint
 
-            constraint = const_type(
-                cons_id, cons_label, Property(prop_id, prop_label), self.wikibase_helper
+            constraint = constType(
+                consId, consLabel, Property(propId, propLabel), self.wikibaseHelper
             )
 
-            self.constraints[cons_id, prop_id] = constraint
+            self.constraints[consId, propId] = constraint
 
         self.constrainedPropertiesUpdated.emit()
 
-    def get_constraints_list_full(self):
+    def getConstraintsListFull(self):
         return [
             [
                 c.property.identifier,
@@ -360,8 +360,8 @@ class ConstraintAnalyzer(QObject):
             for c in self.constraints.values()
         ]
 
-    def set_focused_constraint(self, prop_id, constraint_id):
-        constraint = self.constraints.get((constraint_id, prop_id))
+    def setFocusedConstraint(self, propId, constraintId):
+        constraint = self.constraints.get((constraintId, propId))
         if constraint:
-            self.focused_constraint = constraint
+            self.focusedConstraint = constraint
             self.focusedPropertyConstraintUpdated.emit()

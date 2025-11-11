@@ -1,33 +1,33 @@
 import re
 
 
-def query_result_to_list(query_result):
-    if not query_result:
+def queryResultToList(queryResult):
+    if not queryResult:
         return None
     # First row is the header
-    variable_names = query_result["head"]["vars"]
-    result = [variable_names]
+    header = queryResult["head"]["vars"]
+    result = [header]
     # Next come the value rows
-    for query_row in query_result["results"]["bindings"]:
-        result_row = []
-        for variable_name in variable_names:
-            result_row.append(
-                query_row[variable_name]["value"]
-                if variable_name in query_row
+    for queryRow in queryResult["results"]["bindings"]:
+        resultRow = []
+        for variableName in header:
+            resultRow.append(
+                queryRow[variableName]["value"]
+                if variableName in queryRow
                 else None
             )
-        result.append(result_row)
+        result.append(resultRow)
     return result
 
 
-def strip_url_part(url):
+def stripUrlPart(url):
     return url.rsplit("/", 1)[-1]
 
 
-def url_from_id(possible_id, base_url):
-    property_regex = re.compile(r"^P\d+$")
-    entity_regex = re.compile(r"^Q\d+$")
-    if property_regex.match(possible_id) or entity_regex.match(possible_id):
-        return f"{base_url}/entity/{possible_id}"
+def urlFromId(possibleId, baseUrl):
+    propertyRegex = re.compile(r"^P\d+$")
+    entityRegex = re.compile(r"^Q\d+$")
+    if propertyRegex.match(possibleId) or entityRegex.match(possibleId):
+        return f"{baseUrl}/entity/{possibleId}"
     else:
         return None

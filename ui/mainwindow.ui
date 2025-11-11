@@ -22,7 +22,7 @@
    </property>
    <layout class="QVBoxLayout" name="verticalLayout">
     <item>
-     <widget class="QTabWidget" name="tab_widget"/>
+     <widget class="QTabWidget" name="tabWidget"/>
     </item>
    </layout>
   </widget>
