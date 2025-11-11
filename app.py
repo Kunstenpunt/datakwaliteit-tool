@@ -162,9 +162,17 @@ class ConstraintsTab(QWidget, Ui_ConstraintTab):
         focusedPropertyConstraint.violationsUpdated.connect(
             self.updateViolationsTableView
         )
-        self.labelRight.setText(focusedPropertyConstraint.pretty())
+        focusedPropertyConstraint.qualifiersUpdated.connect(
+            self.updateFocusedPropertyConstraintLabel
+        )
+        self.updateFocusedPropertyConstraintLabel()
         self.validateButton.setEnabled(focusedPropertyConstraint.implemented)
         self.updateViolationsTableView()
+        focusedPropertyConstraint.queryQualifiers()
+
+    def updateFocusedPropertyConstraintLabel(self):
+        focusedPropertyConstraint = self.model.constraintAnalyzer.focusedConstraint
+        self.labelRight.setText(focusedPropertyConstraint.pretty())
 
     def onValidateButtonClicked(self):
         focusedPropertyConstraint = self.model.constraintAnalyzer.focusedConstraint

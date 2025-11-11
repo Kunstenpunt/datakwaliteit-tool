@@ -14,6 +14,7 @@ class Property:
 
 class Constraint(QObject):
     violationsUpdated = Signal()
+    qualifiersUpdated = Signal()
 
     def __init__(self, identifier, label, prop, wikibaseHelper):
         super().__init__()
@@ -22,8 +23,11 @@ class Constraint(QObject):
         self.implemented = False
         self.label = label
         self.property = prop
+        self.qualifiersObtained = False
         self.wikibaseHelper = wikibaseHelper
         self.violations = None
+
+        self.qualifiersUpdated.connect(self._onQualifiersUpdated)
 
     def __str__(self):
         return f"{self.label} ({self.identifier})"
@@ -33,6 +37,9 @@ class Constraint(QObject):
 
     def queryViolations(self):
         print(f"Querying violations not implemented for {self}")
+
+    def _onQualifiersUpdated(self):
+        self.qualifiersObtained = True
 
 
 # https://www.wikidata.org/wiki/Help:Property_constraints_portal/Single_value
@@ -44,10 +51,15 @@ class SingleValueConstraint(Constraint):
 
         self.separators = []
 
-    def queryViolations(self):
-        self._queryQualifiers()
+    def pretty(self):
+        label = super().pretty()
+        if len(self.separators):
+            label += f"\nseperator(s): {[str(s) for s in self.separators]}"
+        return label
 
-    def _queryQualifiers(self):
+    def queryQualifiers(self):
+        if self.qualifiersObtained:
+            return
         query = f"""
             SELECT DISTINCT ?pq_obj ?pq_objLabel
             WHERE
@@ -66,9 +78,9 @@ class SingleValueConstraint(Constraint):
             return
         for [identifier, label] in result[1:]:
             self.separators.append(Property(stripUrlPart(identifier), label))
-        self._queryViolations()
+        self.qualifiersUpdated.emit()
 
-    def _queryViolations(self):
+    def queryViolations(self):
         query = f"""
             SELECT (SAMPLE(?statement) AS ?statement) ?entity ?entityLabel ?valueCount
             WHERE
@@ -110,10 +122,15 @@ class ValueTypeConstraint(Constraint):
         self.classes = []
         self.relation = None
 
-    def queryViolations(self):
-        self._queryQualifiers()
+    def pretty(self):
+        label = super().pretty()
+        if len(self.classes):
+            label += f"\nclass(es): {[str(s) for s in self.classes]}"
+        return label
 
-    def _queryQualifiers(self):
+    def queryQualifiers(self):
+        if self.qualifiersObtained:
+            return
         query = f"""
             SELECT DISTINCT ?class ?classLabel ?relation ?relationLabel
             WHERE
@@ -141,9 +158,9 @@ class ValueTypeConstraint(Constraint):
                 self.relation = None
             self.classes.append(Property(classId, classLabel))
         self.relation = "P1"
-        self._queryViolations()
+        self.qualifiersUpdated.emit()
 
-    def _queryViolations(self):
+    def queryViolations(self):
         if self.relation != "P1":
             return
         query = f"""
@@ -185,10 +202,15 @@ class SubjectTypeConstraint(Constraint):
         self.classes = []
         self.relation = None
 
-    def queryViolations(self):
-        self._queryQualifiers()
+    def pretty(self):
+        label = super().pretty()
+        if len(self.classes):
+            label += f"\nclass(es): {[str(s) for s in self.classes]}"
+        return label
 
-    def _queryQualifiers(self):
+    def queryQualifiers(self):
+        if self.qualifiersObtained:
+            return
         query = f"""
             SELECT DISTINCT ?class ?classLabel ?relation ?relationLabel
             WHERE
@@ -216,9 +238,9 @@ class SubjectTypeConstraint(Constraint):
                 self.relation = None
             self.classes.append(Property(classId, classLabel))
         self.relation = "P1"
-        self._queryViolations()
+        self.qualifiersUpdated.emit()
 
-    def _queryViolations(self):
+    def queryViolations(self):
         if self.relation != "P1":
             return
         query = f"""
@@ -257,10 +279,14 @@ class RequiredQualifierConstraint(Constraint):
 
         self.requiredQualifier = None
 
-    def queryViolations(self):
-        self._queryQualifiers()
+    def pretty(self):
+        label = super().pretty()
+        label += f"\nrequired qualifier: {str(self.requiredQualifier)}"
+        return label
 
-    def _queryQualifiers(self):
+    def queryQualifiers(self):
+        if self.qualifiersObtained:
+            return
         query = f"""
             SELECT DISTINCT ?prop ?propLabel
             WHERE
@@ -280,9 +306,9 @@ class RequiredQualifierConstraint(Constraint):
         for [propId, propLabel] in result[1:]:
             propId = stripUrlPart(propId)
             self.requiredQualifier = Property(propId, propLabel)
-        self._queryViolations()
+        self.qualifiersUpdated.emit()
 
-    def _queryViolations(self):
+    def queryViolations(self):
         query = f"""
             SELECT DISTINCT (SAMPLE(?statement) AS ?statement) ?entity ?entityLabel
             WHERE
