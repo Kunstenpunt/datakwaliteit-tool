@@ -17,7 +17,7 @@ class QueryWorker(QObject):
     def __init__(self, query, prefixes):
         super().__init__()
         self.query = query
-        self.prefixes = prefixes
+        self.prefixes = None if "PREFIX" in query else prefixes
         self.resultList = None
 
     def run(self):
