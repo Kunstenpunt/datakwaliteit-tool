@@ -23,11 +23,20 @@ from ui.mainwindow import Ui_MainWindow
 from ui.querytab import Ui_QueryTab
 
 
+MAXIMUM_AUTO_TABLE_SECTION_WIDTH = 200
+
+
 def onTableDoubleClicked(index):
     possibleID = index.data()
     url = urlFromId(possibleID, BASE_URL)
     if url:
         QDesktopServices.openUrl(QUrl(url))
+
+
+def headerResizeNeatly(header):
+    header.setMaximumSectionSize(MAXIMUM_AUTO_TABLE_SECTION_WIDTH)
+    header.resizeSections(QHeaderView.ResizeMode.ResizeToContents)
+    header.setMaximumSectionSize(-1)
 
 
 class SimpleTableModel(QAbstractTableModel):
@@ -45,7 +54,11 @@ class SimpleTableModel(QAbstractTableModel):
         if role == Qt.ItemDataRole.BackgroundRole:
             data = self._data[index.row() + 1][index.column()]
             if type(data) == type(True):
-                return QBrush(Qt.GlobalColor.darkGreen) if data else QBrush(Qt.GlobalColor.darkRed)
+                return (
+                    QBrush(Qt.GlobalColor.darkGreen)
+                    if data
+                    else QBrush(Qt.GlobalColor.darkRed)
+                )
 
         if role == Qt.ItemDataRole.ForegroundRole:
             data = self._data[index.row() + 1][index.column()]
@@ -92,9 +105,8 @@ class QueryTab(QWidget, Ui_QueryTab):
         resultModel = QSortFilterProxyModel()
         resultModel.setSourceModel(SimpleTableModel(result))
         self.tableView.setModel(resultModel)
-        self.tableView.horizontalHeader().resizeSections(
-            QHeaderView.ResizeMode.ResizeToContents
-        )
+        header = self.tableView.horizontalHeader()
+        headerResizeNeatly(header)
 
 
 class ConstraintsTab(QWidget, Ui_ConstraintTab):
@@ -103,7 +115,7 @@ class ConstraintsTab(QWidget, Ui_ConstraintTab):
         self.setupUi(self)
 
         self.model = model
-        self.splitter.setStretchFactor(0, 2)
+        self.splitter.setStretchFactor(0, 1)
         self.splitter.setStretchFactor(1, 1)
         self.validateButton.setEnabled(False)
 
@@ -125,29 +137,28 @@ class ConstraintsTab(QWidget, Ui_ConstraintTab):
         self.model.constraintAnalyzer.updateConstraints()
 
     def onConstrainedPropertiesUpdated(self):
-        header = ["Prop ID", "Prop label", "Constraint ID", "Constraint Label", "Implemented"]
-        data = [
-            header
-        ] + self.model.constraintAnalyzer.getConstraintsListFull()
+        header = [
+            "Prop ID",
+            "Prop label",
+            "Constraint ID",
+            "Constraint Label",
+            "Implemented",
+        ]
+        data = [header] + self.model.constraintAnalyzer.getConstraintsListFull()
         sortableDataModel = QSortFilterProxyModel()
         sortableDataModel.setSourceModel(SimpleTableModel(data))
         self.propertiesTableView.setModel(sortableDataModel)
-        self.propertiesTableView.horizontalHeader().resizeSections(
-            QHeaderView.ResizeMode.ResizeToContents
-        )
+        header = self.propertiesTableView.horizontalHeader()
+        headerResizeNeatly(header)
 
     def onPropertyClicked(self, index):
         tableModel = index.model()
         propId = tableModel.data(tableModel.index(index.row(), 0))
         constraintId = tableModel.data(tableModel.index(index.row(), 2))
-        self.model.constraintAnalyzer.setFocusedConstraint(
-            propId, constraintId
-        )
+        self.model.constraintAnalyzer.setFocusedConstraint(propId, constraintId)
 
     def onFocusedPropertyConstraintUpdated(self):
-        focusedPropertyConstraint = (
-            self.model.constraintAnalyzer.focusedConstraint
-        )
+        focusedPropertyConstraint = self.model.constraintAnalyzer.focusedConstraint
         focusedPropertyConstraint.violationsUpdated.connect(
             self.updateViolationsTableView
         )
@@ -156,9 +167,7 @@ class ConstraintsTab(QWidget, Ui_ConstraintTab):
         self.updateViolationsTableView()
 
     def onValidateButtonClicked(self):
-        focusedPropertyConstraint = (
-            self.model.constraintAnalyzer.focusedConstraint
-        )
+        focusedPropertyConstraint = self.model.constraintAnalyzer.focusedConstraint
         focusedPropertyConstraint.queryViolations()
 
     def updateViolationsTableView(self):
@@ -169,9 +178,9 @@ class ConstraintsTab(QWidget, Ui_ConstraintTab):
         sortableDataModel = QSortFilterProxyModel()
         sortableDataModel.setSourceModel(SimpleTableModel(data))
         self.violationsTableView.setModel(sortableDataModel)
-        self.violationsTableView.horizontalHeader().resizeSections(
-            QHeaderView.ResizeMode.ResizeToContents
-        )
+        header = self.violationsTableView.horizontalHeader()
+        headerResizeNeatly(header)
+        header.resizeSection(0, header.defaultSectionSize())
 
 
 class MainWindow(QMainWindow, Ui_MainWindow):
