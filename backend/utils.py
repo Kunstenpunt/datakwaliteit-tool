@@ -25,7 +25,11 @@ def stripUrlPart(url):
 def urlFromId(possibleId, baseUrl):
     propertyRegex = re.compile(r"^P\d+$")
     entityRegex = re.compile(r"^Q\d+$")
+    statementRegex = re.compile(r"^Q\d+-[A-Za-z0-9\-]+$")
+
     if propertyRegex.match(possibleId) or entityRegex.match(possibleId):
         return f"{baseUrl}/entity/{possibleId}"
+    elif statementRegex.match(possibleId):
+        return f"{baseUrl}/entity/statement/{possibleId}"
     else:
         return None
