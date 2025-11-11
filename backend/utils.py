@@ -12,9 +12,7 @@ def queryResultToList(queryResult):
         resultRow = []
         for variableName in header:
             resultRow.append(
-                queryRow[variableName]["value"]
-                if variableName in queryRow
-                else None
+                queryRow[variableName]["value"] if variableName in queryRow else None
             )
         result.append(resultRow)
     return result
