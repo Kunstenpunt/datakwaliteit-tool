@@ -277,11 +277,14 @@ class RequiredQualifierConstraint(Constraint):
         super().__init__(*args, **kwargs)
         self.implemented = True
 
-        self.requiredQualifier = None
+        self.requiredQualifiers = None
 
     def pretty(self):
         label = super().pretty()
-        label += f"\nrequired qualifier: {str(self.requiredQualifier)}"
+        if self.requiredQualifiers:
+            label += (
+                f"\nrequired qualifiers: {[str(q) for q in self.requiredQualifiers]}"
+            )
         return label
 
     def queryQualifiers(self):
@@ -303,9 +306,10 @@ class RequiredQualifierConstraint(Constraint):
         result = self.wikibaseHelper.queryResult
         if not result:
             return
+        self.requiredQualifiers = []
         for [propId, propLabel] in result[1:]:
             propId = stripUrlPart(propId)
-            self.requiredQualifier = Property(propId, propLabel)
+            self.requiredQualifiers.append(Property(propId, propLabel))
         self.qualifiersUpdated.emit()
 
     def queryViolations(self):
@@ -318,7 +322,7 @@ class RequiredQualifierConstraint(Constraint):
                     WHERE
                     {{
                         ?entity kpp:{self.property.identifier} ?statement .
-                        FILTER NOT EXISTS {{ ?statement kppq:{self.requiredQualifier.identifier} ?val }}
+                        {'\n'.join(f'FILTER NOT EXISTS {{ ?statement kppq:{q.identifier} ?val }} .' for q in self.requiredQualifiers)}
                     }}
                 }}
                 ?entity kpp:{self.property.identifier} ?statement
