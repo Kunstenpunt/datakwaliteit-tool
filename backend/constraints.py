@@ -342,11 +342,84 @@ class RequiredQualifierConstraint(Constraint):
         self.violationsUpdated.emit()
 
 
+class AllowedQualifiersConstraint(Constraint):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.implemented = True
+
+        self.allowedQualifiers = None
+
+    def pretty(self):
+        label = super().pretty()
+        if self.allowedQualifiers:
+            label += (
+                f"\nallowed qualifiers: {[str(q) for q in self.allowedQualifiers]}"
+            )
+        return label
+
+    def queryQualifiers(self):
+        if self.qualifiersObtained:
+            return
+        query = f"""
+            SELECT DISTINCT ?prop ?propLabel
+            WHERE
+            {{
+                ?statement kpps:P85 kp:Q1585541 .
+                kp:{self.property.identifier} kpp:P85 ?statement .
+                OPTIONAL {{ ?statement kppq:P88 ?prop }}
+                SERVICE wikibase:label {{ bd:serviceParam wikibase:language "nl" . }}
+            }}
+        """
+        self.wikibaseHelper.executeQuery(query, self._queryQualifiersResult)
+
+    def _queryQualifiersResult(self):
+        result = self.wikibaseHelper.queryResult
+        if not result:
+            return
+        self.allowedQualifiers = []
+        for [propId, propLabel] in result[1:]:
+            propId = stripUrlPart(propId)
+            self.allowedQualifiers.append(Property(propId, propLabel))
+        self.qualifiersUpdated.emit()
+
+    def queryViolations(self):
+        query = f"""
+            SELECT DISTINCT (SAMPLE(?statement) AS ?statement) ?entity ?entityLabel
+            WHERE
+            {{
+                {{
+                    SELECT DISTINCT ?entity
+                    WHERE
+                    {{
+                        ?entity kpp:{self.property.identifier} ?statement .
+                        ?statement ?predicate [] .
+                        [] wikibase:qualifier ?predicate .
+                        {'\n'.join(f'FILTER(?predicate != kppq:{q.identifier}) .' for q in self.allowedQualifiers)}
+                    }}
+                }}
+                ?entity kpp:{self.property.identifier} ?statement
+                SERVICE wikibase:label {{ bd:serviceParam wikibase:language "nl" . }}
+            }}
+            GROUP BY ?entity ?entityLabel
+        """
+        self.wikibaseHelper.executeQuery(query, self._queryViolationsResult)
+
+    def _queryViolationsResult(self):
+        result = self.wikibaseHelper.queryResult
+        if not result:
+            return
+        self.violations = [
+            [stripUrlPart(s), stripUrlPart(e), eL] for [s, e, eL] in result
+        ]
+        self.violationsUpdated.emit()
+
+
 CONSTRAINT_MAP = {
     "Q1585537": SingleValueConstraint,
     "Q1585538": ValueTypeConstraint,
     "Q1585539": SubjectTypeConstraint,
     "Q1585540": RequiredQualifierConstraint,
+    "Q1585541": AllowedQualifiersConstraint,
 }
 
 
