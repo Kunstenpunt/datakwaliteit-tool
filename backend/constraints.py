@@ -502,6 +502,7 @@ class ConflictsWithConstraint(Constraint):
         ]
         self.violationsUpdated.emit()
 
+
 class DistinctValuesConstraint(Constraint):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -538,7 +539,9 @@ class DistinctValuesConstraint(Constraint):
         for [identifier, label] in result[1:]:
             self.separators.append(Property(stripUrlPart(identifier), label))
         if self.separators:
-            print("Warning: validation hasn't been tested yet with separators, could explode violently.")
+            print(
+                "Warning: validation hasn't been tested yet with separators, could explode violently."
+            )
         self.qualifiersUpdated.emit()
 
     def queryViolations(self):
@@ -575,7 +578,15 @@ class DistinctValuesConstraint(Constraint):
         if not result:
             return
         self.violations = [
-            [stripUrlPart(s), stripUrlPart(e), e_l, stripUrlPart(v), v_l, stripUrlPart(sep)] for [s, e, e_l, v, v_l, sep] in result
+            [
+                stripUrlPart(s),
+                stripUrlPart(e),
+                e_l,
+                stripUrlPart(v),
+                v_l,
+                stripUrlPart(sep),
+            ]
+            for [s, e, e_l, v, v_l, sep] in result
         ]
         self.violationsUpdated.emit()
 
