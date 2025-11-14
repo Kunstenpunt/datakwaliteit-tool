@@ -502,6 +502,82 @@ class ConflictsWithConstraint(Constraint):
         ]
         self.violationsUpdated.emit()
 
+class DistinctValuesConstraint(Constraint):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.implemented = True
+
+        self.separators = None
+
+    def pretty(self):
+        label = super().pretty()
+        if self.separators:
+            label += f"\nseperator(s): {[str(s) for s in self.separators]}"
+        return label
+
+    def queryQualifiers(self):
+        if self.qualifiersObtained:
+            return
+        query = f"""
+            SELECT DISTINCT ?pq_obj ?pq_objLabel
+            WHERE
+            {{
+                ?statement kpps:P85 kp:Q1585647 .
+                kp:{self.property.identifier} kpp:P85 ?statement .
+                ?statement kppq:P90 ?pq_obj .
+                SERVICE wikibase:label {{ bd:serviceParam wikibase:language "nl" . }}
+            }}
+        """
+        self.wikibaseHelper.executeQuery(query, self._queryQualifiersResult)
+
+    def _queryQualifiersResult(self):
+        result = self.wikibaseHelper.queryResult
+        if not result:
+            return
+        self.separators = []
+        for [identifier, label] in result[1:]:
+            self.separators.append(Property(stripUrlPart(identifier), label))
+        if self.separators:
+            print("Warning: validation hasn't been tested yet with separators, could explode violently.")
+        self.qualifiersUpdated.emit()
+
+    def queryViolations(self):
+        query = f"""
+            SELECT ?statement ?entity ?entityLabel ?value ?valueLabel ?separator
+            WHERE
+            {{
+                {{
+                    SELECT ?value ?separator (COUNT(?statement) AS ?statementCount)
+                    WHERE
+                    {{
+                        ?statement kpps:{self.property.identifier} ?value .
+                        {
+                        f"OPTIONAL {{ ?statement {"|".join(f"kppq:{s.identifier}" for s in self.separators)} ?seperator }}"
+                            if self.separators else ""
+                        }
+                    }}
+                    GROUP BY ?value ?separator
+                    HAVING(?statementCount > 1)
+                }}
+                ?statement kpps:{self.property.identifier} ?value .
+                ?entity kpp:{self.property.identifier} ?statement .
+                {
+                f"OPTIONAL {{ ?statement {"|".join(f"kppq:{s.identifier}" for s in self.separators)} ?seperator }}"
+                    if self.separators else ""
+                }
+                SERVICE wikibase:label {{ bd:serviceParam wikibase:language "nl" . }}
+            }}
+        """
+        self.wikibaseHelper.executeQuery(query, self._queryViolationsResult)
+
+    def _queryViolationsResult(self):
+        result = self.wikibaseHelper.queryResult
+        if not result:
+            return
+        self.violations = [
+            [stripUrlPart(s), stripUrlPart(e), e_l, stripUrlPart(v), v_l, stripUrlPart(sep)] for [s, e, e_l, v, v_l, sep] in result
+        ]
+        self.violationsUpdated.emit()
 
 CONSTRAINT_MAP = {
     "Q1585537": SingleValueConstraint,
@@ -510,6 +586,7 @@ CONSTRAINT_MAP = {
     "Q1585540": RequiredQualifierConstraint,
     "Q1585541": AllowedQualifiersConstraint,
     "Q1585646": ConflictsWithConstraint,
+    "Q1585647": DistinctValuesConstraint,
 }
 
 
