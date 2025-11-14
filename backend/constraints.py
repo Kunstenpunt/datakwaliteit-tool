@@ -94,7 +94,9 @@ class SingleValueConstraint(Constraint):
                     {{
                         ?entity kpp:{self.property.identifier} ?statement .
                         ?statement kpps:{self.property.identifier} ?value .
-                        {'\n'.join(f'MINUS {{ ?statement kppq:{s.identifier} ?seperator }} .' for s in self.separators)}             
+                        { f'\n{"    " * 6}'.join(
+                        f'MINUS {{ ?statement kppq:{s.identifier} ?seperator }} .' for s in self.separators)
+                        }             
                     }}
                     GROUP BY ?entity
                     HAVING(?valueCount > 1)
@@ -175,7 +177,9 @@ class ValueTypeConstraint(Constraint):
                     WHERE
                     {{
                         ?entity kpt:{self.property.identifier} ?value .
-                        {'\n'.join(f'MINUS {{ ?value kpt:{self.relation} kp:{c.identifier}}} .' for c in self.classes)}
+                        { f'\n{"    " * 6}'.join(
+                        f'MINUS {{ ?value kpt:{self.relation} kp:{c.identifier}}} .' for c in self.classes)
+                        }
                     }}
                 }}
                 ?entity kpp:{self.property.identifier} ?statement
@@ -255,7 +259,9 @@ class SubjectTypeConstraint(Constraint):
                     WHERE
                     {{
                         ?entity kpt:{self.property.identifier} ?value .
-                        {'\n'.join(f'MINUS {{ ?entity kpt:{self.relation} kp:{c.identifier}}} .' for c in self.classes)}
+                        { f'\n{"    " * 6}'.join(
+                        f'MINUS {{ ?entity kpt:{self.relation} kp:{c.identifier}}} .' for c in self.classes)
+                        }
                     }}
                 }}
                 ?entity kpp:{self.property.identifier} ?statement
@@ -325,7 +331,9 @@ class RequiredQualifierConstraint(Constraint):
                     WHERE
                     {{
                         ?entity kpp:{self.property.identifier} ?statement .
-                        {'\n'.join(f'FILTER NOT EXISTS {{ ?statement kppq:{q.identifier} ?val }} .' for q in self.requiredQualifiers)}
+                        { f'\n{"    " * 6}'.join(
+                        f'FILTER NOT EXISTS {{ ?statement kppq:{q.identifier} ?val }} .' for q in self.requiredQualifiers)
+                        }
                     }}
                 }}
                 ?entity kpp:{self.property.identifier} ?statement
@@ -395,7 +403,9 @@ class AllowedQualifiersConstraint(Constraint):
                         ?entity kpp:{self.property.identifier} ?statement .
                         ?statement ?predicate [] .
                         [] wikibase:qualifier ?predicate .
-                        {'\n'.join(f'FILTER(?predicate != kppq:{q.identifier}) .' for q in self.allowedQualifiers)}
+                        { f'\n{"    " * 6}'.join(
+                        f'FILTER(?predicate != kppq:{q.identifier}) .' for q in self.allowedQualifiers)
+                        }
                     }}
                 }}
                 ?entity kpp:{self.property.identifier} ?statement
