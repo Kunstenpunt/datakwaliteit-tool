@@ -417,12 +417,91 @@ class AllowedQualifiersConstraint(Constraint):
         self.violationsUpdated.emit()
 
 
+class ConflictsWithConstraint(Constraint):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.implemented = True
+        # List of lists [property, valueId, valueLabel), value can be None
+        self.conflictingStatements = None
+
+    def pretty(self):
+        label = super().pretty()
+        if self.conflictingStatements:
+            label += f"\nconflicting statements: {[f"{str(p)} {v if v else ""}" for [p,v, v_l] in self.conflictingStatements]}"
+        return label
+
+    def queryQualifiers(self):
+        if self.qualifiersObtained:
+            return
+        query = f"""
+            SELECT DISTINCT ?prop ?propLabel ?value ?valueLabel
+            WHERE
+            {{
+                ?statement kpps:P85 kp:Q1585646 .
+                kp:{self.property.identifier} kpp:P85 ?statement .
+                OPTIONAL {{ ?statement kppq:P88 ?prop }}
+                OPTIONAL {{ ?statement kppq:P89 ?value}}
+                SERVICE wikibase:label {{ bd:serviceParam wikibase:language "nl" . }}
+            }}
+        """
+        self.wikibaseHelper.executeQuery(query, self._queryQualifiersResult)
+
+    def _queryQualifiersResult(self):
+        result = self.wikibaseHelper.queryResult
+        print(result)
+        if not result:
+            return
+        self.conflictingStatements = []
+        for [propId, propLabel, valueId, valueLabel] in result[1:]:
+            propId = stripUrlPart(propId)
+            if valueId:
+                valueId = stripUrlPart(valueId)
+            self.conflictingStatements.append(
+                [Property(propId, propLabel), valueId, valueLabel]
+            )
+        self.qualifiersUpdated.emit()
+
+    def queryViolations(self):
+        query = f"""
+            SELECT DISTINCT (SAMPLE(?statement) AS ?statement) ?entity ?entityLabel
+            WHERE
+            {{
+                {{
+                    SELECT DISTINCT ?entity
+                    WHERE
+                    {{
+                        ?entity kpp:{self.property.identifier} [] .
+                        FILTER(
+                            { f' ||\n{"    " * 7}'.join(
+                            f'EXISTS {{ ?entity kpt:{p.identifier} {"kp:" + v if v else "[]"} }}' for [p,v,_] in self.conflictingStatements)
+                            }
+                        )
+                    }}
+                }}
+                ?entity kpp:{self.property.identifier} ?statement
+                SERVICE wikibase:label {{ bd:serviceParam wikibase:language "nl" . }}
+            }}
+            GROUP BY ?entity ?entityLabel
+        """
+        self.wikibaseHelper.executeQuery(query, self._queryViolationsResult)
+
+    def _queryViolationsResult(self):
+        result = self.wikibaseHelper.queryResult
+        if not result:
+            return
+        self.violations = [
+            [stripUrlPart(s), stripUrlPart(e), eL] for [s, e, eL] in result
+        ]
+        self.violationsUpdated.emit()
+
+
 CONSTRAINT_MAP = {
     "Q1585537": SingleValueConstraint,
     "Q1585538": ValueTypeConstraint,
     "Q1585539": SubjectTypeConstraint,
     "Q1585540": RequiredQualifierConstraint,
     "Q1585541": AllowedQualifiersConstraint,
+    "Q1585646": ConflictsWithConstraint,
 }
 
 
