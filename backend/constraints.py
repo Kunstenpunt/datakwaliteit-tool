@@ -52,11 +52,11 @@ class SingleValueConstraint(Constraint):
         super().__init__(*args, **kwargs)
         self.implemented = True
 
-        self.separators = []
+        self.separators = None
 
     def pretty(self):
         label = super().pretty()
-        if len(self.separators):
+        if self.separators:
             label += f"\nseperator(s): {[str(s) for s in self.separators]}"
         return label
 
@@ -79,6 +79,7 @@ class SingleValueConstraint(Constraint):
         result = self.wikibaseHelper.queryResult
         if not result:
             return
+        self.separators = []
         for [identifier, label] in result[1:]:
             self.separators.append(Property(stripUrlPart(identifier), label))
         self.qualifiersUpdated.emit()
@@ -96,7 +97,7 @@ class SingleValueConstraint(Constraint):
                         ?statement kpps:{self.property.identifier} ?value .
                         { f'\n{"    " * 6}'.join(
                         f'MINUS {{ ?statement kppq:{s.identifier} ?seperator }} .' for s in self.separators)
-                        }             
+                        }
                     }}
                     GROUP BY ?entity
                     HAVING(?valueCount > 1)
@@ -462,8 +463,7 @@ class ConflictsWithConstraint(Constraint):
         self.conflictingStatements = []
         for [propId, propLabel, valueId, valueLabel] in result[1:]:
             propId = stripUrlPart(propId)
-            if valueId:
-                valueId = stripUrlPart(valueId)
+            valueId = stripUrlPart(valueId)
             self.conflictingStatements.append(
                 [Property(propId, propLabel), valueId, valueLabel]
             )
