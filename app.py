@@ -215,10 +215,12 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.model.wikibaseHelper.queryDone.connect(self.queryIndicator.hide)
 
     def copyQueryToClipboard(self):
-        prefixes = textwrap.dedent(self.model.wikibaseHelper.queryPrefixes).lstrip()
         query = textwrap.dedent(self.model.wikibaseHelper.mostRecentQuery).lstrip()
         clipboard = QGuiApplication.clipboard()
-        clipboard.setText(f"{prefixes}\n{query}")
+        if not "PREFIX" in query:
+            prefixes = textwrap.dedent(self.model.wikibaseHelper.queryPrefixes).lstrip()
+            query = f"{prefixes}\n{query}"
+        clipboard.setText(query)
 
 
 app = QApplication(sys.argv)
