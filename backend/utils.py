@@ -19,6 +19,8 @@ def queryResultToList(queryResult):
 
 
 def stripUrlPart(url):
+    if not url:
+        return None
     return url.rsplit("/", 1)[-1]
 
 
