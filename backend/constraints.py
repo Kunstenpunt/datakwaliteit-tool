@@ -37,7 +37,7 @@ class Constraint(QObject):
 
     def queryQualifiers(self):
         print(f"Querying qualfiers not implemented for {self}")
-    
+
     def queryViolations(self):
         print(f"Querying violations not implemented for {self}")
 
@@ -355,9 +355,7 @@ class AllowedQualifiersConstraint(Constraint):
     def pretty(self):
         label = super().pretty()
         if self.allowedQualifiers:
-            label += (
-                f"\nallowed qualifiers: {[str(q) for q in self.allowedQualifiers]}"
-            )
+            label += f"\nallowed qualifiers: {[str(q) for q in self.allowedQualifiers]}"
         return label
 
     def queryQualifiers(self):
