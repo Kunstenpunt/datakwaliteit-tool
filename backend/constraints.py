@@ -35,6 +35,9 @@ class Constraint(QObject):
     def pretty(self):
         return f'"{self.label}" ({self.identifier})\non "{self.property.label}" ({self.property.identifier})'
 
+    def queryQualifiers(self):
+        print(f"Querying qualfiers not implemented for {self}")
+    
     def queryViolations(self):
         print(f"Querying violations not implemented for {self}")
 
