@@ -579,6 +579,76 @@ class DistinctValuesConstraint(Constraint):
         ]
         self.violationsUpdated.emit()
 
+
+class FormatConstraint(Constraint):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.implemented = True
+
+        self.format = None
+
+    def pretty(self):
+        label = super().pretty()
+        if self.format:
+            label += f"\nformat: {self.format}"
+        return label
+
+    def queryQualifiers(self):
+        if self.qualifiersObtained:
+            return
+        query = f"""
+            SELECT DISTINCT ?format
+            WHERE
+            {{
+                ?statement kpps:P85 kp:Q1585648 .
+                kp:{self.property.identifier} kpp:P85 ?statement .
+                ?statement kppq:P96 ?format .
+            }}
+        """
+        self.wikibaseHelper.executeQuery(query, self._queryQualifiersResult)
+
+    def _queryQualifiersResult(self):
+        result = self.wikibaseHelper.queryResult
+        if not result or len(result) < 2:
+            return
+        self.format = result[1][0]
+        self.qualifiersUpdated.emit()
+
+    def queryViolations(self):
+        query = f"""
+            SELECT ?statement ?entity ?entityLabel ?value
+            WHERE
+            {{
+                {{
+                    SELECT ?statement ?value
+                    WHERE
+                    {{
+                        ?statement kpps:{self.property.identifier} ?value .
+                        FILTER(!REGEX(STR(?value), "{self.format.replace("\\", "\\\\")}"))
+                    }}
+                }}
+                ?entity kpp:{self.property.identifier} ?statement .
+                SERVICE wikibase:label {{ bd:serviceParam wikibase:language "nl" . }}
+            }}
+        """
+        self.wikibaseHelper.executeQuery(query, self._queryViolationsResult)
+
+    def _queryViolationsResult(self):
+        result = self.wikibaseHelper.queryResult
+        if not result:
+            return
+        self.violations = [
+            [
+                stripUrlPart(s),
+                stripUrlPart(e),
+                e_l,
+                v,
+            ]
+            for [s, e, e_l, v] in result
+        ]
+        self.violationsUpdated.emit()
+
+
 CONSTRAINT_MAP = {
     "Q1585537": SingleValueConstraint,
     "Q1585538": ValueTypeConstraint,
@@ -587,6 +657,7 @@ CONSTRAINT_MAP = {
     "Q1585541": AllowedQualifiersConstraint,
     "Q1585646": ConflictsWithConstraint,
     "Q1585647": DistinctValuesConstraint,
+    "Q1585648": FormatConstraint,
 }
 
 
