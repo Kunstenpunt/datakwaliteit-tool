@@ -666,6 +666,159 @@ class FormatConstraint(Constraint):
         self.violationsUpdated.emit()
 
 
+class ItemRequiresStatementConstraint(Constraint):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.implemented = True
+        # Dictionary of form PROP_ID -> [PROP, VAL1, VAL2, ...]
+        self.requiredStatements = None
+
+    def pretty(self):
+        label = super().pretty()
+        if self.requiredStatements:
+            label += f"\nrequiredStatement: {[f"{str(s[0])} = " + ", ".join(str(v) for v in s[1:]) for s in self.requiredStatements.values()]}"
+        return label
+
+    def queryQualifiers(self):
+        if self.qualifiersObtained:
+            return
+        query = f"""
+            SELECT DISTINCT ?prop ?propLabel ?value ?valueLabel
+            WHERE
+            {{
+                ?statement kpps:P85 kp:Q1585649 .
+                kp:{self.property.identifier} kpp:P85 ?statement .
+                OPTIONAL {{ ?statement kppq:P88 ?prop }}
+                OPTIONAL {{ ?statement kppq:P89 ?value}}
+                SERVICE wikibase:label {{ bd:serviceParam wikibase:language "nl" . }}
+            }}
+        """
+        self.wikibaseHelper.executeQuery(query, self._queryQualifiersResult)
+
+    def _queryQualifiersResult(self):
+        result = self.wikibaseHelper.queryResult
+        if not result:
+            return
+        self.requiredStatements = {}
+        for [propId, propLabel, valueId, valueLabel] in result[1:]:
+            prop = Property(stripUrlPart(propId), propLabel)
+            value = Item(stripUrlPart(valueId), valueLabel)
+            if not (prop.identifier in self.requiredStatements):
+                self.requiredStatements[prop.identifier] = [prop]
+            if valueId != None:
+                self.requiredStatements[prop.identifier].append(value)
+        self.qualifiersUpdated.emit()
+
+    def queryViolations(self):
+        query = f"""
+            SELECT DISTINCT (SAMPLE(?statement) AS ?statement) ?entity ?entityLabel
+            WHERE
+            {{
+                {{
+                    SELECT DISTINCT ?entity
+                    WHERE
+                    {{
+                        ?entity kpp:{self.property.identifier} [] .
+                        FILTER(
+                            { f' ||\n{"    " * 7}'.join(
+                            f'NOT EXISTS {{ ?entity kpt:{s[0].identifier} ?v . {f"VALUES ?v {{{" ".join("kp:" + v.identifier for v in s[1:])}}}" if len(s) > 1 else ""} }}' for s in self.requiredStatements.values())
+                            }
+                        )
+                    }}
+                }}
+                ?entity kpp:{self.property.identifier} ?statement
+                SERVICE wikibase:label {{ bd:serviceParam wikibase:language "nl" . }}
+            }}
+            GROUP BY ?entity ?entityLabel
+        """
+        self.wikibaseHelper.executeQuery(query, self._queryViolationsResult)
+
+    def _queryViolationsResult(self):
+        result = self.wikibaseHelper.queryResult
+        if not result:
+            return
+        self.violations = [
+            [stripUrlPart(s), stripUrlPart(e), eL] for [s, e, eL] in result
+        ]
+        self.violationsUpdated.emit()
+
+
+class ValueRequiresStatementConstraint(Constraint):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.implemented = True
+        # Dictionary of form PROP_ID -> [PROP, VAL1, VAL2, ...]
+        self.requiredStatements = None
+
+    def pretty(self):
+        label = super().pretty()
+        if self.requiredStatements:
+            label += f"\nrequiredStatement: {[f"{str(s[0])} = " + ", ".join(str(v) for v in s[1:]) for s in self.requiredStatements.values()]}"
+        return label
+
+    def queryQualifiers(self):
+        if self.qualifiersObtained:
+            return
+        query = f"""
+            SELECT DISTINCT ?prop ?propLabel ?value ?valueLabel
+            WHERE
+            {{
+                ?statement kpps:P85 kp:Q1585650 .
+                kp:{self.property.identifier} kpp:P85 ?statement .
+                OPTIONAL {{ ?statement kppq:P88 ?prop }}
+                OPTIONAL {{ ?statement kppq:P89 ?value}}
+                SERVICE wikibase:label {{ bd:serviceParam wikibase:language "nl" . }}
+            }}
+        """
+        self.wikibaseHelper.executeQuery(query, self._queryQualifiersResult)
+
+    def _queryQualifiersResult(self):
+        result = self.wikibaseHelper.queryResult
+        if not result:
+            return
+        self.requiredStatements = {}
+        for [propId, propLabel, valueId, valueLabel] in result[1:]:
+            prop = Property(stripUrlPart(propId), propLabel)
+            value = Item(stripUrlPart(valueId), valueLabel)
+            if not (prop.identifier in self.requiredStatements):
+                self.requiredStatements[prop.identifier] = [prop]
+            if valueId != None:
+                self.requiredStatements[prop.identifier].append(value)
+
+        self.qualifiersUpdated.emit()
+
+    def queryViolations(self):
+        query = f"""
+            SELECT ?statement ?value ?valueLabel
+            WHERE
+            {{
+                {{
+                    SELECT DISTINCT ?statement ?value
+                    WHERE
+                    {{
+                        ?statement kpps:{self.property.identifier} ?value .
+                        FILTER(
+                            { f' ||\n{"    " * 7}'.join(
+                            f'NOT EXISTS {{ ?value kpt:{s[0].identifier} ?v . {f"VALUES ?v {{{" ".join("kp:" + v.identifier for v in s[1:])}}}" if len(s) > 1 else ""} }}' for s in self.requiredStatements.values())
+                            }
+                        )
+                    }}
+                }}
+                SERVICE wikibase:label {{ bd:serviceParam wikibase:language "nl" . }}
+            }}
+        """
+        self.wikibaseHelper.executeQuery(query, self._queryViolationsResult)
+
+    def _queryViolationsResult(self):
+        result = self.wikibaseHelper.queryResult
+        if not result:
+            return
+        self.violations = [
+            [stripUrlPart(s), stripUrlPart(e), eL] for [s, e, eL] in result
+        ]
+        self.violationsUpdated.emit()
+
+
 CONSTRAINT_MAP = {
     "Q1585537": SingleValueConstraint,
     "Q1585538": ValueTypeConstraint,
@@ -675,6 +828,8 @@ CONSTRAINT_MAP = {
     "Q1585646": ConflictsWithConstraint,
     "Q1585647": DistinctValuesConstraint,
     "Q1585648": FormatConstraint,
+    "Q1585649": ItemRequiresStatementConstraint,
+    "Q1585650": ValueRequiresStatementConstraint,
 }
 
 
