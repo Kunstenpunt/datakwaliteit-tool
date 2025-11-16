@@ -3,13 +3,21 @@ from PySide6.QtCore import Signal, QObject
 from .utils import stripUrlPart
 
 
-class Property:
+class Item:
     def __init__(self, identifier, label):
         self.identifier = identifier
         self.label = label
 
     def __str__(self):
-        return f"{self.label} ({self.identifier})"
+        if self.identifier == None and self.label == None:
+            return "?"
+        else:
+            return f"{self.label} ({self.identifier})"
+
+
+class Property(Item):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 
 class Constraint(QObject):
