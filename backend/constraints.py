@@ -96,10 +96,10 @@ class SingleValueConstraint(Constraint):
                         ?entity kpp:{self.property.identifier} ?statement .
                         ?statement kpps:{self.property.identifier} ?value .
                         { f'\n{"    " * 6}'.join(
-                        f'MINUS {{ ?statement kppq:{s.identifier} ?seperator }} .' for s in self.separators)
+                        f'OPTIONAL {{ ?statement kppq:{s.identifier} ?seperator{i} }} .' for (i, s) in enumerate(self.separators))
                         }
                     }}
-                    GROUP BY ?entity
+                    GROUP BY ?entity { f", ".join(f"?seperator{i}" for i in range(len(self.separators))) }
                     HAVING(?valueCount > 1)
                 }}
                 ?entity kpp:{self.property.identifier} ?statement
