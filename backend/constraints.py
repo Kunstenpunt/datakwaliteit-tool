@@ -65,7 +65,7 @@ class SingleValueConstraint(Constraint):
     def pretty(self):
         label = super().pretty()
         if self.separators:
-            label += f"\nseperator(s): {[str(s) for s in self.separators]}"
+            label += f"\nseparator(s): {[str(s) for s in self.separators]}"
         return label
 
     def queryQualifiers(self):
@@ -104,10 +104,10 @@ class SingleValueConstraint(Constraint):
                         ?entity kpp:{self.property.identifier} ?statement .
                         ?statement kpps:{self.property.identifier} ?value .
                         { f'\n{"    " * 6}'.join(
-                        f'OPTIONAL {{ ?statement kppq:{s.identifier} ?seperator{i} }} .' for (i, s) in enumerate(self.separators))
+                        f'OPTIONAL {{ ?statement kppq:{s.identifier} ?separator{i} }} .' for (i, s) in enumerate(self.separators))
                         }
                     }}
-                    GROUP BY ?entity { f", ".join(f"?seperator{i}" for i in range(len(self.separators))) }
+                    GROUP BY ?entity { f", ".join(f"?separator{i}" for i in range(len(self.separators))) }
                     HAVING(?valueCount > 1)
                 }}
                 ?entity kpp:{self.property.identifier} ?statement
@@ -523,7 +523,7 @@ class DistinctValuesConstraint(Constraint):
     def pretty(self):
         label = super().pretty()
         if self.separators:
-            label += f"\nseperator(s): {[str(s) for s in self.separators]}"
+            label += f"\nseparator(s): {[str(s) for s in self.separators]}"
         return label
 
     def queryQualifiers(self):
@@ -565,7 +565,7 @@ class DistinctValuesConstraint(Constraint):
                     {{
                         ?statement kpps:{self.property.identifier} ?value .
                         {
-                        f"OPTIONAL {{ ?statement {"|".join(f"kppq:{s.identifier}" for s in self.separators)} ?seperator }}"
+                        f"OPTIONAL {{ ?statement {"|".join(f"kppq:{s.identifier}" for s in self.separators)} ?separator }}"
                             if self.separators else ""
                         }
                     }}
@@ -575,7 +575,7 @@ class DistinctValuesConstraint(Constraint):
                 ?statement kpps:{self.property.identifier} ?value .
                 ?entity kpp:{self.property.identifier} ?statement .
                 {
-                f"OPTIONAL {{ ?statement {"|".join(f"kppq:{s.identifier}" for s in self.separators)} ?seperator }}"
+                f"OPTIONAL {{ ?statement {"|".join(f"kppq:{s.identifier}" for s in self.separators)} ?separator }}"
                     if self.separators else ""
                 }
                 SERVICE wikibase:label {{ bd:serviceParam wikibase:language "nl" . }}
