@@ -290,6 +290,7 @@ class SubjectTypeConstraint(Constraint):
         self.violationsUpdated.emit()
 
 
+# https://www.wikidata.org/wiki/Help:Property_constraints_portal/Required_qualifiers
 class RequiredQualifierConstraint(Constraint):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -362,6 +363,7 @@ class RequiredQualifierConstraint(Constraint):
         self.violationsUpdated.emit()
 
 
+# https://www.wikidata.org/wiki/Help:Property_constraints_portal/Qualifiers
 class AllowedQualifiersConstraint(Constraint):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -434,6 +436,7 @@ class AllowedQualifiersConstraint(Constraint):
         self.violationsUpdated.emit()
 
 
+# https://www.wikidata.org/wiki/Help:Property_constraints_portal/Conflicts_with
 class ConflictsWithConstraint(Constraint):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -509,6 +512,7 @@ class ConflictsWithConstraint(Constraint):
         self.violationsUpdated.emit()
 
 
+# https://www.wikidata.org/wiki/Help:Property_constraints_portal/Unique_value
 class DistinctValuesConstraint(Constraint):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -597,6 +601,7 @@ class DistinctValuesConstraint(Constraint):
         self.violationsUpdated.emit()
 
 
+# https://www.wikidata.org/wiki/Help:Property_constraints_portal/Format
 class FormatConstraint(Constraint):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -666,6 +671,7 @@ class FormatConstraint(Constraint):
         self.violationsUpdated.emit()
 
 
+# https://www.wikidata.org/wiki/Help:Property_constraints_portal/Item
 class ItemRequiresStatementConstraint(Constraint):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -743,6 +749,7 @@ class ItemRequiresStatementConstraint(Constraint):
         self.violationsUpdated.emit()
 
 
+# https://www.wikidata.org/wiki/Help:Property_constraints_portal/Target_required_claim
 class ValueRequiresStatementConstraint(Constraint):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
