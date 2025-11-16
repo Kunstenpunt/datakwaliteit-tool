@@ -438,13 +438,13 @@ class ConflictsWithConstraint(Constraint):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.implemented = True
-        # List of lists [property, valueId, valueLabel), value can be None
+        # List of form [[Prop, Value], ...]
         self.conflictingStatements = None
 
     def pretty(self):
         label = super().pretty()
         if self.conflictingStatements:
-            label += f"\nconflicting statements: {[f"{str(p)} {v if v else ""}" for [p,v, v_l] in self.conflictingStatements]}"
+            label += f"\nconflicting statements: {[f"{str(p)}{" " + str(v) if v else ""}" for [p,v] in self.conflictingStatements]}"
         return label
 
     def queryQualifiers(self):
@@ -470,11 +470,9 @@ class ConflictsWithConstraint(Constraint):
             return
         self.conflictingStatements = []
         for [propId, propLabel, valueId, valueLabel] in result[1:]:
-            propId = stripUrlPart(propId)
-            valueId = stripUrlPart(valueId)
-            self.conflictingStatements.append(
-                [Property(propId, propLabel), valueId, valueLabel]
-            )
+            prop = Property(stripUrlPart(propId), propLabel)
+            value = Item(valueId, valueLabel) if valueId else None
+            self.conflictingStatements.append([prop, value])
         self.qualifiersUpdated.emit()
 
     def queryViolations(self):
@@ -489,7 +487,7 @@ class ConflictsWithConstraint(Constraint):
                         ?entity kpp:{self.property.identifier} [] .
                         FILTER(
                             { f' ||\n{"    " * 7}'.join(
-                            f'EXISTS {{ ?entity kpt:{p.identifier} {"kp:" + v if v else "[]"} }}' for [p,v,_] in self.conflictingStatements)
+                            f'EXISTS {{ ?entity kpt:{p.identifier} {"kp:" + v.identifier if v else "[]"} }}' for [p,v] in self.conflictingStatements)
                             }
                         )
                     }}
