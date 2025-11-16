@@ -556,28 +556,23 @@ class DistinctValuesConstraint(Constraint):
 
     def queryViolations(self):
         query = f"""
-            SELECT ?statement ?entity ?entityLabel ?value ?valueLabel ?separator
+            SELECT ?statement ?entity ?entityLabel ?value ?valueLabel
             WHERE
             {{
                 {{
-                    SELECT ?value ?separator (COUNT(?statement) AS ?statementCount)
+                    SELECT ?value (COUNT(?statement) AS ?statementCount)
                     WHERE
                     {{
                         ?statement kpps:{self.property.identifier} ?value .
-                        {
-                        f"OPTIONAL {{ ?statement {"|".join(f"kppq:{s.identifier}" for s in self.separators)} ?separator }}"
-                            if self.separators else ""
+                        { f'\n{"    " * 6}'.join(
+                        f'OPTIONAL {{ ?statement kppq:{s.identifier} ?separator{i} }} .' for (i, s) in enumerate(self.separators))
                         }
                     }}
-                    GROUP BY ?value ?separator
+                    GROUP BY ?value { f", ".join(f"?separator{i}" for i in range(len(self.separators))) }
                     HAVING(?statementCount > 1)
                 }}
                 ?statement kpps:{self.property.identifier} ?value .
                 ?entity kpp:{self.property.identifier} ?statement .
-                {
-                f"OPTIONAL {{ ?statement {"|".join(f"kppq:{s.identifier}" for s in self.separators)} ?separator }}"
-                    if self.separators else ""
-                }
                 SERVICE wikibase:label {{ bd:serviceParam wikibase:language "nl" . }}
             }}
         """
@@ -588,15 +583,8 @@ class DistinctValuesConstraint(Constraint):
         if not result:
             return
         self.violations = [
-            [
-                stripUrlPart(s),
-                stripUrlPart(e),
-                e_l,
-                stripUrlPart(v),
-                v_l,
-                stripUrlPart(sep),
-            ]
-            for [s, e, e_l, v, v_l, sep] in result
+            [stripUrlPart(s), stripUrlPart(e), e_l, stripUrlPart(v), v_l]
+            for [s, e, e_l, v, v_l] in result
         ]
         self.violationsUpdated.emit()
 
