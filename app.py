@@ -213,6 +213,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
         self.model.wikibaseHelper.queryStarted.connect(self.queryIndicator.show)
         self.model.wikibaseHelper.queryDone.connect(self.queryIndicator.hide)
+        self.model.wikibaseHelper.queryDone.connect(self.reportQueryStatus)
 
     def copyQueryToClipboard(self):
         query = textwrap.dedent(self.model.wikibaseHelper.mostRecentQuery).lstrip()
@@ -221,6 +222,12 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             prefixes = textwrap.dedent(self.model.wikibaseHelper.queryPrefixes).lstrip()
             query = f"{prefixes}\n{query}"
         clipboard.setText(query)
+
+    def reportQueryStatus(self):
+        if self.model.wikibaseHelper.queryResult == None:
+            self.statusbar.showMessage("LAST QUERY FAILED!")
+        else:
+            self.statusbar.clearMessage()
 
 
 app = QApplication(sys.argv)
