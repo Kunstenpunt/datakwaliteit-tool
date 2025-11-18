@@ -414,9 +414,7 @@ class AllowedQualifiersConstraint(Constraint):
                         ?entity kpp:{self.property.identifier} ?statement .
                         ?statement ?predicate [] .
                         [] wikibase:qualifier ?predicate .
-                        { f'\n{"    " * 6}'.join(
-                        f'FILTER(?predicate != kppq:{q.identifier}) .' for q in self.allowedQualifiers)
-                        }
+                        FILTER(!(?predicate in ({", ".join(f"kppq:{q.identifier}" for q in self.allowedQualifiers)})))
                     }}
                 }}
                 ?entity kpp:{self.property.identifier} ?statement
