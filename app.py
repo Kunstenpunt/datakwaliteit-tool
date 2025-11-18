@@ -121,7 +121,6 @@ class ConstraintsTab(QWidget, Ui_ConstraintTab):
 
         self.reloadButton.clicked.connect(self.onReloadButtonClicked)
         self.validateButton.clicked.connect(self.onValidateButtonClicked)
-        self.propertiesTableView.clicked.connect(self.onPropertyClicked)
         self.propertiesTableView.doubleClicked.connect(onTableDoubleClicked)
         self.violationsTableView.doubleClicked.connect(onTableDoubleClicked)
         self.model.constraintAnalyzer.constrainedPropertiesUpdated.connect(
@@ -150,11 +149,14 @@ class ConstraintsTab(QWidget, Ui_ConstraintTab):
         self.propertiesTableView.setModel(sortableDataModel)
         header = self.propertiesTableView.horizontalHeader()
         headerResizeNeatly(header)
+        self.propertiesTableView.selectionModel().currentChanged.connect(self.onPropertySelectionChanged)
 
-    def onPropertyClicked(self, index):
-        tableModel = index.model()
-        propId = tableModel.data(tableModel.index(index.row(), 0))
-        constraintId = tableModel.data(tableModel.index(index.row(), 2))
+    def onPropertySelectionChanged(self, current, _):
+        if current == None:
+            return
+        tableModel = current.model()
+        propId = tableModel.data(tableModel.index(current.row(), 0))
+        constraintId = tableModel.data(tableModel.index(current.row(), 2))
         self.model.constraintAnalyzer.setFocusedConstraint(propId, constraintId)
 
     def onFocusedPropertyConstraintUpdated(self):
