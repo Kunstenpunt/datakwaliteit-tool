@@ -15,9 +15,10 @@ from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
     QFont, QFontDatabase, QGradient, QIcon,
     QImage, QKeySequence, QLinearGradient, QPainter,
     QPalette, QPixmap, QRadialGradient, QTransform)
-from PySide6.QtWidgets import (QAbstractItemView, QApplication, QHBoxLayout, QHeaderView,
-    QLabel, QPushButton, QSizePolicy, QSpacerItem,
-    QSplitter, QTableView, QVBoxLayout, QWidget)
+from PySide6.QtWidgets import (QAbstractItemView, QApplication, QCheckBox, QHBoxLayout,
+    QHeaderView, QLabel, QPushButton, QSizePolicy,
+    QSpacerItem, QSplitter, QTableView, QVBoxLayout,
+    QWidget)
 
 class Ui_ConstraintTab(object):
     def setupUi(self, ConstraintTab):
@@ -62,6 +63,25 @@ class Ui_ConstraintTab(object):
 
         self.verticalLayoutLeft.addWidget(self.propertiesTableView)
 
+        self.horizontalLayoutLeftBottom = QHBoxLayout()
+        self.horizontalLayoutLeftBottom.setObjectName(u"horizontalLayoutLeftBottom")
+        self.horizontalSpacerLeftBottom = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+
+        self.horizontalLayoutLeftBottom.addItem(self.horizontalSpacerLeftBottom)
+
+        self.exportAllButton = QPushButton(self.verticalLayoutWidgetLeft)
+        self.exportAllButton.setObjectName(u"exportAllButton")
+
+        self.horizontalLayoutLeftBottom.addWidget(self.exportAllButton)
+
+        self.exportAllUrlCheckBox = QCheckBox(self.verticalLayoutWidgetLeft)
+        self.exportAllUrlCheckBox.setObjectName(u"exportAllUrlCheckBox")
+
+        self.horizontalLayoutLeftBottom.addWidget(self.exportAllUrlCheckBox)
+
+
+        self.verticalLayoutLeft.addLayout(self.horizontalLayoutLeftBottom)
+
         self.splitter.addWidget(self.verticalLayoutWidgetLeft)
         self.verticalLayoutWidgetRight = QWidget(self.splitter)
         self.verticalLayoutWidgetRight.setObjectName(u"verticalLayoutWidgetRight")
@@ -99,6 +119,25 @@ class Ui_ConstraintTab(object):
 
         self.verticalLayoutRight.addWidget(self.violationsTableView)
 
+        self.horizontalLayoutRightBottom = QHBoxLayout()
+        self.horizontalLayoutRightBottom.setObjectName(u"horizontalLayoutRightBottom")
+        self.horizontalSpacerRightBottom = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+
+        self.horizontalLayoutRightBottom.addItem(self.horizontalSpacerRightBottom)
+
+        self.exportButton = QPushButton(self.verticalLayoutWidgetRight)
+        self.exportButton.setObjectName(u"exportButton")
+
+        self.horizontalLayoutRightBottom.addWidget(self.exportButton)
+
+        self.exportUrlCheckBox = QCheckBox(self.verticalLayoutWidgetRight)
+        self.exportUrlCheckBox.setObjectName(u"exportUrlCheckBox")
+
+        self.horizontalLayoutRightBottom.addWidget(self.exportUrlCheckBox)
+
+
+        self.verticalLayoutRight.addLayout(self.horizontalLayoutRightBottom)
+
         self.splitter.addWidget(self.verticalLayoutWidgetRight)
 
         self.verticalLayout.addWidget(self.splitter)
@@ -113,8 +152,12 @@ class Ui_ConstraintTab(object):
         ConstraintTab.setWindowTitle(QCoreApplication.translate("ConstraintTab", u"Form", None))
         self.labelLeft.setText(QCoreApplication.translate("ConstraintTab", u"Constrained Properties", None))
         self.reloadButton.setText(QCoreApplication.translate("ConstraintTab", u"Reload", None))
+        self.exportAllButton.setText(QCoreApplication.translate("ConstraintTab", u"Export All Validated", None))
+        self.exportAllUrlCheckBox.setText(QCoreApplication.translate("ConstraintTab", u"Full URLs", None))
         self.labelRight.setText(QCoreApplication.translate("ConstraintTab", u"Selected Constrained Property\n"
 "will be displayed here", None))
         self.validateButton.setText(QCoreApplication.translate("ConstraintTab", u"Validate", None))
+        self.exportButton.setText(QCoreApplication.translate("ConstraintTab", u"Export", None))
+        self.exportUrlCheckBox.setText(QCoreApplication.translate("ConstraintTab", u"Full URLs", None))
     # retranslateUi
 

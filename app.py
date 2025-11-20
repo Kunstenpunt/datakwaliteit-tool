@@ -1,9 +1,17 @@
 import sys, textwrap
 
-from PySide6.QtCore import QAbstractTableModel, QSortFilterProxyModel, Qt, QUrl
+from PySide6.QtCore import (
+    QAbstractTableModel,
+    QFileInfo,
+    QSortFilterProxyModel,
+    QStandardPaths,
+    Qt,
+    QUrl,
+)
 from PySide6.QtGui import QBrush, QDesktopServices, QGuiApplication, QPixmap
 from PySide6.QtWidgets import (
     QApplication,
+    QFileDialog,
     QHeaderView,
     QMainWindow,
     QProgressBar,
@@ -16,6 +24,7 @@ from PySide6.QtWidgets import (
 
 from backend.wikibasehelper import BASE_URL, WikibaseHelper
 from backend.constraints import ConstraintAnalyzer
+from backend.export import exportSingleConstraintToOds
 from backend.utils import urlFromId
 
 from ui.constrainttab import Ui_ConstraintTab
@@ -120,12 +129,17 @@ class ConstraintsTab(QWidget, Ui_ConstraintTab):
         self.setupUi(self)
 
         self.model = model
+        self.exportDir = QStandardPaths.writableLocation(
+            QStandardPaths.StandardLocation.DocumentsLocation,
+        )
         self.splitter.setStretchFactor(0, 1)
         self.splitter.setStretchFactor(1, 1)
         self.validateButton.setEnabled(False)
+        self.exportButton.setEnabled(False)
 
         self.reloadButton.clicked.connect(self.onReloadButtonClicked)
         self.validateButton.clicked.connect(self.onValidateButtonClicked)
+        self.exportButton.clicked.connect(self.exportSingleConstraint)
         self.propertiesTableView.doubleClicked.connect(onTableDoubleClicked)
         self.violationsTableView.doubleClicked.connect(onTableDoubleClicked)
         self.model.constraintAnalyzer.constrainedPropertiesUpdated.connect(
@@ -200,6 +214,7 @@ class ConstraintsTab(QWidget, Ui_ConstraintTab):
 
     def updateViolationsTableView(self):
         data = self.model.constraintAnalyzer.focusedConstraint.violations
+        self.exportButton.setEnabled(data != None)
         if data == None:
             self.violationsTableView.setModel(None)
             return
@@ -209,6 +224,21 @@ class ConstraintsTab(QWidget, Ui_ConstraintTab):
         header = self.violationsTableView.horizontalHeader()
         headerResizeNeatly(header)
         header.resizeSection(0, header.defaultSectionSize())
+
+    def exportSingleConstraint(self):
+        constraint = self.model.constraintAnalyzer.focusedConstraint
+        defaultFileName = f"constraint_violations_{constraint.property.identifier}_{constraint.identifier}.ods"
+        fileName = QFileDialog.getSaveFileName(
+            self,
+            "Export Results",
+            f"{self.exportDir}/{defaultFileName}",
+            "ODS files (*.ods)",
+        )[0]
+        if not fileName:
+            return
+        self.exportDir = QFileInfo(fileName).absolutePath()
+        exportUrl = self.exportUrlCheckBox.isChecked()
+        exportSingleConstraintToOds(constraint, fileName, exportUrl)
 
 
 class MainWindow(QMainWindow, Ui_MainWindow):

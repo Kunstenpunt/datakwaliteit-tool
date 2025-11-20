@@ -6,6 +6,7 @@ name = "pypi"
 [packages]
 wikibaseintegrator = "*"
 pyside6 = "*"
+pyexcel-ods3 = "*"
 
 [dev-packages]
 
