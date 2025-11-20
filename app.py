@@ -76,6 +76,11 @@ class SimpleTableModel(QAbstractTableModel):
             if orientation == Qt.Orientation.Horizontal:
                 return self._data[0][section]
 
+    def setData(self, index, value, role=None):
+        self._data[index.row() + 1][index.column()] = value
+        self.dataChanged.emit(index, index)
+        return True
+
 
 class Model:
     def __init__(self):
@@ -126,6 +131,9 @@ class ConstraintsTab(QWidget, Ui_ConstraintTab):
         self.model.constraintAnalyzer.constrainedPropertiesUpdated.connect(
             self.onConstrainedPropertiesUpdated
         )
+        self.model.constraintAnalyzer.constrainedPropertyValidated.connect(
+            self.onConstrainedPropertyValidated
+        )
         self.model.constraintAnalyzer.focusedPropertyConstraintUpdated.connect(
             self.onFocusedPropertyConstraintUpdated
         )
@@ -142,6 +150,7 @@ class ConstraintsTab(QWidget, Ui_ConstraintTab):
             "Constraint ID",
             "Constraint Label",
             "Implemented",
+            "Validated",
         ]
         data = [header] + self.model.constraintAnalyzer.getConstraintsListFull()
         sortableDataModel = QSortFilterProxyModel()
@@ -149,7 +158,16 @@ class ConstraintsTab(QWidget, Ui_ConstraintTab):
         self.propertiesTableView.setModel(sortableDataModel)
         header = self.propertiesTableView.horizontalHeader()
         headerResizeNeatly(header)
-        self.propertiesTableView.selectionModel().currentChanged.connect(self.onPropertySelectionChanged)
+        self.propertiesTableView.selectionModel().currentChanged.connect(
+            self.onPropertySelectionChanged
+        )
+
+    def onConstrainedPropertyValidated(self):
+        data = self.model.constraintAnalyzer.getConstraintsListFull()
+        model = self.propertiesTableView.model().sourceModel()
+        validatedColumnIndex = 5
+        for rowIndex, row in enumerate(data):
+            model.setData(model.index(rowIndex, validatedColumnIndex), row[5])
 
     def onPropertySelectionChanged(self, current, _):
         if current == None:

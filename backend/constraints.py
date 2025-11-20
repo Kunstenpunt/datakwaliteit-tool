@@ -829,6 +829,7 @@ CONSTRAINT_MAP = {
 class ConstraintAnalyzer(QObject):
 
     constrainedPropertiesUpdated = Signal()
+    constrainedPropertyValidated = Signal()
     focusedPropertyConstraintUpdated = Signal()
 
     def __init__(self, wikibaseHelper):
@@ -864,22 +865,26 @@ class ConstraintAnalyzer(QObject):
             constraint = constType(
                 consId, consLabel, Property(propId, propLabel), self.wikibaseHelper
             )
+            constraint.violationsUpdated.connect(self.constrainedPropertyValidated)
 
             self.constraints[consId, propId] = constraint
 
         self.constrainedPropertiesUpdated.emit()
 
     def getConstraintsListFull(self):
-        return [
+        return sorted(
             [
-                c.property.identifier,
-                c.property.label,
-                c.identifier,
-                c.label,
-                c.implemented,
+                [
+                    c.property.identifier,
+                    c.property.label,
+                    c.identifier,
+                    c.label,
+                    c.implemented,
+                    c.violations != None,
+                ]
+                for c in self.constraints.values()
             ]
-            for c in self.constraints.values()
-        ]
+        )
 
     def setFocusedConstraint(self, propId, constraintId):
         constraint = self.constraints.get((constraintId, propId))
