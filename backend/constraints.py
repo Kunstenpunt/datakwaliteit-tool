@@ -466,7 +466,6 @@ class ConflictsWithConstraint(Constraint):
 
     def _queryQualifiersResult(self):
         result = self.wikibaseHelper.queryResult
-        print(result)
         if not result:
             return
         self.conflictingStatements = []
