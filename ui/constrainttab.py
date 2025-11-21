@@ -43,6 +43,11 @@ class Ui_ConstraintTab(object):
 
         self.horizontalLayoutLeft.addWidget(self.labelLeft)
 
+        self.validateAllButton = QPushButton(self.verticalLayoutWidgetLeft)
+        self.validateAllButton.setObjectName(u"validateAllButton")
+
+        self.horizontalLayoutLeft.addWidget(self.validateAllButton)
+
         self.horizontalSpacerLeft = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
 
         self.horizontalLayoutLeft.addItem(self.horizontalSpacerLeft)
@@ -151,6 +156,7 @@ class Ui_ConstraintTab(object):
     def retranslateUi(self, ConstraintTab):
         ConstraintTab.setWindowTitle(QCoreApplication.translate("ConstraintTab", u"Form", None))
         self.labelLeft.setText(QCoreApplication.translate("ConstraintTab", u"Constrained Properties", None))
+        self.validateAllButton.setText(QCoreApplication.translate("ConstraintTab", u"Validate All", None))
         self.reloadButton.setText(QCoreApplication.translate("ConstraintTab", u"Reload", None))
         self.exportAllButton.setText(QCoreApplication.translate("ConstraintTab", u"Export All Validated", None))
         self.exportAllUrlCheckBox.setText(QCoreApplication.translate("ConstraintTab", u"Full URLs", None))

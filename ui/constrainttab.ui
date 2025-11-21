@@ -25,11 +25,18 @@
      <widget class="QWidget" name="verticalLayoutWidgetLeft">
       <layout class="QVBoxLayout" name="verticalLayoutLeft">
        <item>
-        <layout class="QHBoxLayout" name="horizontalLayoutLeft" stretch="0,0,0">
+        <layout class="QHBoxLayout" name="horizontalLayoutLeft" stretch="0,0,0,0">
          <item>
           <widget class="QLabel" name="labelLeft">
            <property name="text">
             <string>Constrained Properties</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QPushButton" name="validateAllButton">
+           <property name="text">
+            <string>Validate All</string>
            </property>
           </widget>
          </item>

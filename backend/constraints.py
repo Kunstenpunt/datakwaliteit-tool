@@ -827,6 +827,7 @@ class ConstraintAnalyzer(QObject):
         self.wikibaseHelper = wikibaseHelper
         self.constraints = {}
         self.focusedConstraint = None
+        self.validationQueue = []
 
     def updateConstraints(self):
         query = """
@@ -856,6 +857,9 @@ class ConstraintAnalyzer(QObject):
             )
             constraint.violationsUpdated.connect(self.constrainedPropertyValidated)
 
+            constraint.qualifiersUpdated.connect(self.validateNextInQueue)
+            constraint.violationsUpdated.connect(self.validateNextInQueue)
+
             self.constraints[consId, propId] = constraint
 
         self.constrainedPropertiesUpdated.emit()
@@ -880,3 +884,20 @@ class ConstraintAnalyzer(QObject):
         if constraint:
             self.focusedConstraint = constraint
             self.focusedPropertyConstraintUpdated.emit()
+
+    def validateAll(self):
+        self.validationQueue = list(self.constraints.values())
+        self.validateNextInQueue()
+
+    def validateNextInQueue(self):
+        if not self.validationQueue:
+            return
+        constraint = self.validationQueue[-1]
+        if constraint.implemented and constraint.violations == None:
+            if not constraint.qualifiersObtained:
+                constraint.queryQualifiers()
+            else:
+                self.validationQueue.pop()
+                constraint.queryViolations()
+        else:
+            self.validateNextInQueue()

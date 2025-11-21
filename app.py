@@ -138,6 +138,7 @@ class ConstraintsTab(QWidget, Ui_ConstraintTab):
         self.exportButton.setEnabled(False)
 
         self.reloadButton.clicked.connect(self.onReloadButtonClicked)
+        self.validateAllButton.clicked.connect(self.validateAll)
         self.validateButton.clicked.connect(self.onValidateButtonClicked)
         self.exportButton.clicked.connect(self.exportSingleConstraint)
         self.propertiesTableView.doubleClicked.connect(onTableDoubleClicked)
@@ -207,6 +208,9 @@ class ConstraintsTab(QWidget, Ui_ConstraintTab):
     def updateFocusedPropertyConstraintLabel(self):
         focusedPropertyConstraint = self.model.constraintAnalyzer.focusedConstraint
         self.labelRight.setText(focusedPropertyConstraint.pretty())
+
+    def validateAll(self):
+        self.model.constraintAnalyzer.validateAll()
 
     def onValidateButtonClicked(self):
         focusedPropertyConstraint = self.model.constraintAnalyzer.focusedConstraint
