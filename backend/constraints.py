@@ -119,11 +119,10 @@ class SingleValueConstraint(Constraint):
 
     def _queryViolationsResult(self):
         result = self.wikibaseHelper.queryResult
-        if not result:
-            return
-        self.violations = [
-            [stripUrlPart(s), stripUrlPart(e), eL, v] for [s, e, eL, v] in result
-        ]
+        if result:
+            self.violations = [
+                [stripUrlPart(s), stripUrlPart(e), eL, v] for [s, e, eL, v] in result
+            ]
         self.violationsUpdated.emit()
 
 
@@ -200,12 +199,11 @@ class ValueTypeConstraint(Constraint):
 
     def _queryViolationsResult(self):
         result = self.wikibaseHelper.queryResult
-        if not result:
-            return
-        self.violations = [
-            [stripUrlPart(s), stripUrlPart(e), eL, stripUrlPart(v), vL]
-            for [s, e, eL, v, vL] in result
-        ]
+        if result:
+            self.violations = [
+                [stripUrlPart(s), stripUrlPart(e), eL, stripUrlPart(v), vL]
+                for [s, e, eL, v, vL] in result
+            ]
         self.violationsUpdated.emit()
 
 
@@ -282,11 +280,10 @@ class SubjectTypeConstraint(Constraint):
 
     def _queryViolationsResult(self):
         result = self.wikibaseHelper.queryResult
-        if not result:
-            return
-        self.violations = [
-            [stripUrlPart(s), stripUrlPart(e), eL] for [s, e, eL] in result
-        ]
+        if result:
+            self.violations = [
+                [stripUrlPart(s), stripUrlPart(e), eL] for [s, e, eL] in result
+            ]
         self.violationsUpdated.emit()
 
 
@@ -355,11 +352,10 @@ class RequiredQualifierConstraint(Constraint):
 
     def _queryViolationsResult(self):
         result = self.wikibaseHelper.queryResult
-        if not result:
-            return
-        self.violations = [
-            [stripUrlPart(s), stripUrlPart(e), eL] for [s, e, eL] in result
-        ]
+        if result:
+            self.violations = [
+                [stripUrlPart(s), stripUrlPart(e), eL] for [s, e, eL] in result
+            ]
         self.violationsUpdated.emit()
 
 
@@ -426,11 +422,10 @@ class AllowedQualifiersConstraint(Constraint):
 
     def _queryViolationsResult(self):
         result = self.wikibaseHelper.queryResult
-        if not result:
-            return
-        self.violations = [
-            [stripUrlPart(s), stripUrlPart(e), eL] for [s, e, eL] in result
-        ]
+        if result:
+            self.violations = [
+                [stripUrlPart(s), stripUrlPart(e), eL] for [s, e, eL] in result
+            ]
         self.violationsUpdated.emit()
 
 
@@ -501,11 +496,10 @@ class ConflictsWithConstraint(Constraint):
 
     def _queryViolationsResult(self):
         result = self.wikibaseHelper.queryResult
-        if not result:
-            return
-        self.violations = [
-            [stripUrlPart(s), stripUrlPart(e), eL] for [s, e, eL] in result
-        ]
+        if result:
+            self.violations = [
+                [stripUrlPart(s), stripUrlPart(e), eL] for [s, e, eL] in result
+            ]
         self.violationsUpdated.emit()
 
 
@@ -577,12 +571,11 @@ class DistinctValuesConstraint(Constraint):
 
     def _queryViolationsResult(self):
         result = self.wikibaseHelper.queryResult
-        if not result:
-            return
-        self.violations = [
-            [stripUrlPart(s), stripUrlPart(e), e_l, stripUrlPart(v), v_l]
-            for [s, e, e_l, v, v_l] in result
-        ]
+        if result:
+            self.violations = [
+                [stripUrlPart(s), stripUrlPart(e), e_l, stripUrlPart(v), v_l]
+                for [s, e, e_l, v, v_l] in result
+            ]
         self.violationsUpdated.emit()
 
 
@@ -642,17 +635,16 @@ class FormatConstraint(Constraint):
 
     def _queryViolationsResult(self):
         result = self.wikibaseHelper.queryResult
-        if not result:
-            return
-        self.violations = [
-            [
-                stripUrlPart(s),
-                stripUrlPart(e),
-                e_l,
-                v,
+        if result:
+            self.violations = [
+                [
+                    stripUrlPart(s),
+                    stripUrlPart(e),
+                    e_l,
+                    v,
+                ]
+                for [s, e, e_l, v] in result
             ]
-            for [s, e, e_l, v] in result
-        ]
         self.violationsUpdated.emit()
 
 
@@ -726,11 +718,10 @@ class ItemRequiresStatementConstraint(Constraint):
 
     def _queryViolationsResult(self):
         result = self.wikibaseHelper.queryResult
-        if not result:
-            return
-        self.violations = [
-            [stripUrlPart(s), stripUrlPart(e), eL] for [s, e, eL] in result
-        ]
+        if result:
+            self.violations = [
+                [stripUrlPart(s), stripUrlPart(e), eL] for [s, e, eL] in result
+            ]
         self.violationsUpdated.emit()
 
 
@@ -803,11 +794,10 @@ class ValueRequiresStatementConstraint(Constraint):
 
     def _queryViolationsResult(self):
         result = self.wikibaseHelper.queryResult
-        if not result:
-            return
-        self.violations = [
-            [stripUrlPart(s), stripUrlPart(e), eL] for [s, e, eL] in result
-        ]
+        if result:
+            self.violations = [
+                [stripUrlPart(s), stripUrlPart(e), eL] for [s, e, eL] in result
+            ]
         self.violationsUpdated.emit()
 
 
