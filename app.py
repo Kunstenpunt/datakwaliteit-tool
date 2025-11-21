@@ -24,7 +24,7 @@ from PySide6.QtWidgets import (
 
 from backend.wikibasehelper import BASE_URL, WikibaseHelper
 from backend.constraints import ConstraintAnalyzer
-from backend.export import exportSingleConstraintToOds
+from backend.export import exportMultipleConstraintsToOds, exportSingleConstraintToOds
 from backend.utils import urlFromId
 
 from ui.constrainttab import Ui_ConstraintTab
@@ -140,6 +140,7 @@ class ConstraintsTab(QWidget, Ui_ConstraintTab):
         self.reloadButton.clicked.connect(self.onReloadButtonClicked)
         self.validateAllButton.clicked.connect(self.validateAll)
         self.validateButton.clicked.connect(self.onValidateButtonClicked)
+        self.exportAllButton.clicked.connect(self.exportAllValidated)
         self.exportButton.clicked.connect(self.exportSingleConstraint)
         self.propertiesTableView.doubleClicked.connect(onTableDoubleClicked)
         self.violationsTableView.doubleClicked.connect(onTableDoubleClicked)
@@ -237,7 +238,7 @@ class ConstraintsTab(QWidget, Ui_ConstraintTab):
         defaultFileName = f"constraint_violations_{constraint.property.identifier}_{constraint.identifier}.ods"
         fileName = QFileDialog.getSaveFileName(
             self,
-            "Export Results",
+            f"Export Violations for {constraint.property.identifier}-{constraint.identifier}",
             f"{self.exportDir}/{defaultFileName}",
             "ODS files (*.ods)",
         )[0]
@@ -246,6 +247,25 @@ class ConstraintsTab(QWidget, Ui_ConstraintTab):
         self.exportDir = QFileInfo(fileName).absolutePath()
         exportUrl = self.exportUrlCheckBox.isChecked()
         exportSingleConstraintToOds(constraint, fileName, exportUrl)
+
+    def exportAllValidated(self):
+        validatedConstraints = sorted([
+            c
+            for c in self.model.constraintAnalyzer.constraints.values()
+            if c.violations != None
+        ])
+        defaultFileName = "constraint_violations_combined.ods"
+        fileName = QFileDialog.getSaveFileName(
+            self,
+            "Export Violations for All Validated Constraints",
+            f"{self.exportDir}/{defaultFileName}",
+            "ODS files (*.ods)",
+        )[0]
+        if not fileName:
+            return
+        self.exportDir = QFileInfo(fileName).absolutePath()
+        exportUrl = self.exportAllUrlCheckBox.isChecked()
+        exportMultipleConstraintsToOds(validatedConstraints, fileName, exportUrl)
 
 
 class MainWindow(QMainWindow, Ui_MainWindow):
