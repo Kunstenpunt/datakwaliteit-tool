@@ -40,6 +40,12 @@ class Constraint(QObject):
     def __str__(self):
         return f"{self.label} ({self.identifier})"
 
+    def __lt__(self, other):
+        return [int(self.property.identifier[1:]), int(self.identifier[1:])] < [
+            int(other.property.identifier[1:]),
+            int(other.identifier[1:]),
+        ]
+
     def pretty(self):
         return f'"{self.label}" ({self.identifier})\non "{self.property.label}" ({self.property.identifier})'
 
