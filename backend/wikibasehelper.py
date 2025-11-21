@@ -68,17 +68,17 @@ class WikibaseHelper(QObject):
         wbi = WikibaseIntegrator(login=login)
 
     def executeQuery(self, queryString, callback):
+        if self.executingQuery:
+            return
+        else:
+            self.executingQuery = True
+
         try:
             self._readyForNewQuery.disconnect()
         except TypeError:
             pass
 
         self._readyForNewQuery.connect(callback)
-
-        if self.executingQuery:
-            return
-        else:
-            self.executingQuery = True
 
         self.queryThread = QThread()
         self.queryWorker = QueryWorker(queryString, self.queryPrefixes)
