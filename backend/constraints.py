@@ -906,4 +906,5 @@ class ConstraintAnalyzer(QObject):
                 self.validationQueue.pop()
                 constraint.queryViolations()
         else:
+            self.validationQueue.pop()
             self.validateNextInQueue()
