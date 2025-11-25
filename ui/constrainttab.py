@@ -130,6 +130,15 @@ class Ui_ConstraintTab(object):
 
         self.horizontalLayoutRightBottom.addItem(self.horizontalSpacerRightBottom)
 
+        self.violationsLabel = QLabel(self.verticalLayoutWidgetRight)
+        self.violationsLabel.setObjectName(u"violationsLabel")
+
+        self.horizontalLayoutRightBottom.addWidget(self.violationsLabel)
+
+        self.horizontalSpacer = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+
+        self.horizontalLayoutRightBottom.addItem(self.horizontalSpacer)
+
         self.exportButton = QPushButton(self.verticalLayoutWidgetRight)
         self.exportButton.setObjectName(u"exportButton")
 
@@ -163,6 +172,7 @@ class Ui_ConstraintTab(object):
         self.labelRight.setText(QCoreApplication.translate("ConstraintTab", u"Selected Constrained Property\n"
 "will be displayed here", None))
         self.validateButton.setText(QCoreApplication.translate("ConstraintTab", u"Validate", None))
+        self.violationsLabel.setText(QCoreApplication.translate("ConstraintTab", u"Not Validated", None))
         self.exportButton.setText(QCoreApplication.translate("ConstraintTab", u"Export", None))
         self.exportUrlCheckBox.setText(QCoreApplication.translate("ConstraintTab", u"Full URLs", None))
     # retranslateUi

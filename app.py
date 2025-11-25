@@ -239,6 +239,7 @@ class ConstraintsTab(QWidget, Ui_ConstraintTab):
         self.exportButton.setEnabled(data != None)
         if data == None:
             self.violationsTableView.setModel(None)
+            self.violationsLabel.setText("Not Validated")
             return
         sortableDataModel = QSortFilterProxyModel()
         sortableDataModel.setSourceModel(SimpleTableModel(data))
@@ -246,6 +247,10 @@ class ConstraintsTab(QWidget, Ui_ConstraintTab):
         header = self.violationsTableView.horizontalHeader()
         headerResizeNeatly(header)
         header.resizeSection(0, header.defaultSectionSize())
+        violations = len(data) - 1
+        self.violationsLabel.setText(
+            f"{violations} violation{"s" if violations != 1 else ""} found."
+        )
 
     def exportSingleConstraint(self):
         constraint = self.model.constraintAnalyzer.focusedConstraint

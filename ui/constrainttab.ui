@@ -184,6 +184,26 @@ will be displayed here</string>
           </spacer>
          </item>
          <item>
+          <widget class="QLabel" name="violationsLabel">
+           <property name="text">
+            <string>Not Validated</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <spacer name="horizontalSpacer">
+           <property name="orientation">
+            <enum>Qt::Orientation::Horizontal</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>40</width>
+             <height>20</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+         <item>
           <widget class="QPushButton" name="exportButton">
            <property name="text">
             <string>Export</string>
