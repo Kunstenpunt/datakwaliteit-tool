@@ -263,11 +263,13 @@ class ConstraintsTab(QWidget, Ui_ConstraintTab):
         exportSingleConstraintToOds(constraint, fileName, exportUrl)
 
     def exportAllValidated(self):
-        validatedConstraints = sorted([
-            c
-            for c in self.model.constraintAnalyzer.constraints.values()
-            if c.violations != None
-        ])
+        validatedConstraints = sorted(
+            [
+                c
+                for c in self.model.constraintAnalyzer.constraints.values()
+                if c.violations != None
+            ]
+        )
         defaultFileName = "constraint_violations_combined.ods"
         fileName = QFileDialog.getSaveFileName(
             self,
