@@ -228,10 +228,7 @@ class ConstraintsTab(QWidget, Ui_ConstraintTab):
 
     def onValidateButtonClicked(self):
         focusedPropertyConstraint = self.model.constraintAnalyzer.focusedConstraint
-        if focusedPropertyConstraint.qualifiersObtained:
-            focusedPropertyConstraint.queryViolations()
-        else:
-            focusedPropertyConstraint.queryQualifiers()
+        focusedPropertyConstraint.queryViolations()
 
     def updateViolationsTableView(self):
         data = self.model.constraintAnalyzer.focusedConstraint.violations

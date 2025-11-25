@@ -53,7 +53,14 @@ class Constraint(QObject):
         print(f"Querying qualfiers not implemented for {self}")
 
     def queryViolations(self):
-        print(f"Querying violations not implemented for {self}")
+        if hasattr(self, "_queryViolations"):
+            if not self.qualifiersObtained:
+                self.qualifiersUpdated.connect(self._queryViolations)
+                self.queryQualifiers()
+            else:
+                self._queryViolations()
+        else:
+            print(f"Querying violations not implemented for {self}")
 
     def _onQualifiersUpdated(self):
         self.qualifiersObtained = True
@@ -98,7 +105,7 @@ class SingleValueConstraint(Constraint):
             self.separators.append(Property(stripUrlPart(identifier), label))
         self.qualifiersUpdated.emit()
 
-    def queryViolations(self):
+    def _queryViolations(self):
         query = f"""
             SELECT (SAMPLE(?statement) AS ?statement) ?entity ?entityLabel ?valueCount
             WHERE
@@ -179,7 +186,7 @@ class ValueTypeConstraint(Constraint):
         self.relation = "P1"
         self.qualifiersUpdated.emit()
 
-    def queryViolations(self):
+    def _queryViolations(self):
         if self.relation != "P1":
             return
         query = f"""
@@ -260,7 +267,7 @@ class SubjectTypeConstraint(Constraint):
         self.relation = "P1"
         self.qualifiersUpdated.emit()
 
-    def queryViolations(self):
+    def _queryViolations(self):
         if self.relation != "P1":
             return
         query = f"""
@@ -334,7 +341,7 @@ class RequiredQualifierConstraint(Constraint):
             self.requiredQualifiers.append(Property(propId, propLabel))
         self.qualifiersUpdated.emit()
 
-    def queryViolations(self):
+    def _queryViolations(self):
         query = f"""
             SELECT DISTINCT (SAMPLE(?statement) AS ?statement) ?entity ?entityLabel
             WHERE
@@ -404,7 +411,7 @@ class AllowedQualifiersConstraint(Constraint):
             self.allowedQualifiers.append(Property(propId, propLabel))
         self.qualifiersUpdated.emit()
 
-    def queryViolations(self):
+    def _queryViolations(self):
         query = f"""
             SELECT DISTINCT (SAMPLE(?statement) AS ?statement) ?entity ?entityLabel
             WHERE
@@ -476,7 +483,7 @@ class ConflictsWithConstraint(Constraint):
             self.conflictingStatements.append([prop, value])
         self.qualifiersUpdated.emit()
 
-    def queryViolations(self):
+    def _queryViolations(self):
         query = f"""
             SELECT DISTINCT (SAMPLE(?statement) AS ?statement) ?entity ?entityLabel
             WHERE
@@ -551,7 +558,7 @@ class DistinctValuesConstraint(Constraint):
             )
         self.qualifiersUpdated.emit()
 
-    def queryViolations(self):
+    def _queryViolations(self):
         query = f"""
             SELECT ?statement ?entity ?entityLabel ?value ?valueLabel
             WHERE
@@ -620,7 +627,7 @@ class FormatConstraint(Constraint):
         self.format = result[1][0]
         self.qualifiersUpdated.emit()
 
-    def queryViolations(self):
+    def _queryViolations(self):
         query = f"""
             SELECT ?statement ?entity ?entityLabel ?value
             WHERE
@@ -698,7 +705,7 @@ class ItemRequiresStatementConstraint(Constraint):
                 self.requiredStatements[prop.identifier].append(value)
         self.qualifiersUpdated.emit()
 
-    def queryViolations(self):
+    def _queryViolations(self):
         query = f"""
             SELECT DISTINCT (SAMPLE(?statement) AS ?statement) ?entity ?entityLabel
             WHERE
@@ -776,7 +783,7 @@ class ValueRequiresStatementConstraint(Constraint):
 
         self.qualifiersUpdated.emit()
 
-    def queryViolations(self):
+    def _queryViolations(self):
         query = f"""
             SELECT ?statement ?value ?valueLabel
             WHERE
