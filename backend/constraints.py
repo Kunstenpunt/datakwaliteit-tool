@@ -826,6 +826,7 @@ class ConstraintAnalyzer(QObject):
     constrainedPropertiesUpdated = Signal()
     constrainedPropertyValidated = Signal()
     focusedPropertyConstraintUpdated = Signal()
+    validateAllDone = Signal()
 
     def __init__(self, wikibaseHelper):
         super().__init__()
@@ -891,12 +892,20 @@ class ConstraintAnalyzer(QObject):
             self.focusedConstraint = constraint
             self.focusedPropertyConstraintUpdated.emit()
 
+    def validatingAll(self):
+        return len(self.validationQueue) != 0
+
+    def stopValidatingAll(self):
+        self.validationQueue = []
+        self.validateAllDone.emit()
+
     def validateAll(self):
         self.validationQueue = list(self.constraints.values())
         self.validateNextInQueue()
 
     def validateNextInQueue(self):
         if not self.validationQueue:
+            self.validateAllDone.emit()
             return
         constraint = self.validationQueue[-1]
         if constraint.implemented and constraint.violations == None:

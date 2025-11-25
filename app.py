@@ -153,6 +153,9 @@ class ConstraintsTab(QWidget, Ui_ConstraintTab):
         self.model.constraintAnalyzer.focusedPropertyConstraintUpdated.connect(
             self.onFocusedPropertyConstraintUpdated
         )
+        self.model.constraintAnalyzer.validateAllDone.connect(
+            self.updateValidateAllLabel
+        )
         # Automatically perform query for constrainted properties on startup
         self.model.constraintAnalyzer.updateConstraints()
 
@@ -211,7 +214,18 @@ class ConstraintsTab(QWidget, Ui_ConstraintTab):
         self.labelRight.setText(focusedPropertyConstraint.pretty())
 
     def validateAll(self):
-        self.model.constraintAnalyzer.validateAll()
+        if not self.model.constraintAnalyzer.validatingAll():
+            self.model.constraintAnalyzer.validateAll()
+        else:
+            self.model.constraintAnalyzer.stopValidatingAll()
+        self.updateValidateAllLabel()
+
+    def updateValidateAllLabel(self):
+        self.validateAllButton.setText(
+            "Stop Validating All"
+            if self.model.constraintAnalyzer.validatingAll()
+            else "Validate All"
+        )
 
     def onValidateButtonClicked(self):
         focusedPropertyConstraint = self.model.constraintAnalyzer.focusedConstraint
