@@ -6,7 +6,6 @@ from wikibaseintegrator.wbi_helpers import execute_sparql_query
 from wikibaseintegrator.wbi_login import Login
 
 from .utils import queryResultToList
-from .secrets import password, user
 
 BASE_URL = "https://kg.kunsten.be"
 
@@ -62,10 +61,7 @@ class WikibaseHelper(QObject):
         self.queryResult = None
         self.mostRecentQuery = None
 
-    def login(self, user=user, password=password):
-        # Login using the bot account username and password
-        login = Login(user=user, password=password)
-        wbi = WikibaseIntegrator(login=login)
+        wbi = WikibaseIntegrator()
 
     def executeQuery(self, queryString, callback):
         if self.executingQuery:

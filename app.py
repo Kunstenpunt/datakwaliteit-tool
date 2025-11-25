@@ -94,7 +94,6 @@ class SimpleTableModel(QAbstractTableModel):
 class Model:
     def __init__(self):
         self.wikibaseHelper = WikibaseHelper()
-        self.wikibaseHelper.login()
         self.constraintAnalyzer = ConstraintAnalyzer(self.wikibaseHelper)
 
 
