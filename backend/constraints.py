@@ -27,12 +27,8 @@ class ValidationState(Enum):
     VALIDATED = 3
     FAILED = 4
 
-    strings = [
-        "UNVALIDATED",
-        "VALIDATING",
-        "VALIDATED",
-        "FAILED"
-    ]
+    strings = ["UNVALIDATED", "VALIDATING", "VALIDATED", "FAILED"]
+
 
 class Constraint(QObject):
     violationsUpdated = Signal()
@@ -57,7 +53,7 @@ class Constraint(QObject):
     @property
     def validationState(self):
         return self._validationState
-    
+
     @validationState.setter
     def validationState(self, value):
         self._validationState = value
@@ -939,7 +935,9 @@ class ConstraintAnalyzer(QObject):
             constraint = constType(
                 consId, consLabel, Property(propId, propLabel), self.wikibaseHelper
             )
-            constraint.validationStateChanged.connect(self.constrainedPropertyValidationStateChanged)
+            constraint.validationStateChanged.connect(
+                self.constrainedPropertyValidationStateChanged
+            )
 
             constraint.qualifiersUpdated.connect(self.validateNextInQueue)
             constraint.violationsUpdated.connect(self.validateNextInQueue)
@@ -957,7 +955,7 @@ class ConstraintAnalyzer(QObject):
                     c.identifier,
                     c.label,
                     c.implemented,
-                    c.validationState
+                    c.validationState,
                 ]
                 for c in self.constraints.values()
             ]
