@@ -908,6 +908,7 @@ class ConstraintAnalyzer(QObject):
         self.constraints = {}
         self.focusedConstraint = None
         self.validationQueue = []
+        self.validatingQueue = False
 
     def updateConstraints(self):
         query = """
@@ -967,6 +968,12 @@ class ConstraintAnalyzer(QObject):
             self.focusedConstraint = constraint
             self.focusedPropertyConstraintUpdated.emit()
 
+    def validateFocusedConstraint(self):
+        if self.validatingQueue:
+            self.validationQueue.append(self.focusedConstraint)
+        else:
+            self.focusedConstraint.queryViolations()
+
     def validatingAll(self):
         return len(self.validationQueue) != 0
 
@@ -976,11 +983,13 @@ class ConstraintAnalyzer(QObject):
 
     def validateAll(self):
         self.validationQueue = list(self.constraints.values())
+        self.validatingQueue = True
         self.validateNextInQueue()
 
     def validateNextInQueue(self):
         if not self.validationQueue:
             self.validateAllDone.emit()
+            self.validatingQueue = False
             return
         constraint = self.validationQueue[-1]
         if constraint.implemented and constraint.validationState == ValidationState.UNVALIDATED:
