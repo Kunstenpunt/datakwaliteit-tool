@@ -983,7 +983,7 @@ class ConstraintAnalyzer(QObject):
             self.validateAllDone.emit()
             return
         constraint = self.validationQueue[-1]
-        if constraint.implemented and constraint.violations == None:
+        if constraint.implemented and constraint.validationState == ValidationState.UNVALIDATED:
             if not constraint.qualifiersObtained:
                 constraint.queryQualifiers()
             else:
