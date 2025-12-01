@@ -23,7 +23,7 @@ from PySide6.QtWidgets import (
 )
 
 from backend.wikibasehelper import BASE_URL, WikibaseHelper
-from backend.constraints import ConstraintAnalyzer
+from backend.constraints import ConstraintAnalyzer, ValidationState
 from backend.export import exportMultipleConstraintsToOds, exportSingleConstraintToOds
 from backend.utils import urlFromId
 
@@ -58,6 +58,8 @@ class SimpleTableModel(QAbstractTableModel):
             data = self._data[index.row() + 1][index.column()]
             if type(data) == type(True):
                 return "✓" if data else "✗"
+            if type(data) == ValidationState:
+                return data.name
             return data
 
         if role == Qt.ItemDataRole.BackgroundRole:
@@ -68,10 +70,19 @@ class SimpleTableModel(QAbstractTableModel):
                     if data
                     else QBrush(Qt.GlobalColor.darkRed)
                 )
-
+            if type(data) == ValidationState:
+                match data:
+                    case ValidationState.FAILED:
+                        return QBrush(Qt.GlobalColor.darkRed)
+                    case ValidationState.UNVALIDATED:
+                        return QBrush(Qt.GlobalColor.darkGray)
+                    case ValidationState.VALIDATED:
+                        return QBrush(Qt.GlobalColor.darkGreen)
+                    case ValidationState.VALIDATING:
+                        return QBrush(Qt.GlobalColor.darkYellow)
         if role == Qt.ItemDataRole.ForegroundRole:
             data = self._data[index.row() + 1][index.column()]
-            if type(data) == type(True):
+            if type(data) == type(True) or type(data) == ValidationState:
                 return QBrush(Qt.GlobalColor.white)
 
     def rowCount(self, index):
@@ -146,8 +157,8 @@ class ConstraintsTab(QWidget, Ui_ConstraintTab):
         self.model.constraintAnalyzer.constrainedPropertiesUpdated.connect(
             self.onConstrainedPropertiesUpdated
         )
-        self.model.constraintAnalyzer.constrainedPropertyValidated.connect(
-            self.onConstrainedPropertyValidated
+        self.model.constraintAnalyzer.constrainedPropertyValidationStateChanged.connect(
+            self.onConstrainedPropertyValidationStateChanged
         )
         self.model.constraintAnalyzer.focusedPropertyConstraintUpdated.connect(
             self.onFocusedPropertyConstraintUpdated
@@ -180,7 +191,7 @@ class ConstraintsTab(QWidget, Ui_ConstraintTab):
             self.onPropertySelectionChanged
         )
 
-    def onConstrainedPropertyValidated(self):
+    def onConstrainedPropertyValidationStateChanged(self):
         data = self.model.constraintAnalyzer.getConstraintsListFull()
         model = self.propertiesTableView.model().sourceModel()
         validatedColumnIndex = 5

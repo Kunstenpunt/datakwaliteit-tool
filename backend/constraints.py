@@ -1,4 +1,5 @@
 from PySide6.QtCore import Signal, QObject
+from enum import Enum
 
 from .utils import stripUrlPart
 
@@ -20,12 +21,28 @@ class Property(Item):
         super().__init__(*args, **kwargs)
 
 
+class ValidationState(Enum):
+    UNVALIDATED = 1
+    VALIDATING = 2
+    VALIDATED = 3
+    FAILED = 4
+
+    strings = [
+        "UNVALIDATED",
+        "VALIDATING",
+        "VALIDATED",
+        "FAILED"
+    ]
+
 class Constraint(QObject):
     violationsUpdated = Signal()
     qualifiersUpdated = Signal()
+    validationStateChanged = Signal()
 
     def __init__(self, identifier, label, prop, wikibaseHelper):
         super().__init__()
+
+        self._validationState = ValidationState.UNVALIDATED
 
         self.identifier = identifier
         self.implemented = False
@@ -36,6 +53,15 @@ class Constraint(QObject):
         self.violations = None
 
         self.qualifiersUpdated.connect(self._onQualifiersUpdated)
+
+    @property
+    def validationState(self):
+        return self._validationState
+    
+    @validationState.setter
+    def validationState(self, value):
+        self._validationState = value
+        self.validationStateChanged.emit()
 
     def __str__(self):
         return f"{self.label} ({self.identifier})"
@@ -53,6 +79,7 @@ class Constraint(QObject):
         print(f"Querying qualfiers not implemented for {self}")
 
     def queryViolations(self):
+        self.validationState = ValidationState.VALIDATING
         if hasattr(self, "_queryViolations"):
             if not self.qualifiersObtained:
                 self.qualifiersUpdated.connect(self._queryViolations)
@@ -61,6 +88,7 @@ class Constraint(QObject):
                 self._queryViolations()
         else:
             print(f"Querying violations not implemented for {self}")
+            self.validationState = ValidationState.FAILED
 
     def _onQualifiersUpdated(self):
         self.qualifiersObtained = True
@@ -99,6 +127,7 @@ class SingleValueConstraint(Constraint):
     def _queryQualifiersResult(self):
         result = self.wikibaseHelper.queryResult
         if not result:
+            self.validationState = ValidationState.FAILED
             return
         self.separators = []
         for [identifier, label] in result[1:]:
@@ -136,6 +165,9 @@ class SingleValueConstraint(Constraint):
             self.violations = [
                 [stripUrlPart(s), stripUrlPart(e), eL, v] for [s, e, eL, v] in result
             ]
+            self.validationState = ValidationState.VALIDATED
+        else:
+            self.validationState = ValidationState.FAILED
         self.violationsUpdated.emit()
 
 
@@ -173,6 +205,7 @@ class ValueTypeConstraint(Constraint):
     def _queryQualifiersResult(self):
         result = self.wikibaseHelper.queryResult
         if not result:
+            self.validationState = ValidationState.FAILED
             return
         for [classId, classLabel, relationId, relationLabel] in result[1:]:
             classId = stripUrlPart(classId)
@@ -181,6 +214,7 @@ class ValueTypeConstraint(Constraint):
                 print(
                     f'ValueTypeConstraint for relation "{relationLabel}" is currently unsupported.'
                 )
+                self.validationState = ValidationState.FAILED
                 self.relation = None
             self.classes.append(Property(classId, classLabel))
         self.relation = "P1"
@@ -217,6 +251,9 @@ class ValueTypeConstraint(Constraint):
                 [stripUrlPart(s), stripUrlPart(e), eL, stripUrlPart(v), vL]
                 for [s, e, eL, v, vL] in result
             ]
+            self.validationState = ValidationState.VALIDATED
+        else:
+            self.validationState = ValidationState.FAILED
         self.violationsUpdated.emit()
 
 
@@ -254,6 +291,7 @@ class SubjectTypeConstraint(Constraint):
     def _queryQualifiersResult(self):
         result = self.wikibaseHelper.queryResult
         if not result:
+            self.validationState = ValidationState.FAILED
             return
         for [classId, classLabel, relationId, relationLabel] in result[1:]:
             classId = stripUrlPart(classId)
@@ -262,6 +300,7 @@ class SubjectTypeConstraint(Constraint):
                 print(
                     f'SubjectTypeConstraint for relation "{relationLabel}" is currently unsupported.'
                 )
+                self.validationState = ValidationState.FAILED
                 self.relation = None
             self.classes.append(Property(classId, classLabel))
         self.relation = "P1"
@@ -297,6 +336,9 @@ class SubjectTypeConstraint(Constraint):
             self.violations = [
                 [stripUrlPart(s), stripUrlPart(e), eL] for [s, e, eL] in result
             ]
+            self.validationState = ValidationState.VALIDATED
+        else:
+            self.validationState = ValidationState.FAILED
         self.violationsUpdated.emit()
 
 
@@ -334,6 +376,7 @@ class RequiredQualifierConstraint(Constraint):
     def _queryQualifiersResult(self):
         result = self.wikibaseHelper.queryResult
         if not result:
+            self.validationState = ValidationState.FAILED
             return
         self.requiredQualifiers = []
         for [propId, propLabel] in result[1:]:
@@ -369,6 +412,9 @@ class RequiredQualifierConstraint(Constraint):
             self.violations = [
                 [stripUrlPart(s), stripUrlPart(e), eL] for [s, e, eL] in result
             ]
+            self.validationState = ValidationState.VALIDATED
+        else:
+            self.validationState = ValidationState.FAILED
         self.violationsUpdated.emit()
 
 
@@ -404,6 +450,7 @@ class AllowedQualifiersConstraint(Constraint):
     def _queryQualifiersResult(self):
         result = self.wikibaseHelper.queryResult
         if not result:
+            self.validationState = ValidationState.FAILED
             return
         self.allowedQualifiers = []
         for [propId, propLabel] in result[1:]:
@@ -439,6 +486,9 @@ class AllowedQualifiersConstraint(Constraint):
             self.violations = [
                 [stripUrlPart(s), stripUrlPart(e), eL] for [s, e, eL] in result
             ]
+            self.validationState = ValidationState.VALIDATED
+        else:
+            self.validationState = ValidationState.FAILED
         self.violationsUpdated.emit()
 
 
@@ -475,6 +525,7 @@ class ConflictsWithConstraint(Constraint):
     def _queryQualifiersResult(self):
         result = self.wikibaseHelper.queryResult
         if not result:
+            self.validationState = ValidationState.FAILED
             return
         self.conflictingStatements = []
         for [propId, propLabel, valueId, valueLabel] in result[1:]:
@@ -513,6 +564,9 @@ class ConflictsWithConstraint(Constraint):
             self.violations = [
                 [stripUrlPart(s), stripUrlPart(e), eL] for [s, e, eL] in result
             ]
+            self.validationState = ValidationState.VALIDATED
+        else:
+            self.validationState = ValidationState.FAILED
         self.violationsUpdated.emit()
 
 
@@ -548,6 +602,7 @@ class DistinctValuesConstraint(Constraint):
     def _queryQualifiersResult(self):
         result = self.wikibaseHelper.queryResult
         if not result:
+            self.validationState = ValidationState.FAILED
             return
         self.separators = []
         for [identifier, label] in result[1:]:
@@ -589,6 +644,9 @@ class DistinctValuesConstraint(Constraint):
                 [stripUrlPart(s), stripUrlPart(e), e_l, stripUrlPart(v), v_l]
                 for [s, e, e_l, v, v_l] in result
             ]
+            self.validationState = ValidationState.VALIDATED
+        else:
+            self.validationState = ValidationState.FAILED
         self.violationsUpdated.emit()
 
 
@@ -623,6 +681,7 @@ class FormatConstraint(Constraint):
     def _queryQualifiersResult(self):
         result = self.wikibaseHelper.queryResult
         if not result or len(result) < 2:
+            self.validationState = ValidationState.FAILED
             return
         self.format = result[1][0]
         self.qualifiersUpdated.emit()
@@ -658,6 +717,9 @@ class FormatConstraint(Constraint):
                 ]
                 for [s, e, e_l, v] in result
             ]
+            self.validationState = ValidationState.VALIDATED
+        else:
+            self.validationState = ValidationState.FAILED
         self.violationsUpdated.emit()
 
 
@@ -694,6 +756,7 @@ class ItemRequiresStatementConstraint(Constraint):
     def _queryQualifiersResult(self):
         result = self.wikibaseHelper.queryResult
         if not result:
+            self.validationState = ValidationState.FAILED
             return
         self.requiredStatements = {}
         for [propId, propLabel, valueId, valueLabel] in result[1:]:
@@ -735,6 +798,9 @@ class ItemRequiresStatementConstraint(Constraint):
             self.violations = [
                 [stripUrlPart(s), stripUrlPart(e), eL] for [s, e, eL] in result
             ]
+            self.validationState = ValidationState.VALIDATED
+        else:
+            self.validationState = ValidationState.FAILED
         self.violationsUpdated.emit()
 
 
@@ -771,6 +837,7 @@ class ValueRequiresStatementConstraint(Constraint):
     def _queryQualifiersResult(self):
         result = self.wikibaseHelper.queryResult
         if not result:
+            self.validationState = ValidationState.FAILED
             return
         self.requiredStatements = {}
         for [propId, propLabel, valueId, valueLabel] in result[1:]:
@@ -811,6 +878,9 @@ class ValueRequiresStatementConstraint(Constraint):
             self.violations = [
                 [stripUrlPart(s), stripUrlPart(e), eL] for [s, e, eL] in result
             ]
+            self.validationState = ValidationState.VALIDATED
+        else:
+            self.validationState = ValidationState.FAILED
         self.violationsUpdated.emit()
 
 
@@ -831,7 +901,7 @@ CONSTRAINT_MAP = {
 class ConstraintAnalyzer(QObject):
 
     constrainedPropertiesUpdated = Signal()
-    constrainedPropertyValidated = Signal()
+    constrainedPropertyValidationStateChanged = Signal()
     focusedPropertyConstraintUpdated = Signal()
     validateAllDone = Signal()
 
@@ -869,7 +939,7 @@ class ConstraintAnalyzer(QObject):
             constraint = constType(
                 consId, consLabel, Property(propId, propLabel), self.wikibaseHelper
             )
-            constraint.violationsUpdated.connect(self.constrainedPropertyValidated)
+            constraint.validationStateChanged.connect(self.constrainedPropertyValidationStateChanged)
 
             constraint.qualifiersUpdated.connect(self.validateNextInQueue)
             constraint.violationsUpdated.connect(self.validateNextInQueue)
@@ -887,7 +957,7 @@ class ConstraintAnalyzer(QObject):
                     c.identifier,
                     c.label,
                     c.implemented,
-                    c.violations != None,
+                    c.validationState
                 ]
                 for c in self.constraints.values()
             ]
