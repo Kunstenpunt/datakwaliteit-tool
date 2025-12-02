@@ -260,15 +260,21 @@ class ConstraintsTab(QWidget, Ui_ConstraintTab):
 
     def exportSingleConstraint(self):
         constraint = self.model.constraintAnalyzer.focusedConstraint
-        defaultFileName = f"constraint_violations_{constraint.property.identifier}_{constraint.identifier}.ods"
-        fileName = QFileDialog.getSaveFileName(
+        defaultFileName = f"constraint_violations_{constraint.property.identifier}_{constraint.identifier}"
+        fileName, fileFilter = QFileDialog.getSaveFileName(
             self,
             f"Export Violations for {constraint.property.identifier}-{constraint.identifier}",
             f"{self.exportDir}/{defaultFileName}",
-            "ODS files (*.ods)",
-        )[0]
+            "ODF Spreadsheet (*.ods);;Excel Workbook (*.xlsx) ",
+        )
         if not fileName:
             return
+        if fileFilter == "ODF Spreadsheet (*.ods)":
+            if not fileName.endswith(".ods"):
+                fileName += ".ods"
+        else:
+            if not fileName.endswith(".xlsx"):
+                fileName += ".xlsx"
         self.exportDir = QFileInfo(fileName).absolutePath()
         exportUrl = self.exportUrlCheckBox.isChecked()
         exportSingleConstraintToOds(constraint, fileName, exportUrl)

@@ -1,12 +1,12 @@
 from collections import OrderedDict
 
-from pyexcel_ods3 import save_data as saveData
+import pandas as pd
 
 from .wikibasehelper import BASE_URL
 from .utils import urlFromId
 
 
-def _createSheetData(constraint, exportUrl):
+def _addSheetData(writer, constraint, exportUrl):
     sheetName = f"{constraint.property.identifier}-{constraint.identifier}"
     sheetData = constraint.violations
     if exportUrl:
@@ -14,16 +14,17 @@ def _createSheetData(constraint, exportUrl):
             [urlFromId(el, BASE_URL) if urlFromId(el, BASE_URL) else el for el in row]
             for row in sheetData
         ]
-    return {sheetName: sheetData}
+    pd.DataFrame(sheetData[1:]).to_excel(
+        writer, sheet_name=sheetName, header=sheetData[0], index=False
+    )
 
 
 def exportSingleConstraintToOds(constraint, fileName, exportUrl):
-    data = OrderedDict()
-    data.update(_createSheetData(constraint, exportUrl))
-    saveData(fileName, data)
+    with pd.ExcelWriter(fileName) as writer:
+        _addSheetData(writer, constraint, exportUrl)
 
 
-def _createInfoSheetData(constraints, exportUrl):
+def _addInfoSheetData(writer, constraints):
     sheetName = "Info"
     header = [
         "Prop ID",
@@ -32,7 +33,7 @@ def _createInfoSheetData(constraints, exportUrl):
         "Constraint Label",
         "Violations",
     ]
-    sheetData = [header] + [
+    sheetData = [
         [
             c.property.identifier,
             c.property.label,
@@ -42,12 +43,13 @@ def _createInfoSheetData(constraints, exportUrl):
         ]
         for c in constraints
     ]
-    return {sheetName: sheetData}
+    pd.DataFrame(sheetData).to_excel(
+        writer, sheet_name=sheetName, header=header, index=False
+    )
 
 
 def exportMultipleConstraintsToOds(constraints, fileName, exportUrl):
-    data = OrderedDict()
-    data.update(_createInfoSheetData(constraints, exportUrl))
-    for c in constraints:
-        data.update(_createSheetData(c, exportUrl))
-    saveData(fileName, data)
+    with pd.ExcelWriter(fileName) as writer:
+        _addInfoSheetData(writer, constraints)
+        for c in constraints:
+            _addSheetData(writer, c, exportUrl)
