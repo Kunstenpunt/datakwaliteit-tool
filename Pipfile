@@ -6,9 +6,8 @@ name = "pypi"
 [packages]
 wikibaseintegrator = "*"
 pyside6 = "*"
-pandas = "*"
-odfpy = "*"
-openpyxl = "*"
+odswriter = "*"
+xlsxwriter = "*"
 
 [dev-packages]
 

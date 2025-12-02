@@ -24,7 +24,7 @@ from PySide6.QtWidgets import (
 
 from backend.wikibasehelper import BASE_URL, WikibaseHelper
 from backend.constraints import ConstraintAnalyzer, ValidationState
-from backend.export import exportMultipleConstraintsToOds, exportSingleConstraintToOds
+from backend.export import exportMultipleConstraints, exportSingleConstraint
 from backend.utils import urlFromId
 
 from ui.constrainttab import Ui_ConstraintTab
@@ -265,7 +265,7 @@ class ConstraintsTab(QWidget, Ui_ConstraintTab):
             self,
             f"Export Violations for {constraint.property.identifier}-{constraint.identifier}",
             f"{self.exportDir}/{defaultFileName}",
-            "ODF Spreadsheet (*.ods);;Excel Workbook (*.xlsx) ",
+            "ODF Spreadsheet (*.ods);;Excel Workbook (*.xlsx)",
         )
         if not fileName:
             return
@@ -277,7 +277,7 @@ class ConstraintsTab(QWidget, Ui_ConstraintTab):
                 fileName += ".xlsx"
         self.exportDir = QFileInfo(fileName).absolutePath()
         exportUrl = self.exportUrlCheckBox.isChecked()
-        exportSingleConstraintToOds(constraint, fileName, exportUrl)
+        exportSingleConstraint(constraint, fileName, exportUrl)
 
     def exportAllValidated(self):
         validatedConstraints = sorted(
@@ -287,18 +287,24 @@ class ConstraintsTab(QWidget, Ui_ConstraintTab):
                 if c.violations != None
             ]
         )
-        defaultFileName = "constraint_violations_combined.ods"
-        fileName = QFileDialog.getSaveFileName(
+        defaultFileName = "constraint_violations_combined"
+        fileName, fileFilter = QFileDialog.getSaveFileName(
             self,
             "Export Violations for All Validated Constraints",
             f"{self.exportDir}/{defaultFileName}",
-            "ODS files (*.ods)",
-        )[0]
+            "ODF Spreadsheet (*.ods);;Excel Workbook (*.xlsx)",
+        )
         if not fileName:
             return
+        if fileFilter == "ODF Spreadsheet (*.ods)":
+            if not fileName.endswith(".ods"):
+                fileName += ".ods"
+        else:
+            if not fileName.endswith(".xlsx"):
+                fileName += ".xlsx"
         self.exportDir = QFileInfo(fileName).absolutePath()
         exportUrl = self.exportAllUrlCheckBox.isChecked()
-        exportMultipleConstraintsToOds(validatedConstraints, fileName, exportUrl)
+        exportMultipleConstraints(validatedConstraints, fileName, exportUrl)
 
 
 class MainWindow(QMainWindow, Ui_MainWindow):

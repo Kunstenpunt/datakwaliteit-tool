@@ -1,12 +1,13 @@
 from collections import OrderedDict
 
-import pandas as pd
+import odswriter as ods
+import xlsxwriter as xlsx
 
 from .wikibasehelper import BASE_URL
 from .utils import urlFromId
 
 
-def _addSheetData(writer, constraint, exportUrl):
+def _getSheetData(constraint, exportUrl):
     sheetName = f"{constraint.property.identifier}-{constraint.identifier}"
     sheetData = constraint.violations
     if exportUrl:
@@ -14,17 +15,34 @@ def _addSheetData(writer, constraint, exportUrl):
             [urlFromId(el, BASE_URL) if urlFromId(el, BASE_URL) else el for el in row]
             for row in sheetData
         ]
-    pd.DataFrame(sheetData[1:]).to_excel(
-        writer, sheet_name=sheetName, header=sheetData[0], index=False
-    )
+    return [sheetName, sheetData]
 
 
-def exportSingleConstraintToOds(constraint, fileName, exportUrl):
-    with pd.ExcelWriter(fileName) as writer:
-        _addSheetData(writer, constraint, exportUrl)
+def _addSheetOds(odsFile, sheetName, sheetData):
+    sheet = odsFile.new_sheet(sheetName)
+    for row in sheetData:
+        sheet.writerow(row)
 
 
-def _addInfoSheetData(writer, constraints):
+def _addSheetXlsx(xlsxData, sheetName, sheetData):
+    sheet = xlsxData.add_worksheet(sheetName)
+    for i, row in enumerate(sheetData):
+        sheet.write_row(i, 0, row)
+
+
+def exportSingleConstraint(constraint, fileName, exportUrl):
+    sheetName, sheetData = _getSheetData(constraint, exportUrl)
+    if fileName.endswith(".ods"):
+        with open(fileName, "wb") as f:
+            with ods.writer(f) as odsFile:
+                _addSheetOds(odsFile, sheetName, sheetData)
+    if fileName.endswith(".xlsx"):
+        xlsxData = xlsx.Workbook(fileName, {"constant_memory": True})
+        _addSheetXlsx(xlsxData, sheetName, sheetData)
+        xlsxData.close()
+
+
+def _getInfoSheetData(constraints):
     sheetName = "Info"
     header = [
         "Prop ID",
@@ -33,7 +51,7 @@ def _addInfoSheetData(writer, constraints):
         "Constraint Label",
         "Violations",
     ]
-    sheetData = [
+    sheetData = [header] + [
         [
             c.property.identifier,
             c.property.label,
@@ -43,13 +61,21 @@ def _addInfoSheetData(writer, constraints):
         ]
         for c in constraints
     ]
-    pd.DataFrame(sheetData).to_excel(
-        writer, sheet_name=sheetName, header=header, index=False
-    )
+    return [sheetName, sheetData]
 
 
-def exportMultipleConstraintsToOds(constraints, fileName, exportUrl):
-    with pd.ExcelWriter(fileName) as writer:
-        _addInfoSheetData(writer, constraints)
-        for c in constraints:
-            _addSheetData(writer, c, exportUrl)
+def exportMultipleConstraints(constraints, fileName, exportUrl):
+    infoSheetName, infoSheetData = _getInfoSheetData(constraints)
+    dataSheets = [_getSheetData(c, exportUrl) for c in constraints]
+    if fileName.endswith(".ods"):
+        with open(fileName, "wb") as f:
+            with ods.writer(f) as odsFile:
+                _addSheetOds(odsFile, infoSheetName, infoSheetData)
+                for s in dataSheets:
+                    _addSheetOds(odsFile, s[0], s[1])
+    if fileName.endswith(".xlsx"):
+        xlsxData = xlsx.Workbook(fileName, {"constant_memory": True})
+        _addSheetXlsx(xlsxData, infoSheetName, infoSheetData)
+        for s in dataSheets:
+            _addSheetXlsx(xlsxData, s[0], s[1])
+        xlsxData.close()
