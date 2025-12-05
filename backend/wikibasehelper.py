@@ -34,6 +34,7 @@ class QueryWorker(QObject):
 class WikibaseHelper(QObject):
     queryStarted = Signal()  # For loading indicator
     queryDone = Signal()  # For loading indicator
+    _queryResultAvailable = Signal()
     _readyForNewQuery = Signal()
 
     def __init__(self):
@@ -58,23 +59,37 @@ class WikibaseHelper(QObject):
         """
 
         self.executingQuery = False
-        self.queryResult = None
         self.mostRecentQuery = None
+        self.queryQueue = []
+        self.queryResult = None
+
+        self._readyForNewQuery.connect(self.handleQueryQueue)
 
         wbi = WikibaseIntegrator()
 
     def executeQuery(self, queryString, callback):
+        self.queryQueue.append((queryString, callback))
+        if len(self.queryQueue) == 1 and not self.executingQuery:
+            self.handleQueryQueue()
+        
+    def handleQueryQueue(self):
+        if not self.queryQueue:
+            return
+        (queryString, callback) = self.queryQueue.pop(0)
+        self.processQuery(queryString, callback)
+
+    def processQuery(self, queryString, callback):
         if self.executingQuery:
             return
         else:
             self.executingQuery = True
 
         try:
-            self._readyForNewQuery.disconnect()
+            self._queryResultAvailable.disconnect()
         except TypeError:
             pass
 
-        self._readyForNewQuery.connect(callback)
+        self._queryResultAvailable.connect(callback)
 
         self.queryThread = QThread()
         self.queryWorker = QueryWorker(queryString, self.queryPrefixes)
@@ -92,6 +107,7 @@ class WikibaseHelper(QObject):
 
     def queryWorkerFinished(self):
         self.queryResult = self.queryWorker.resultList
+        self._queryResultAvailable.emit()
         self.queryDone.emit()
 
     def queryThreadDestroyed(self):
