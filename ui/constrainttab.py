@@ -103,6 +103,7 @@ class Ui_ConstraintTab(object):
         self.labelRight.setObjectName(u"labelRight")
         self.labelRight.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.labelRight.setWordWrap(True)
+        self.labelRight.setTextInteractionFlags(Qt.TextInteractionFlag.LinksAccessibleByMouse|Qt.TextInteractionFlag.TextSelectableByMouse)
 
         self.horizontalLayoutRight.addWidget(self.labelRight)
 
