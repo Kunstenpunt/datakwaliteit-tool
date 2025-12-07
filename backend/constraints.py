@@ -27,7 +27,11 @@ class ValidationState(Enum):
     VALIDATED = 3
     FAILED = 4
 
-    strings = ["UNVALIDATED", "VALIDATING", "VALIDATED", "FAILED"]
+
+class ValidationInputCountType(Enum):
+    STATEMENTS = 0
+    ENTITIES = 1
+    OTHER = 2
 
 
 class Constraint(QObject):
@@ -49,6 +53,7 @@ class Constraint(QObject):
         self.property = prop
         self.qualifiersObtained = False
         self.wikibaseHelper = wikibaseHelper
+        self.validationInputCountType = ValidationInputCountType.OTHER
         self.violations = None
 
         self.qualifiersUpdated.connect(self._onQualifiersUpdated)
@@ -85,6 +90,43 @@ class Constraint(QObject):
 
     def queryQualifiers(self):
         print(f"Querying qualfiers not implemented for {self}")
+
+    def queryInputCount(self):
+        countType = self.validationInputCountType
+        if countType == ValidationInputCountType.STATEMENTS:
+            query = f"""
+                SELECT (COUNT(*) as ?count)
+                WHERE
+                {{
+                    ?entity kpp:{self.property.identifier} ?statement
+                }}
+            """
+        elif countType == self.validationInputCountType.ENTITIES:
+            query = f"""
+                SELECT ?count
+                WHERE
+                {{
+                    SERVICE wikibase:mwapi
+                    {{
+                        bd:serviceParam wikibase:endpoint "kg.kunsten.be";
+                            wikibase:api "Search"; wikibase:limit "once" ;
+                            mwapi:srsearch "haswbstatement:{self.property.identifier}" ;
+                            mwapi:srlimit "1" ; mwapi:srprop "" ; mwapi:srsort "none" ; mwapi:srnamespace "*" .
+                        ?count wikibase:apiOutput '//searchinfo[1]/@totalhits'.
+                    }}
+                }}
+            """
+        else:
+            print(f"Querying input count not implemented for {self}")
+            return
+
+        self.wikibaseHelper.executeQuery(query, self._queryInputCountResult)
+
+    def _queryInputCountResult(self):
+        result = self.wikibaseHelper.queryResult
+        if not result:
+            pass
+        self.inputCount = result[1][0]
 
     def queryViolations(self):
         self.validationState = ValidationState.VALIDATING
