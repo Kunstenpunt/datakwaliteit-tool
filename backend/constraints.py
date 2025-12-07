@@ -150,6 +150,7 @@ class SingleValueConstraint(Constraint):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.implemented = True
+        self.validationInputCountType = ValidationInputCountType.STATEMENTS
 
         self.separators = None
 
@@ -226,6 +227,7 @@ class ValueTypeConstraint(Constraint):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.implemented = True
+        self.validationInputCountType = ValidationInputCountType.STATEMENTS
 
         self.classes = []
         self.relation = None
@@ -312,6 +314,7 @@ class SubjectTypeConstraint(Constraint):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.implemented = True
+        self.validationInputCountType = ValidationInputCountType.ENTITIES
 
         self.classes = []
         self.relation = None
@@ -397,6 +400,7 @@ class RequiredQualifierConstraint(Constraint):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.implemented = True
+        self.validationInputCountType = ValidationInputCountType.ENTITIES
 
         self.requiredQualifiers = None
 
@@ -473,6 +477,7 @@ class AllowedQualifiersConstraint(Constraint):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.implemented = True
+        self.validationInputCountType = ValidationInputCountType.STATEMENTS
 
         self.allowedQualifiers = None
 
@@ -547,6 +552,7 @@ class ConflictsWithConstraint(Constraint):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.implemented = True
+        self.validationInputCountType = ValidationInputCountType.ENTITIES
         # List of form [[Prop, Value], ...]
         self.conflictingStatements = None
 
@@ -625,6 +631,7 @@ class DistinctValuesConstraint(Constraint):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.implemented = True
+        self.validationInputCountType = ValidationInputCountType.STATEMENTS
 
         self.separators = None
 
@@ -705,6 +712,7 @@ class FormatConstraint(Constraint):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.implemented = True
+        self.validationInputCountType = ValidationInputCountType.STATEMENTS
 
         self.format = None
 
@@ -778,6 +786,7 @@ class ItemRequiresStatementConstraint(Constraint):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.implemented = True
+        self.validationInputCountType = ValidationInputCountType.ENTITIES
         # Dictionary of form PROP_ID -> [PROP, VAL1, VAL2, ...]
         self.requiredStatements = None
 
@@ -859,6 +868,7 @@ class ValueRequiresStatementConstraint(Constraint):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.implemented = True
+        self.validationInputCountType = ValidationInputCountType.STATEMENTS
         # Dictionary of form PROP_ID -> [PROP, VAL1, VAL2, ...]
         self.requiredStatements = None
 
