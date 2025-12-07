@@ -33,11 +33,14 @@ class ValidationState(Enum):
 class Constraint(QObject):
     violationsUpdated = Signal()
     qualifiersUpdated = Signal()
+
+    inputCountChanged = Signal()
     validationStateChanged = Signal()
 
     def __init__(self, identifier, label, prop, wikibaseHelper):
         super().__init__()
 
+        self._inputCount = -1
         self._validationState = ValidationState.UNVALIDATED
 
         self.identifier = identifier
@@ -58,6 +61,15 @@ class Constraint(QObject):
     def validationState(self, value):
         self._validationState = value
         self.validationStateChanged.emit()
+
+    @property
+    def inputCount(self):
+        return self._inputCount
+
+    @inputCount.setter
+    def inputCount(self, value):
+        self._inputCount = int(value)
+        self.inputCountChanged.emit()
 
     def __str__(self):
         return f"{self.label} ({self.identifier})"
