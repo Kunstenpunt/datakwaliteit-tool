@@ -190,6 +190,8 @@ class ConstraintsTab(QWidget, Ui_ConstraintTab):
         self.propertiesTableView.selectionModel().currentChanged.connect(
             self.onPropertySelectionChanged
         )
+        if len(data) > 1:
+            self.propertiesTableView.selectRow(0)
 
     def onConstrainedPropertyValidationStateChanged(self):
         data = self.model.constraintAnalyzer.getConstraintsListFull()
