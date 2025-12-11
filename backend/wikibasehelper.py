@@ -71,7 +71,7 @@ class WikibaseHelper(QObject):
         self.queryQueue.append((queryString, callback))
         if len(self.queryQueue) == 1 and not self.executingQuery:
             self.handleQueryQueue()
-        
+
     def handleQueryQueue(self):
         if not self.queryQueue:
             return
