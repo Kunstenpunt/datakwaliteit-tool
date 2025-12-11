@@ -492,7 +492,7 @@ class RequiredQualifierConstraint(Constraint):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.implemented = True
-        self.validationInputCountType = ValidationInputCountType.ENTITIES
+        self.validationInputCountType = ValidationInputCountType.STATEMENTS
 
         self.requiredQualifiers = None
 
@@ -531,19 +531,17 @@ class RequiredQualifierConstraint(Constraint):
         self.qualifiersUpdated.emit()
 
     def _queryViolations(self):
-        # TODO nog eens verder kijken of helemaal correct / optimaal
         query = f"""
-            # We only return one invalid statement per entity for optimization reasons
-            SELECT (SAMPLE(?statement) AS ?statement) ?entity ?entityLabel
+            SELECT ?statement ?entity ?entityLabel
             
             WITH
             {{
-                SELECT DISTINCT ?entity
+                SELECT ?entity ?statement
                 WHERE
                 {{
                     ?entity kpp:{self.property.identifier} ?statement
                 }}{f"""{f"""
-                ORDER BY ?entity"""
+                ORDER BY ?entity ?statement"""
                     if self.sort else ""
                 }
                 LIMIT {self.limit} OFFSET {self.offset}"""
@@ -553,11 +551,10 @@ class RequiredQualifierConstraint(Constraint):
 
             WITH
             {{
-                SELECT DISTINCT ?entity
+                SELECT ?entity ?statement
                 WHERE
                 {{
                     INCLUDE %input
-                    ?entity kpp:{self.property.identifier} ?statement .
                 {"".join(f"""
                     FILTER NOT EXISTS {{ ?statement kppq:{q.identifier} ?val }} .""" for q in self.requiredQualifiers)
                 }
@@ -573,10 +570,8 @@ class RequiredQualifierConstraint(Constraint):
             WHERE
             {{
                 INCLUDE %results
-                ?entity kpp:{self.property.identifier} ?statement
                 SERVICE wikibase:label {{ bd:serviceParam wikibase:language "nl" }}
-            }}
-            GROUP BY ?entity ?entityLabel"""
+            }}"""
 
         self.wikibaseHelper.executeQuery(query, self._queryViolationsResult)
 
