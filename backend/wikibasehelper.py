@@ -3,7 +3,6 @@ from PySide6.QtCore import Signal, QObject, QThread
 from wikibaseintegrator import WikibaseIntegrator
 from wikibaseintegrator.wbi_config import config
 from wikibaseintegrator.wbi_helpers import execute_sparql_query
-from wikibaseintegrator.wbi_login import Login
 
 from .utils import queryResultToList
 
@@ -62,6 +61,8 @@ class WikibaseHelper(QObject):
         self.mostRecentQuery = None
         self.queryQueue = []
         self.queryResult = None
+        self.queryThread = None
+        self.queryWorker = None
 
         self._readyForNewQuery.connect(self.handleQueryQueue)
 
