@@ -1,5 +1,6 @@
-from PySide6.QtCore import Signal, QObject
 from enum import Enum
+
+from PySide6.QtCore import Signal, QObject
 
 from .utils import stripUrlPart
 
@@ -24,8 +25,9 @@ class Property(Item):
 class ValidationState(Enum):
     UNVALIDATED = 1
     VALIDATING = 2
-    VALIDATED = 3
-    FAILED = 4
+    PARTIAL = 3
+    VALIDATED = 4
+    FAILED = 5
 
 
 class ValidationMode(Enum):
@@ -157,6 +159,13 @@ class Constraint(QObject):
     def _onQualifiersUpdated(self):
         self.qualifiersObtained = True
 
+    def _validationSuccessful(self):
+        self.validationState = (
+            ValidationState.VALIDATED
+            if self.validationMode == ValidationMode.NO_LIMIT
+            else ValidationState.PARTIAL
+        )
+
 
 # https://www.wikidata.org/wiki/Help:Property_constraints_portal/Single_value
 class SingleValueConstraint(Constraint):
@@ -254,7 +263,7 @@ class SingleValueConstraint(Constraint):
             self.violations = [
                 [stripUrlPart(s), stripUrlPart(e), eL, v] for [s, e, eL, v] in result
             ]
-            self.validationState = ValidationState.VALIDATED
+            self._validationSuccessful()
         else:
             self.validationState = ValidationState.FAILED
         self.violationsUpdated.emit()
@@ -363,7 +372,7 @@ class ValueTypeConstraint(Constraint):
                 [stripUrlPart(s), stripUrlPart(e), eL, stripUrlPart(v), vL]
                 for [s, e, eL, v, vL] in result
             ]
-            self.validationState = ValidationState.VALIDATED
+            self._validationSuccessful()
         else:
             self.validationState = ValidationState.FAILED
         self.violationsUpdated.emit()
@@ -472,7 +481,7 @@ class SubjectTypeConstraint(Constraint):
             self.violations = [
                 [stripUrlPart(s), stripUrlPart(e), eL] for [s, e, eL] in result
             ]
-            self.validationState = ValidationState.VALIDATED
+            self._validationSuccessful()
         else:
             self.validationState = ValidationState.FAILED
         self.violationsUpdated.emit()
@@ -577,7 +586,7 @@ class RequiredQualifierConstraint(Constraint):
             self.violations = [
                 [stripUrlPart(s), stripUrlPart(e), eL] for [s, e, eL] in result
             ]
-            self.validationState = ValidationState.VALIDATED
+            self._validationSuccessful()
         else:
             self.validationState = ValidationState.FAILED
         self.violationsUpdated.emit()
@@ -676,7 +685,7 @@ class AllowedQualifiersConstraint(Constraint):
             self.violations = [
                 [stripUrlPart(s), stripUrlPart(e), eL] for [s, e, eL] in result
             ]
-            self.validationState = ValidationState.VALIDATED
+            self._validationSuccessful()
         else:
             self.validationState = ValidationState.FAILED
         self.violationsUpdated.emit()
@@ -779,7 +788,7 @@ class ConflictsWithConstraint(Constraint):
             self.violations = [
                 [stripUrlPart(s), stripUrlPart(e), eL] for [s, e, eL] in result
             ]
-            self.validationState = ValidationState.VALIDATED
+            self._validationSuccessful()
         else:
             self.validationState = ValidationState.FAILED
         self.violationsUpdated.emit()
@@ -897,7 +906,7 @@ class DistinctValuesConstraint(Constraint):
                 [stripUrlPart(s), stripUrlPart(e), e_l, stripUrlPart(v), v_l]
                 for [s, e, e_l, v, v_l] in result
             ]
-            self.validationState = ValidationState.VALIDATED
+            self._validationSuccessful()
         else:
             self.validationState = ValidationState.FAILED
         self.violationsUpdated.emit()
@@ -996,7 +1005,7 @@ class FormatConstraint(Constraint):
                 ]
                 for [s, e, e_l, v] in result
             ]
-            self.validationState = ValidationState.VALIDATED
+            self._validationSuccessful()
         else:
             self.validationState = ValidationState.FAILED
         self.violationsUpdated.emit()
@@ -1102,7 +1111,7 @@ class ItemRequiresStatementConstraint(Constraint):
             self.violations = [
                 [stripUrlPart(s), stripUrlPart(e), eL] for [s, e, eL] in result
             ]
-            self.validationState = ValidationState.VALIDATED
+            self._validationSuccessful()
         else:
             self.validationState = ValidationState.FAILED
         self.violationsUpdated.emit()
@@ -1207,7 +1216,7 @@ class ValueRequiresStatementConstraint(Constraint):
             self.violations = [
                 [stripUrlPart(s), stripUrlPart(e), eL] for [s, e, eL] in result
             ]
-            self.validationState = ValidationState.VALIDATED
+            self._validationSuccessful()
         else:
             self.validationState = ValidationState.FAILED
         self.violationsUpdated.emit()

@@ -8,7 +8,7 @@ from PySide6.QtCore import (
     Qt,
     QUrl,
 )
-from PySide6.QtGui import QBrush, QDesktopServices, QGuiApplication, QPixmap
+from PySide6.QtGui import QBrush, QColor, QDesktopServices, QGuiApplication
 from PySide6.QtWidgets import (
     QApplication,
     QFileDialog,
@@ -16,9 +16,6 @@ from PySide6.QtWidgets import (
     QMainWindow,
     QProgressBar,
     QPushButton,
-    QSplitter,
-    QTextEdit,
-    QVBoxLayout,
     QWidget,
 )
 
@@ -78,6 +75,8 @@ class SimpleTableModel(QAbstractTableModel):
                         return QBrush(Qt.GlobalColor.darkGray)
                     case ValidationState.VALIDATED:
                         return QBrush(Qt.GlobalColor.darkGreen)
+                    case ValidationState.PARTIAL:
+                        return QBrush(QColor(0x60, 0x80, 0))
                     case ValidationState.VALIDATING:
                         return QBrush(Qt.GlobalColor.darkYellow)
         if role == Qt.ItemDataRole.ForegroundRole:
@@ -225,7 +224,9 @@ class ConstraintsTab(QWidget, Ui_ConstraintTab):
         )
         self.updateFocusedPropertyConstraintLabel()
         self.updateFocusedPropertyConstraintInputCount()
-        self.limitComboBox.setCurrentIndex(focusedPropertyConstraint.validationMode.value)
+        self.limitComboBox.setCurrentIndex(
+            focusedPropertyConstraint.validationMode.value
+        )
         self.limitSpinBox.setValue(focusedPropertyConstraint.limit)
         self.pageSpinBox.setValue(focusedPropertyConstraint.getPage())
         self.sortedCheckBox.setChecked(focusedPropertyConstraint.sort)
@@ -333,7 +334,8 @@ class ConstraintsTab(QWidget, Ui_ConstraintTab):
             [
                 c
                 for c in self.model.constraintAnalyzer.constraints.values()
-                if c.violations != None
+                if c.validationState
+                in [ValidationState.VALIDATED, ValidationState.PARTIAL]
             ]
         )
         defaultFileName = "constraint_violations_combined"
