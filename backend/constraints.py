@@ -28,6 +28,12 @@ class ValidationState(Enum):
     FAILED = 4
 
 
+class ValidationMode(Enum):
+    NO_LIMIT = 0
+    LIMIT_OUTPUT = 1
+    LIMIT_INPUT = 2
+
+
 class ValidationInputCountType(Enum):
     STATEMENTS = 0
     ENTITIES = 1
@@ -55,6 +61,11 @@ class Constraint(QObject):
         self.wikibaseHelper = wikibaseHelper
         self.validationInputCountType = ValidationInputCountType.OTHER
         self.violations = None
+
+        self.limit = 100000
+        self.offset = 0
+        self.sort = False
+        self.validationMode = ValidationMode.NO_LIMIT
 
         self.qualifiersUpdated.connect(self._onQualifiersUpdated)
 
@@ -84,6 +95,9 @@ class Constraint(QObject):
             int(other.property.identifier[1:]),
             int(other.identifier[1:]),
         ]
+
+    def getPage(self):
+        return (self.offset / self.limit) + 1 if self.limit != 0 else 1
 
     def pretty(self):
         return f'"{self.label}" ({self.identifier})\non "{self.property.label}" ({self.property.identifier})'
@@ -188,26 +202,50 @@ class SingleValueConstraint(Constraint):
     def _queryViolations(self):
         query = f"""
             SELECT (SAMPLE(?statement) AS ?statement) ?entity ?entityLabel ?valueCount
+
+            WITH
+            {{
+                SELECT ?entity ?statement ?value
+                WHERE
+                {{
+                    ?entity kpp:{self.property.identifier} ?statement .
+                    ?statement kpps:{self.property.identifier} ?value
+                }}{f"""{f"""
+                ORDER BY ?entity ?statement ?value"""
+                    if self.sort else ""
+                }
+                LIMIT {self.limit} OFFSET {self.offset}"""
+                    if self.validationMode == ValidationMode.LIMIT_INPUT else ""
+                }
+            }} AS %input
+
+            WITH
+            {{
+                SELECT ?entity (COUNT(?value) AS ?valueCount)
+                WHERE
+                {{
+                    INCLUDE %input{"\n".join(f"""
+                    OPTIONAL {{ ?statement kppq:{s.identifier} ?separator{i} }} .""" for (i, s) in enumerate(self.separators))
+                    }
+                }}
+                GROUP BY ?entity { f", ".join(f"?separator{i}" for i in range(len(self.separators))) }
+                HAVING(?valueCount > 1){ f"""{f"""
+                ORDER BY ?entity ?value"""
+                    if self.sort else ""
+                }
+                LIMIT {self.limit} OFFSET {self.offset}""" 
+                    if self.validationMode == ValidationMode.LIMIT_OUTPUT else ""
+                }
+            }} AS %results
+
             WHERE
             {{
-                {{
-                    SELECT ?entity (COUNT(?value) AS ?valueCount)
-                    WHERE
-                    {{
-                        ?entity kpp:{self.property.identifier} ?statement .
-                        ?statement kpps:{self.property.identifier} ?value .
-                        { f'\n{"    " * 6}'.join(
-                        f'OPTIONAL {{ ?statement kppq:{s.identifier} ?separator{i} }} .' for (i, s) in enumerate(self.separators))
-                        }
-                    }}
-                    GROUP BY ?entity { f", ".join(f"?separator{i}" for i in range(len(self.separators))) }
-                    HAVING(?valueCount > 1)
-                }}
+                INCLUDE %results
                 ?entity kpp:{self.property.identifier} ?statement
-                SERVICE wikibase:label {{ bd:serviceParam wikibase:language "nl" . }}
+                SERVICE wikibase:label {{ bd:serviceParam wikibase:language "nl" }}
             }}
-            GROUP BY ?entity ?entityLabel ?valueCount
-        """
+            GROUP BY ?entity ?entityLabel ?valueCount"""
+
         self.wikibaseHelper.executeQuery(query, self._queryViolationsResult)
 
     def _queryViolationsResult(self):
@@ -276,24 +314,46 @@ class ValueTypeConstraint(Constraint):
         if self.relation != "P1":
             return
         query = f"""
-            SELECT (SAMPLE(?statement) AS ?statement) ?entity ?entityLabel ?value ?valueLabel
+            SELECT ?statement ?entity ?entityLabel ?value ?valueLabel
+
+            WITH
+            {{
+                SELECT ?statement ?value
+                WHERE
+                {{
+                    ?statement kpps:{self.property.identifier} ?value
+                }}{f"""{f"""
+                ORDER BY ?statement ?value"""
+                    if self.sort else ""
+                }
+                LIMIT {self.limit} OFFSET {self.offset}"""
+                    if self.validationMode == ValidationMode.LIMIT_INPUT else ""
+                }
+            }} AS %input
+
+            WITH
+            {{
+                SELECT ?statement ?value
+                WHERE
+                {{
+                    INCLUDE %input
+                    MINUS {{ ?value kpt:{self.relation} ?x . VALUES ?x {{{" ".join(f"kp:{c.identifier}" for c in self.classes)}}} }}
+                }}{f"""{f"""
+                ORDER BY ?entity ?value"""
+                    if self.sort else ""
+                }
+                LIMIT {self.limit} OFFSET {self.offset}""" 
+                    if self.validationMode == ValidationMode.LIMIT_OUTPUT else ""
+                }
+            }} AS %results
+            
             WHERE
             {{
-                {{
-                    SELECT DISTINCT ?entity ?value
-                    WHERE
-                    {{
-                        ?entity kpt:{self.property.identifier} ?value .
-                        { f'\n{"    " * 6}'.join(
-                        f'MINUS {{ ?value kpt:{self.relation} kp:{c.identifier}}} .' for c in self.classes)
-                        }
-                    }}
-                }}
-                ?entity kpp:{self.property.identifier} ?statement
-                SERVICE wikibase:label {{ bd:serviceParam wikibase:language "nl" . }}
-            }}
-            GROUP BY ?entity ?entityLabel ?value ?valueLabel
-        """
+                INCLUDE %results
+                ?entity kpp:{self.property.identifier} ?statement .
+                SERVICE wikibase:label {{ bd:serviceParam wikibase:language "nl" }}
+            }}"""
+
         self.wikibaseHelper.executeQuery(query, self._queryViolationsResult)
 
     def _queryViolationsResult(self):
@@ -364,23 +424,46 @@ class SubjectTypeConstraint(Constraint):
             return
         query = f"""
             SELECT (SAMPLE(?statement) AS ?statement) ?entity ?entityLabel
+
+            WITH
+            {{
+                SELECT DISTINCT ?entity
+                WHERE
+                {{
+                    ?entity kpp:{self.property.identifier} []
+                }}{f"""{f"""
+                ORDER BY ?entity"""
+                    if self.sort else ""
+                }
+                LIMIT {self.limit} OFFSET {self.offset}"""
+                if self.validationMode == ValidationMode.LIMIT_INPUT else ""
+                }
+            }} AS %input
+
+            WITH
+            {{
+                SELECT ?entity
+                WHERE
+                {{
+                    INCLUDE %input
+                    MINUS {{ ?entity kpt:{self.relation} ?x . VALUES ?x {{{" ".join(f"kp:{c.identifier}" for c in self.classes)}}} }}
+                }}{f"""{f"""
+                ORDER BY ?entity"""
+                    if self.sort else ""
+                }
+                LIMIT {self.limit} OFFSET {self.offset}""" 
+                    if self.validationMode == ValidationMode.LIMIT_OUTPUT else ""
+                }
+            }} AS %results
+
             WHERE
             {{
-                {{
-                    SELECT DISTINCT ?entity
-                    WHERE
-                    {{
-                        ?entity kpt:{self.property.identifier} ?value .
-                        { f'\n{"    " * 6}'.join(
-                        f'MINUS {{ ?entity kpt:{self.relation} kp:{c.identifier}}} .' for c in self.classes)
-                        }
-                    }}
-                }}
-                ?entity kpp:{self.property.identifier} ?statement
-                SERVICE wikibase:label {{ bd:serviceParam wikibase:language "nl" . }}
+                INCLUDE %results
+                ?entity kpp:{self.property.identifier} ?statement .
+                SERVICE wikibase:label {{ bd:serviceParam wikibase:language "nl" }}
             }}
-            GROUP BY ?entity ?entityLabel
-        """
+            GROUP BY ?entity ?entityLabel"""
+
         self.wikibaseHelper.executeQuery(query, self._queryViolationsResult)
 
     def _queryViolationsResult(self):
@@ -439,25 +522,53 @@ class RequiredQualifierConstraint(Constraint):
         self.qualifiersUpdated.emit()
 
     def _queryViolations(self):
+        # TODO nog eens verder kijken of helemaal correct / optimaal
         query = f"""
-            SELECT DISTINCT (SAMPLE(?statement) AS ?statement) ?entity ?entityLabel
+            # We only return one invalid statement per entity for optimization reasons
+            SELECT (SAMPLE(?statement) AS ?statement) ?entity ?entityLabel
+            
+            WITH
+            {{
+                SELECT DISTINCT ?entity
+                WHERE
+                {{
+                    ?entity kpp:{self.property.identifier} ?statement
+                }}{f"""{f"""
+                ORDER BY ?entity"""
+                    if self.sort else ""
+                }
+                LIMIT {self.limit} OFFSET {self.offset}"""
+                    if self.validationMode == ValidationMode.LIMIT_INPUT else ""
+                }
+            }} AS %input
+
+            WITH
+            {{
+                SELECT DISTINCT ?entity
+                WHERE
+                {{
+                    INCLUDE %input
+                    ?entity kpp:{self.property.identifier} ?statement .
+                {"".join(f"""
+                    FILTER NOT EXISTS {{ ?statement kppq:{q.identifier} ?val }} .""" for q in self.requiredQualifiers)
+                }
+                }}{f"""{f"""
+                ORDER BY ?entity"""
+                    if self.sort else ""
+                }
+                LIMIT {self.limit} OFFSET {self.offset}""" 
+                    if self.validationMode == ValidationMode.LIMIT_OUTPUT else ""
+                }
+            }} AS %results
+
             WHERE
             {{
-                {{
-                    SELECT DISTINCT ?entity
-                    WHERE
-                    {{
-                        ?entity kpp:{self.property.identifier} ?statement .
-                        { f'\n{"    " * 6}'.join(
-                        f'FILTER NOT EXISTS {{ ?statement kppq:{q.identifier} ?val }} .' for q in self.requiredQualifiers)
-                        }
-                    }}
-                }}
+                INCLUDE %results
                 ?entity kpp:{self.property.identifier} ?statement
-                SERVICE wikibase:label {{ bd:serviceParam wikibase:language "nl" . }}
+                SERVICE wikibase:label {{ bd:serviceParam wikibase:language "nl" }}
             }}
-            GROUP BY ?entity ?entityLabel
-        """
+            GROUP BY ?entity ?entityLabel"""
+
         self.wikibaseHelper.executeQuery(query, self._queryViolationsResult)
 
     def _queryViolationsResult(self):
@@ -515,24 +626,48 @@ class AllowedQualifiersConstraint(Constraint):
 
     def _queryViolations(self):
         query = f"""
-            SELECT DISTINCT (SAMPLE(?statement) AS ?statement) ?entity ?entityLabel
+            SELECT ?statement ?entity ?entityLabel
+
+            WITH
+            {{
+                SELECT ?statement
+                WHERE
+                {{
+                    [] kpp:{self.property.identifier} ?statement
+                }}{f"""{f"""
+                ORDER BY ?statement"""
+                    if self.sort else ""
+                }
+                LIMIT {self.limit} OFFSET {self.offset}"""
+                    if self.validationMode == ValidationMode.LIMIT_INPUT else ""
+                }
+            }} AS %input
+
+            WITH
+            {{
+                SELECT ?statement
+                WHERE
+                {{
+                    INCLUDE %input
+                    ?statement ?predicate [] .
+                    [] wikibase:qualifier ?predicate .
+                    FILTER(!(?predicate in ({", ".join(f"kppq:{q.identifier}" for q in self.allowedQualifiers)})))
+                }}{f"""{f"""
+                ORDER BY ?statement"""
+                    if self.sort else ""
+                }
+                LIMIT {self.limit} OFFSET {self.offset}""" 
+                    if self.validationMode == ValidationMode.LIMIT_OUTPUT else ""
+                }
+            }} AS %results
+
             WHERE
             {{
-                {{
-                    SELECT DISTINCT ?entity
-                    WHERE
-                    {{
-                        ?entity kpp:{self.property.identifier} ?statement .
-                        ?statement ?predicate [] .
-                        [] wikibase:qualifier ?predicate .
-                        FILTER(!(?predicate in ({", ".join(f"kppq:{q.identifier}" for q in self.allowedQualifiers)})))
-                    }}
-                }}
+                INCLUDE %results
                 ?entity kpp:{self.property.identifier} ?statement
-                SERVICE wikibase:label {{ bd:serviceParam wikibase:language "nl" . }}
-            }}
-            GROUP BY ?entity ?entityLabel
-        """
+                SERVICE wikibase:label {{ bd:serviceParam wikibase:language "nl" }}
+            }}"""
+
         self.wikibaseHelper.executeQuery(query, self._queryViolationsResult)
 
     def _queryViolationsResult(self):
@@ -592,26 +727,50 @@ class ConflictsWithConstraint(Constraint):
 
     def _queryViolations(self):
         query = f"""
-            SELECT DISTINCT (SAMPLE(?statement) AS ?statement) ?entity ?entityLabel
+            SELECT (SAMPLE(?statement) AS ?statement) ?entity ?entityLabel
+
+            WITH
+            {{
+                SELECT DISTINCT ?entity
+                WHERE
+                {{
+                    ?entity kpp:{self.property.identifier} []
+                }}{f"""{f"""
+                ORDER BY ?entity"""
+                    if self.sort else ""
+                }
+                LIMIT {self.limit} OFFSET {self.offset}"""
+                if self.validationMode == ValidationMode.LIMIT_INPUT else ""
+                }
+            }} AS %input
+
+            WITH
+            {{
+                SELECT ?entity
+                WHERE
+                {{
+                    INCLUDE %input
+                    FILTER({" ||".join(f"""
+                        EXISTS {{ ?entity kpt:{p.identifier} {"kp:" + v.identifier if v else "[]"} }}""" for [p,v] in self.conflictingStatements)
+                    }
+                    )
+                }}{f"""{f"""
+                ORDER BY ?entity"""
+                    if self.sort else ""
+                }
+                LIMIT {self.limit} OFFSET {self.offset}""" 
+                    if self.validationMode == ValidationMode.LIMIT_OUTPUT else ""
+                }
+            }} AS %results
+
             WHERE
             {{
-                {{
-                    SELECT DISTINCT ?entity
-                    WHERE
-                    {{
-                        ?entity kpp:{self.property.identifier} [] .
-                        FILTER(
-                            { f' ||\n{"    " * 7}'.join(
-                            f'EXISTS {{ ?entity kpt:{p.identifier} {"kp:" + v.identifier if v else "[]"} }}' for [p,v] in self.conflictingStatements)
-                            }
-                        )
-                    }}
-                }}
+                INCLUDE %results
                 ?entity kpp:{self.property.identifier} ?statement
-                SERVICE wikibase:label {{ bd:serviceParam wikibase:language "nl" . }}
+                SERVICE wikibase:label {{ bd:serviceParam wikibase:language "nl" }}
             }}
-            GROUP BY ?entity ?entityLabel
-        """
+            GROUP BY ?entity ?entityLabel"""
+
         self.wikibaseHelper.executeQuery(query, self._queryViolationsResult)
 
     def _queryViolationsResult(self):
@@ -672,26 +831,63 @@ class DistinctValuesConstraint(Constraint):
 
     def _queryViolations(self):
         query = f"""
+            # Note that the actual number of returned output rows will be
+            # different from the choosen number if output is limited.
+            #
+            # The output limit limits the number of violating values,
+            # so the actual number of output rows will be larger (at least
+            # double the limit, as there must be more than 1 entity for each
+            # value that offends distinct-values-constraint). We could limit
+            # the final part of the query instead, but this would yield no
+            # speed results at all as the heavy work happens in the query
+            # before it. For other constraints the final step never adds extra
+            # results, which is why there the limits do match the results.
+
             SELECT ?statement ?entity ?entityLabel ?value ?valueLabel
+
+            WITH
+            {{
+                SELECT ?statement ?value
+                WHERE
+                {{
+                    ?statement kpps:{self.property.identifier} ?value
+                }}{f"""{f"""
+                ORDER BY ?statement ?value"""
+                    if self.sort else ""
+                }
+                LIMIT {self.limit} OFFSET {self.offset}"""
+                    if self.validationMode == ValidationMode.LIMIT_INPUT else ""
+                }
+            }} AS %input
+
+            WITH
+            {{
+                SELECT ?value (COUNT(?statement) AS ?statementCount)
+                WHERE
+                {{
+                    INCLUDE %input{"\n".join(f"""
+                    OPTIONAL {{ ?statement kppq:{s.identifier} ?separator{i} }} .""" for (i, s) in enumerate(self.separators))
+                    }
+                }}
+                GROUP BY ?value { f", ".join(f"?separator{i}" for i in range(len(self.separators))) }
+                HAVING(?statementCount > 1){ f"""{f"""
+                ORDER BY ?entity ?value"""
+                    if self.sort else ""
+                }
+                LIMIT {self.limit} OFFSET {self.offset}""" 
+                    if self.validationMode == ValidationMode.LIMIT_OUTPUT else ""
+                }
+            }} AS %results
+
+
             WHERE
             {{
-                {{
-                    SELECT ?value (COUNT(?statement) AS ?statementCount)
-                    WHERE
-                    {{
-                        ?statement kpps:{self.property.identifier} ?value .
-                        { f'\n{"    " * 6}'.join(
-                        f'OPTIONAL {{ ?statement kppq:{s.identifier} ?separator{i} }} .' for (i, s) in enumerate(self.separators))
-                        }
-                    }}
-                    GROUP BY ?value { f", ".join(f"?separator{i}" for i in range(len(self.separators))) }
-                    HAVING(?statementCount > 1)
-                }}
+                INCLUDE %results
                 ?statement kpps:{self.property.identifier} ?value .
                 ?entity kpp:{self.property.identifier} ?statement .
                 SERVICE wikibase:label {{ bd:serviceParam wikibase:language "nl" . }}
-            }}
-        """
+            }}"""
+
         self.wikibaseHelper.executeQuery(query, self._queryViolationsResult)
 
     def _queryViolationsResult(self):
@@ -747,20 +943,45 @@ class FormatConstraint(Constraint):
     def _queryViolations(self):
         query = f"""
             SELECT ?statement ?entity ?entityLabel ?value
+
+            WITH
+            {{
+                SELECT ?statement ?value
+                WHERE
+                {{
+                    ?statement kpps:{self.property.identifier} ?value
+                }}{f"""{f"""
+                ORDER BY ?statement ?value"""
+                    if self.sort else ""
+                }
+                LIMIT {self.limit} OFFSET {self.offset}"""
+                    if self.validationMode == ValidationMode.LIMIT_INPUT else ""
+                }
+            }} AS %input
+
+            WITH
+            {{
+                SELECT ?statement ?value
+                WHERE
+                {{
+                    INCLUDE %input
+                    FILTER(!REGEX(STR(?value), "{self.format.replace("\\", "\\\\")}"))
+                }}{f"""{f"""
+                ORDER BY ?entity ?value"""
+                    if self.sort else ""
+                }
+                LIMIT {self.limit} OFFSET {self.offset}""" 
+                    if self.validationMode == ValidationMode.LIMIT_OUTPUT else ""
+                }
+            }} AS %results
+
             WHERE
             {{
-                {{
-                    SELECT ?statement ?value
-                    WHERE
-                    {{
-                        ?statement kpps:{self.property.identifier} ?value .
-                        FILTER(!REGEX(STR(?value), "{self.format.replace("\\", "\\\\")}"))
-                    }}
-                }}
+                INCLUDE %results
                 ?entity kpp:{self.property.identifier} ?statement .
-                SERVICE wikibase:label {{ bd:serviceParam wikibase:language "nl" . }}
-            }}
-        """
+                SERVICE wikibase:label {{ bd:serviceParam wikibase:language "nl" }}
+            }}"""
+
         self.wikibaseHelper.executeQuery(query, self._queryViolationsResult)
 
     def _queryViolationsResult(self):
@@ -829,26 +1050,50 @@ class ItemRequiresStatementConstraint(Constraint):
 
     def _queryViolations(self):
         query = f"""
-            SELECT DISTINCT (SAMPLE(?statement) AS ?statement) ?entity ?entityLabel
+            SELECT (SAMPLE(?statement) AS ?statement) ?entity ?entityLabel
+
+            WITH
+            {{
+                SELECT DISTINCT ?entity
+                WHERE
+                {{
+                    ?entity kpp:{self.property.identifier} []
+                }}{f"""{f"""
+                ORDER BY ?entity"""
+                    if self.sort else ""
+                }
+                LIMIT {self.limit} OFFSET {self.offset}"""
+                if self.validationMode == ValidationMode.LIMIT_INPUT else ""
+                }
+            }} AS %input
+
+            WITH
+            {{
+                SELECT ?entity
+                WHERE
+                {{
+                    INCLUDE %input
+                    FILTER({" ||".join(f"""
+                        NOT EXISTS {{ ?entity kpt:{s[0].identifier} ?v . {f"VALUES ?v {{{" ".join("kp:" + v.identifier for v in s[1:])}}}" if len(s) > 1 else ""} }}""" for s in self.requiredStatements.values())
+                    }
+                    )
+                }}{f"""{f"""
+                ORDER BY ?entity"""
+                    if self.sort else ""
+                }
+                LIMIT {self.limit} OFFSET {self.offset}""" 
+                    if self.validationMode == ValidationMode.LIMIT_OUTPUT else ""
+                }
+            }} AS %results
+
             WHERE
             {{
-                {{
-                    SELECT DISTINCT ?entity
-                    WHERE
-                    {{
-                        ?entity kpp:{self.property.identifier} [] .
-                        FILTER(
-                            { f' ||\n{"    " * 7}'.join(
-                            f'NOT EXISTS {{ ?entity kpt:{s[0].identifier} ?v . {f"VALUES ?v {{{" ".join("kp:" + v.identifier for v in s[1:])}}}" if len(s) > 1 else ""} }}' for s in self.requiredStatements.values())
-                            }
-                        )
-                    }}
-                }}
+                INCLUDE %results
                 ?entity kpp:{self.property.identifier} ?statement
-                SERVICE wikibase:label {{ bd:serviceParam wikibase:language "nl" . }}
+                SERVICE wikibase:label {{ bd:serviceParam wikibase:language "nl" }}
             }}
-            GROUP BY ?entity ?entityLabel
-        """
+            GROUP BY ?entity ?entityLabel"""
+
         self.wikibaseHelper.executeQuery(query, self._queryViolationsResult)
 
     def _queryViolationsResult(self):
@@ -913,23 +1158,47 @@ class ValueRequiresStatementConstraint(Constraint):
     def _queryViolations(self):
         query = f"""
             SELECT ?statement ?value ?valueLabel
+
+            WITH
+            {{
+                SELECT ?statement ?value
+                WHERE
+                {{
+                    ?statement kpps:{self.property.identifier} ?value
+                }}{f"""{f"""
+                ORDER BY ?statement ?value"""
+                    if self.sort else ""
+                }
+                LIMIT {self.limit} OFFSET {self.offset}"""
+                    if self.validationMode == ValidationMode.LIMIT_INPUT else ""
+                }
+            }} AS %input
+
+            WITH
+            {{
+                SELECT ?statement ?value
+                WHERE
+                {{
+                    INCLUDE %input
+                    FILTER({" ||".join(f"""
+                        NOT EXISTS {{ ?value kpt:{s[0].identifier} ?v . {f"VALUES ?v {{{" ".join("kp:" + v.identifier for v in s[1:])}}}" if len(s) > 1 else ""} }}""" for s in self.requiredStatements.values())
+                    }
+                    )
+                }}{f"""{f"""
+                ORDER BY ?entity"""
+                    if self.sort else ""
+                }
+                LIMIT {self.limit} OFFSET {self.offset}""" 
+                    if self.validationMode == ValidationMode.LIMIT_OUTPUT else ""
+                }
+            }} AS %results
+
             WHERE
             {{
-                {{
-                    SELECT DISTINCT ?statement ?value
-                    WHERE
-                    {{
-                        ?statement kpps:{self.property.identifier} ?value .
-                        FILTER(
-                            { f' ||\n{"    " * 7}'.join(
-                            f'NOT EXISTS {{ ?value kpt:{s[0].identifier} ?v . {f"VALUES ?v {{{" ".join("kp:" + v.identifier for v in s[1:])}}}" if len(s) > 1 else ""} }}' for s in self.requiredStatements.values())
-                            }
-                        )
-                    }}
-                }}
-                SERVICE wikibase:label {{ bd:serviceParam wikibase:language "nl" . }}
-            }}
-        """
+                INCLUDE %results
+                SERVICE wikibase:label {{ bd:serviceParam wikibase:language "nl" }}
+            }}"""
+
         self.wikibaseHelper.executeQuery(query, self._queryViolationsResult)
 
     def _queryViolationsResult(self):
@@ -1032,7 +1301,11 @@ class ConstraintAnalyzer(QObject):
             self.focusedConstraint = constraint
             self.focusedPropertyConstraintUpdated.emit()
 
-    def validateFocusedConstraint(self):
+    def validateFocusedConstraint(self, validationMode, limit, offset, sort):
+        self.focusedConstraint.validationMode = validationMode
+        self.focusedConstraint.limit = limit
+        self.focusedConstraint.offset = offset
+        self.focusedConstraint.sort = sort
         if self.validatingQueue:
             self.validationQueue.append(self.focusedConstraint)
         else:
@@ -1056,7 +1329,10 @@ class ConstraintAnalyzer(QObject):
             self.validatingQueue = False
             return
         constraint = self.validationQueue[-1]
-        if constraint.implemented and constraint.validationState == ValidationState.UNVALIDATED:
+        if (
+            constraint.implemented
+            and constraint.validationState == ValidationState.UNVALIDATED
+        ):
             if not constraint.qualifiersObtained:
                 constraint.queryQualifiers()
             else:

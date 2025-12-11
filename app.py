@@ -23,7 +23,7 @@ from PySide6.QtWidgets import (
 )
 
 from backend.wikibasehelper import BASE_URL, WikibaseHelper
-from backend.constraints import ConstraintAnalyzer, ValidationState
+from backend.constraints import ConstraintAnalyzer, ValidationMode, ValidationState
 from backend.export import exportMultipleConstraints, exportSingleConstraint
 from backend.utils import urlFromId
 
@@ -152,6 +152,10 @@ class ConstraintsTab(QWidget, Ui_ConstraintTab):
         self.validateButton.clicked.connect(self.onValidateButtonClicked)
         self.exportAllButton.clicked.connect(self.exportAllValidated)
         self.exportButton.clicked.connect(self.exportSingleConstraint)
+        self.limitComboBox.currentIndexChanged.connect(self.changeLimitMode)
+        self.changeLimitMode()
+        self.sortedCheckBox.checkStateChanged.connect(self.changeLimitSorted)
+        self.changeLimitSorted()
         self.propertiesTableView.doubleClicked.connect(onTableDoubleClicked)
         self.violationsTableView.doubleClicked.connect(onTableDoubleClicked)
         self.model.constraintAnalyzer.constrainedPropertiesUpdated.connect(
@@ -216,14 +220,50 @@ class ConstraintsTab(QWidget, Ui_ConstraintTab):
         focusedPropertyConstraint.qualifiersUpdated.connect(
             self.updateFocusedPropertyConstraintLabel
         )
+        focusedPropertyConstraint.inputCountChanged.connect(
+            self.updateFocusedPropertyConstraintInputCount
+        )
         self.updateFocusedPropertyConstraintLabel()
+        self.updateFocusedPropertyConstraintInputCount()
+        self.limitComboBox.setCurrentIndex(focusedPropertyConstraint.validationMode.value)
+        self.limitSpinBox.setValue(focusedPropertyConstraint.limit)
+        self.pageSpinBox.setValue(focusedPropertyConstraint.getPage())
+        self.sortedCheckBox.setChecked(focusedPropertyConstraint.sort)
         self.validateButton.setEnabled(focusedPropertyConstraint.implemented)
         self.updateViolationsTableView()
         focusedPropertyConstraint.queryQualifiers()
+        focusedPropertyConstraint.queryInputCount()
 
     def updateFocusedPropertyConstraintLabel(self):
-        focusedPropertyConstraint = self.model.constraintAnalyzer.focusedConstraint
-        self.labelRight.setText(focusedPropertyConstraint.pretty())
+        constraint = self.model.constraintAnalyzer.focusedConstraint
+        self.labelRight.setText(constraint.pretty())
+
+    def updateFocusedPropertyConstraintInputCount(self):
+        constraint = self.model.constraintAnalyzer.focusedConstraint
+        if constraint.inputCount != -1:
+            self.inputRowsLabel.setText(f"Rows to check: {constraint.inputCount:,}")
+        else:
+            self.inputRowsLabel.setText(f"Rows to check: ?")
+
+    def changeLimitMode(self):
+        if self.limitComboBox.currentIndex() == ValidationMode.NO_LIMIT.value:
+            self.limitLabel.hide()
+            self.limitSpinBox.hide()
+            self.pageLabel.hide()
+            self.pageSpinBox.hide()
+            self.sortedCheckBox.hide()
+        else:
+            self.limitLabel.show()
+            self.limitSpinBox.show()
+            self.pageLabel.show()
+            self.pageSpinBox.show()
+            self.sortedCheckBox.show()
+
+    def changeLimitSorted(self):
+        # Page should not be selectable if limiting random input
+        self.pageSpinBox.setEnabled(self.sortedCheckBox.isChecked())
+        self.pageLabel.setEnabled(self.sortedCheckBox.isChecked())
+        self.pageSpinBox.setValue(1)
 
     def validateAll(self):
         if not self.model.constraintAnalyzer.validatingAll():
@@ -240,7 +280,14 @@ class ConstraintsTab(QWidget, Ui_ConstraintTab):
         )
 
     def onValidateButtonClicked(self):
-        self.model.constraintAnalyzer.validateFocusedConstraint()
+        limitMode = ValidationMode(self.limitComboBox.currentIndex())
+        sort = self.sortedCheckBox.isChecked()
+        limit = self.limitSpinBox.value()
+        page = self.pageSpinBox.value()
+        offset = (page - 1) * limit
+        self.model.constraintAnalyzer.validateFocusedConstraint(
+            limitMode, limit, offset, sort
+        )
 
     def updateViolationsTableView(self):
         data = self.model.constraintAnalyzer.focusedConstraint.violations

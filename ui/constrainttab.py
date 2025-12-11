@@ -24,7 +24,7 @@ class Ui_ConstraintTab(object):
     def setupUi(self, ConstraintTab):
         if not ConstraintTab.objectName():
             ConstraintTab.setObjectName(u"ConstraintTab")
-        ConstraintTab.resize(1323, 657)
+        ConstraintTab.resize(954, 657)
         self.verticalLayout = QVBoxLayout(ConstraintTab)
         self.verticalLayout.setObjectName(u"verticalLayout")
         self.splitter = QSplitter(ConstraintTab)
@@ -134,26 +134,39 @@ class Ui_ConstraintTab(object):
 
         self.limitSpinBox = QSpinBox(self.verticalLayoutWidgetRight)
         self.limitSpinBox.setObjectName(u"limitSpinBox")
-        self.limitSpinBox.setMaximum(100000)
-        self.limitSpinBox.setSingleStep(10000)
+        sizePolicy1 = QSizePolicy(QSizePolicy.Policy.Maximum, QSizePolicy.Policy.Fixed)
+        sizePolicy1.setHorizontalStretch(0)
+        sizePolicy1.setVerticalStretch(0)
+        sizePolicy1.setHeightForWidth(self.limitSpinBox.sizePolicy().hasHeightForWidth())
+        self.limitSpinBox.setSizePolicy(sizePolicy1)
+        self.limitSpinBox.setProperty(u"showGroupSeparator", True)
+        self.limitSpinBox.setMaximum(10000000)
+        self.limitSpinBox.setSingleStep(100000)
         self.limitSpinBox.setValue(100000)
 
         self.gridLayoutRight.addWidget(self.limitSpinBox, 2, 1, 1, 1)
 
         self.validateButton = QPushButton(self.verticalLayoutWidgetRight)
         self.validateButton.setObjectName(u"validateButton")
+        sizePolicy1.setHeightForWidth(self.validateButton.sizePolicy().hasHeightForWidth())
+        self.validateButton.setSizePolicy(sizePolicy1)
 
-        self.gridLayoutRight.addWidget(self.validateButton, 3, 2, 1, 1)
+        self.gridLayoutRight.addWidget(self.validateButton, 3, 2, 1, 1, Qt.AlignmentFlag.AlignRight)
 
-        self.comboBox = QComboBox(self.verticalLayoutWidgetRight)
-        self.comboBox.addItem("")
-        self.comboBox.addItem("")
-        self.comboBox.setObjectName(u"comboBox")
+        self.limitComboBox = QComboBox(self.verticalLayoutWidgetRight)
+        self.limitComboBox.addItem("")
+        self.limitComboBox.addItem("")
+        self.limitComboBox.addItem("")
+        self.limitComboBox.setObjectName(u"limitComboBox")
+        sizePolicy1.setHeightForWidth(self.limitComboBox.sizePolicy().hasHeightForWidth())
+        self.limitComboBox.setSizePolicy(sizePolicy1)
 
-        self.gridLayoutRight.addWidget(self.comboBox, 2, 2, 1, 1)
+        self.gridLayoutRight.addWidget(self.limitComboBox, 2, 2, 1, 1)
 
         self.pageSpinBox = QSpinBox(self.verticalLayoutWidgetRight)
         self.pageSpinBox.setObjectName(u"pageSpinBox")
+        sizePolicy1.setHeightForWidth(self.pageSpinBox.sizePolicy().hasHeightForWidth())
+        self.pageSpinBox.setSizePolicy(sizePolicy1)
         self.pageSpinBox.setAutoFillBackground(False)
         self.pageSpinBox.setFrame(True)
         self.pageSpinBox.setMinimum(1)
@@ -163,9 +176,16 @@ class Ui_ConstraintTab(object):
 
         self.inputRowsLabel = QLabel(self.verticalLayoutWidgetRight)
         self.inputRowsLabel.setObjectName(u"inputRowsLabel")
+        sizePolicy.setHeightForWidth(self.inputRowsLabel.sizePolicy().hasHeightForWidth())
+        self.inputRowsLabel.setSizePolicy(sizePolicy)
         self.inputRowsLabel.setAlignment(Qt.AlignmentFlag.AlignLeading|Qt.AlignmentFlag.AlignLeft|Qt.AlignmentFlag.AlignVCenter)
 
         self.gridLayoutRight.addWidget(self.inputRowsLabel, 1, 2, 1, 1)
+
+        self.sortedCheckBox = QCheckBox(self.verticalLayoutWidgetRight)
+        self.sortedCheckBox.setObjectName(u"sortedCheckBox")
+
+        self.gridLayoutRight.addWidget(self.sortedCheckBox, 1, 1, 1, 1)
 
 
         self.horizontalLayoutRight.addLayout(self.gridLayoutRight)
@@ -230,10 +250,12 @@ class Ui_ConstraintTab(object):
         self.limitLabel.setText(QCoreApplication.translate("ConstraintTab", u"Limit", None))
         self.pageLabel.setText(QCoreApplication.translate("ConstraintTab", u"Page", None))
         self.validateButton.setText(QCoreApplication.translate("ConstraintTab", u"Validate", None))
-        self.comboBox.setItemText(0, QCoreApplication.translate("ConstraintTab", u"Limit Output Rows", None))
-        self.comboBox.setItemText(1, QCoreApplication.translate("ConstraintTab", u"Limit Input Rows", None))
+        self.limitComboBox.setItemText(0, QCoreApplication.translate("ConstraintTab", u"No Validation Limit", None))
+        self.limitComboBox.setItemText(1, QCoreApplication.translate("ConstraintTab", u"Limit Output Rows", None))
+        self.limitComboBox.setItemText(2, QCoreApplication.translate("ConstraintTab", u"Limit Input Rows", None))
 
         self.inputRowsLabel.setText(QCoreApplication.translate("ConstraintTab", u"Rows to check: ?", None))
+        self.sortedCheckBox.setText(QCoreApplication.translate("ConstraintTab", u"Sorted", None))
         self.violationsLabel.setText(QCoreApplication.translate("ConstraintTab", u"Not Validated", None))
         self.exportButton.setText(QCoreApplication.translate("ConstraintTab", u"Export", None))
         self.exportUrlCheckBox.setText(QCoreApplication.translate("ConstraintTab", u"Full URLs", None))
