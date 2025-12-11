@@ -315,7 +315,7 @@ class ConstraintsTab(QWidget, Ui_ConstraintTab):
             self,
             f"Export Violations for {constraint.property.identifier}-{constraint.identifier}",
             f"{self.exportDir}/{defaultFileName}",
-            "ODF Spreadsheet (*.ods);;Excel Workbook (*.xlsx)",
+            "Excel Workbook (*.xlsx);;ODF Spreadsheet (*.ods)",
         )
         if not fileName:
             return
@@ -343,7 +343,7 @@ class ConstraintsTab(QWidget, Ui_ConstraintTab):
             self,
             "Export Violations for All Validated Constraints",
             f"{self.exportDir}/{defaultFileName}",
-            "ODF Spreadsheet (*.ods);;Excel Workbook (*.xlsx)",
+            "Excel Workbook (*.xlsx);;ODF Spreadsheet (*.ods)",
         )
         if not fileName:
             return
