@@ -9,6 +9,9 @@ todo.md
 ## IDE / editor stuff
 .idea
 
+# Python environment stuff
+.venv
+
 # Byte-compiled / optimized / DLL stuff
 __pycache__/
 *.py[codz]
