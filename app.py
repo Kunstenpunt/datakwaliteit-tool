@@ -311,6 +311,8 @@ class ConstraintsTab(QWidget, Ui_ConstraintTab):
     def exportSingleConstraint(self):
         constraint = self.model.constraintAnalyzer.focusedConstraint
         defaultFileName = f"constraint_violations_{constraint.property.identifier}_{constraint.identifier}"
+        if constraint.validationState == ValidationState.PARTIAL:
+            defaultFileName += "_partial"
         fileName, fileFilter = QFileDialog.getSaveFileName(
             self,
             f"Export Violations for {constraint.property.identifier}-{constraint.identifier}",

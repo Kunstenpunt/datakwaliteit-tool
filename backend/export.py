@@ -1,6 +1,7 @@
 import odswriter as ods
 import xlsxwriter as xlsx
 
+from .constraints import ValidationState
 from .wikibasehelper import BASE_URL
 from .utils import urlFromId
 
@@ -48,6 +49,7 @@ def _getInfoSheetData(constraints):
         "Constraint ID",
         "Constraint Label",
         "Violations",
+        "Completeness",
     ]
     sheetData = [header] + [
         [
@@ -56,6 +58,7 @@ def _getInfoSheetData(constraints):
             c.identifier,
             c.label,
             len(c.violations) - 1,
+            "partial" if c.validationState == ValidationState.PARTIAL else "complete",
         ]
         for c in constraints
     ]
