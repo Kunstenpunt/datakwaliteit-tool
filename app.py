@@ -27,6 +27,7 @@ from backend.utils import urlFromId
 from ui.constrainttab import Ui_ConstraintTab
 from ui.mainwindow import Ui_MainWindow
 from ui.querytab import Ui_QueryTab
+from ui.edittab import Ui_EditTab
 
 
 MAXIMUM_AUTO_TABLE_SECTION_WIDTH = 200
@@ -130,6 +131,14 @@ class QueryTab(QWidget, Ui_QueryTab):
         self.tableView.setModel(resultModel)
         header = self.tableView.horizontalHeader()
         headerResizeNeatly(header)
+
+
+class EditTab(QWidget, Ui_EditTab):
+    def __init__(self, model):
+        super().__init__()
+        self.setupUi(self)
+
+        self.model = model
 
 
 class ConstraintsTab(QWidget, Ui_ConstraintTab):
@@ -369,6 +378,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
         self.tabWidget.addTab(ConstraintsTab(self.model), "Constraints")
         self.tabWidget.addTab(QueryTab(self.model), "Query")
+        self.tabWidget.addTab(EditTab(self.model), "Edit")
         self.queryIndicator = QProgressBar()
         self.queryIndicator.setRange(0, 0)
         self.queryIndicator.setMaximumWidth(128)
