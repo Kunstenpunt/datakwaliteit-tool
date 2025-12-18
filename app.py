@@ -127,7 +127,7 @@ class QueryTab(QWidget, Ui_QueryTab):
         if not result:
             return
         result = [
-            [[stripUrlPart(el) if el.startswith(BASE_URL) else el] for el in row]
+            [stripUrlPart(el) if el.startswith(BASE_URL) else el for el in row]
             for row in result
         ]
         resultModel = QSortFilterProxyModel()
