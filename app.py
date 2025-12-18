@@ -22,7 +22,7 @@ from PySide6.QtWidgets import (
 from backend.wikibasehelper import BASE_URL, WikibaseHelper
 from backend.constraints import ConstraintAnalyzer, ValidationMode, ValidationState
 from backend.export import exportMultipleConstraints, exportSingleConstraint
-from backend.utils import urlFromId
+from backend.utils import stripUrlPart, urlFromId
 
 from ui.constrainttab import Ui_ConstraintTab
 from ui.mainwindow import Ui_MainWindow
@@ -120,12 +120,16 @@ class QueryTab(QWidget, Ui_QueryTab):
 
     def onExecuteButtonClicked(self):
         query = self.plainTextEdit.toPlainText()
-        result = self.model.wikibaseHelper.executeQuery(query, self.onQueryResult)
+        self.model.wikibaseHelper.executeQuery(query, self.onQueryResult)
 
     def onQueryResult(self):
         result = self.model.wikibaseHelper.queryResult
         if not result:
             return
+        result = [
+            [[stripUrlPart(el) if el.startswith(BASE_URL) else el] for el in row]
+            for row in result
+        ]
         resultModel = QSortFilterProxyModel()
         resultModel.setSourceModel(SimpleTableModel(result))
         self.tableView.setModel(resultModel)
