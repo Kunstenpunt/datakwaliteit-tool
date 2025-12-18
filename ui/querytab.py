@@ -34,31 +34,61 @@ class Ui_QueryTab(object):
         self.verticalLayoutLeft = QVBoxLayout(self.verticalLayoutWidget)
         self.verticalLayoutLeft.setObjectName(u"verticalLayoutLeft")
         self.verticalLayoutLeft.setContentsMargins(0, 0, 0, 0)
+        self.horizontalLayoutTopLeft = QHBoxLayout()
+        self.horizontalLayoutTopLeft.setObjectName(u"horizontalLayoutTopLeft")
         self.labelLeft = QLabel(self.verticalLayoutWidget)
         self.labelLeft.setObjectName(u"labelLeft")
         self.labelLeft.setWordWrap(True)
 
-        self.verticalLayoutLeft.addWidget(self.labelLeft)
+        self.horizontalLayoutTopLeft.addWidget(self.labelLeft)
+
+        self.clearButton = QPushButton(self.verticalLayoutWidget)
+        self.clearButton.setObjectName(u"clearButton")
+        sizePolicy = QSizePolicy(QSizePolicy.Policy.Maximum, QSizePolicy.Policy.Fixed)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.clearButton.sizePolicy().hasHeightForWidth())
+        self.clearButton.setSizePolicy(sizePolicy)
+        icon = QIcon(QIcon.fromTheme(QIcon.ThemeIcon.EditDelete))
+        self.clearButton.setIcon(icon)
+
+        self.horizontalLayoutTopLeft.addWidget(self.clearButton, 0, Qt.AlignmentFlag.AlignBottom)
+
+        self.copyButton = QPushButton(self.verticalLayoutWidget)
+        self.copyButton.setObjectName(u"copyButton")
+        sizePolicy.setHeightForWidth(self.copyButton.sizePolicy().hasHeightForWidth())
+        self.copyButton.setSizePolicy(sizePolicy)
+        icon1 = QIcon(QIcon.fromTheme(QIcon.ThemeIcon.EditCopy))
+        self.copyButton.setIcon(icon1)
+
+        self.horizontalLayoutTopLeft.addWidget(self.copyButton, 0, Qt.AlignmentFlag.AlignBottom)
+
+        self.pasteButton = QPushButton(self.verticalLayoutWidget)
+        self.pasteButton.setObjectName(u"pasteButton")
+        sizePolicy.setHeightForWidth(self.pasteButton.sizePolicy().hasHeightForWidth())
+        self.pasteButton.setSizePolicy(sizePolicy)
+        icon2 = QIcon(QIcon.fromTheme(QIcon.ThemeIcon.EditPaste))
+        self.pasteButton.setIcon(icon2)
+
+        self.horizontalLayoutTopLeft.addWidget(self.pasteButton, 0, Qt.AlignmentFlag.AlignBottom)
+
+
+        self.verticalLayoutLeft.addLayout(self.horizontalLayoutTopLeft)
 
         self.plainTextEdit = QPlainTextEdit(self.verticalLayoutWidget)
         self.plainTextEdit.setObjectName(u"plainTextEdit")
 
         self.verticalLayoutLeft.addWidget(self.plainTextEdit)
 
-        self.buttonHorizontalLayout = QHBoxLayout()
-        self.buttonHorizontalLayout.setObjectName(u"buttonHorizontalLayout")
-        self.clearButton = QPushButton(self.verticalLayoutWidget)
-        self.clearButton.setObjectName(u"clearButton")
-
-        self.buttonHorizontalLayout.addWidget(self.clearButton)
-
+        self.horizontalLayoutBottomLeft = QHBoxLayout()
+        self.horizontalLayoutBottomLeft.setObjectName(u"horizontalLayoutBottomLeft")
         self.executeButton = QPushButton(self.verticalLayoutWidget)
         self.executeButton.setObjectName(u"executeButton")
 
-        self.buttonHorizontalLayout.addWidget(self.executeButton)
+        self.horizontalLayoutBottomLeft.addWidget(self.executeButton)
 
 
-        self.verticalLayoutLeft.addLayout(self.buttonHorizontalLayout)
+        self.verticalLayoutLeft.addLayout(self.horizontalLayoutBottomLeft)
 
         self.splitter.addWidget(self.verticalLayoutWidget)
         self.verticalLayoutWidget2 = QWidget(self.splitter)
@@ -79,6 +109,8 @@ class Ui_QueryTab(object):
 
 
         self.retranslateUi(QueryTab)
+        self.pasteButton.clicked.connect(self.plainTextEdit.paste)
+        self.copyButton.clicked.connect(self.plainTextEdit.copy)
         self.clearButton.clicked.connect(self.plainTextEdit.clear)
 
         QMetaObject.connectSlotsByName(QueryTab)
@@ -87,7 +119,18 @@ class Ui_QueryTab(object):
     def retranslateUi(self, QueryTab):
         QueryTab.setWindowTitle(QCoreApplication.translate("QueryTab", u"Form", None))
         self.labelLeft.setText(QCoreApplication.translate("QueryTab", u"Fill in the SPARQL query you want to execute.", None))
-        self.clearButton.setText(QCoreApplication.translate("QueryTab", u"Clear", None))
+#if QT_CONFIG(tooltip)
+        self.clearButton.setToolTip(QCoreApplication.translate("QueryTab", u"Clear Query", None))
+#endif // QT_CONFIG(tooltip)
+        self.clearButton.setText("")
+#if QT_CONFIG(tooltip)
+        self.copyButton.setToolTip(QCoreApplication.translate("QueryTab", u"Copy Query", None))
+#endif // QT_CONFIG(tooltip)
+        self.copyButton.setText("")
+#if QT_CONFIG(tooltip)
+        self.pasteButton.setToolTip(QCoreApplication.translate("QueryTab", u"Paste Query", None))
+#endif // QT_CONFIG(tooltip)
+        self.pasteButton.setText("")
         self.executeButton.setText(QCoreApplication.translate("QueryTab", u"Execute", None))
     # retranslateUi
 
