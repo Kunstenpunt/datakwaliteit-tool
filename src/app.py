@@ -7,10 +7,9 @@ from PySide6.QtWidgets import (
     QPushButton,
 )
 
-
+from .backend.model import Model
 from .ui.constrainttab import ConstraintsTab
 from .ui.edittab import EditTab
-from .ui.model import Model
 from .ui.querytab import QueryTab
 
 from .ui.designer.mainwindow import Ui_MainWindow
