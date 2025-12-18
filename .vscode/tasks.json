@@ -6,7 +6,7 @@
         {
             "label": "convert ui files to python",
             "type": "shell",
-            "command": "pipenv run python ui/build.py",
+            "command": "pipenv run python ui/designer/build.py",
             "problemMatcher": [],
             "group": {
                 "kind": "build",
