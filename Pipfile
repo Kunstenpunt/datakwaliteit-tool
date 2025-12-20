@@ -9,6 +9,7 @@ pyside6 = "*"
 odswriter = "*"
 xlsxwriter = "*"
 imageio = "*"
+black = "*"
 
 [dev-packages]
 
