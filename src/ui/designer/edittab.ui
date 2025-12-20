@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>844</width>
+    <width>860</width>
     <height>536</height>
    </rect>
   </property>
@@ -138,9 +138,9 @@ For each returned row of the Input Query, perform the following modifications (b
        <item>
         <layout class="QHBoxLayout" name="horizontalLayout_2">
          <item>
-          <widget class="QPushButton" name="pushButton">
+          <widget class="QPushButton" name="generateButton">
            <property name="text">
-            <string>Generate All Modifications</string>
+            <string>Generate All Statements</string>
            </property>
           </widget>
          </item>
@@ -151,17 +151,38 @@ For each returned row of the Input Query, perform the following modifications (b
      <widget class="QWidget" name="verticalLayoutWidget2">
       <layout class="QVBoxLayout" name="verticalLayout_2">
        <item>
-        <widget class="QLabel" name="label_3">
-         <property name="text">
-          <string>### Generated Modifications</string>
-         </property>
-         <property name="textFormat">
-          <enum>Qt::TextFormat::MarkdownText</enum>
-         </property>
-        </widget>
+        <layout class="QHBoxLayout" name="horizontalLayout_4">
+         <item>
+          <widget class="QLabel" name="generatedStatementsLabel">
+           <property name="text">
+            <string>### Generated Statements
+These are in QuickStatements **V1 command** format.</string>
+           </property>
+           <property name="textFormat">
+            <enum>Qt::TextFormat::MarkdownText</enum>
+           </property>
+          </widget>
+         </item>
+         <item alignment="Qt::AlignmentFlag::AlignBottom">
+          <widget class="QPushButton" name="copyStatementsButton">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="text">
+            <string/>
+           </property>
+           <property name="icon">
+            <iconset theme="QIcon::ThemeIcon::EditCopy"/>
+           </property>
+          </widget>
+         </item>
+        </layout>
        </item>
        <item>
-        <widget class="QPlainTextEdit" name="plainTextEdit_3"/>
+        <widget class="QPlainTextEdit" name="statementsPlainTextEdit"/>
        </item>
       </layout>
      </widget>
@@ -216,6 +237,22 @@ For each returned row of the Input Query, perform the following modifications (b
     <hint type="destinationlabel">
      <x>244</x>
      <y>159</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>copyStatementsButton</sender>
+   <signal>clicked()</signal>
+   <receiver>statementsPlainTextEdit</receiver>
+   <slot>copy()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>831</x>
+     <y>46</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>645</x>
+     <y>295</y>
     </hint>
    </hints>
   </connection>

@@ -23,7 +23,7 @@ class Ui_EditTab(object):
     def setupUi(self, EditTab):
         if not EditTab.objectName():
             EditTab.setObjectName(u"EditTab")
-        EditTab.resize(844, 536)
+        EditTab.resize(860, 536)
         self.horizontalLayout = QHBoxLayout(EditTab)
         self.horizontalLayout.setObjectName(u"horizontalLayout")
         self.splitter = QSplitter(EditTab)
@@ -109,10 +109,10 @@ class Ui_EditTab(object):
 
         self.horizontalLayout_2 = QHBoxLayout()
         self.horizontalLayout_2.setObjectName(u"horizontalLayout_2")
-        self.pushButton = QPushButton(self.verticalLayoutWidget)
-        self.pushButton.setObjectName(u"pushButton")
+        self.generateButton = QPushButton(self.verticalLayoutWidget)
+        self.generateButton.setObjectName(u"generateButton")
 
-        self.horizontalLayout_2.addWidget(self.pushButton)
+        self.horizontalLayout_2.addWidget(self.generateButton)
 
 
         self.verticalLayout.addLayout(self.horizontalLayout_2)
@@ -123,16 +123,29 @@ class Ui_EditTab(object):
         self.verticalLayout_2 = QVBoxLayout(self.verticalLayoutWidget2)
         self.verticalLayout_2.setObjectName(u"verticalLayout_2")
         self.verticalLayout_2.setContentsMargins(0, 0, 0, 0)
-        self.label_3 = QLabel(self.verticalLayoutWidget2)
-        self.label_3.setObjectName(u"label_3")
-        self.label_3.setTextFormat(Qt.TextFormat.MarkdownText)
+        self.horizontalLayout_4 = QHBoxLayout()
+        self.horizontalLayout_4.setObjectName(u"horizontalLayout_4")
+        self.generatedStatementsLabel = QLabel(self.verticalLayoutWidget2)
+        self.generatedStatementsLabel.setObjectName(u"generatedStatementsLabel")
+        self.generatedStatementsLabel.setTextFormat(Qt.TextFormat.MarkdownText)
 
-        self.verticalLayout_2.addWidget(self.label_3)
+        self.horizontalLayout_4.addWidget(self.generatedStatementsLabel)
 
-        self.plainTextEdit_3 = QPlainTextEdit(self.verticalLayoutWidget2)
-        self.plainTextEdit_3.setObjectName(u"plainTextEdit_3")
+        self.copyStatementsButton = QPushButton(self.verticalLayoutWidget2)
+        self.copyStatementsButton.setObjectName(u"copyStatementsButton")
+        sizePolicy1.setHeightForWidth(self.copyStatementsButton.sizePolicy().hasHeightForWidth())
+        self.copyStatementsButton.setSizePolicy(sizePolicy1)
+        self.copyStatementsButton.setIcon(icon1)
 
-        self.verticalLayout_2.addWidget(self.plainTextEdit_3)
+        self.horizontalLayout_4.addWidget(self.copyStatementsButton, 0, Qt.AlignmentFlag.AlignBottom)
+
+
+        self.verticalLayout_2.addLayout(self.horizontalLayout_4)
+
+        self.statementsPlainTextEdit = QPlainTextEdit(self.verticalLayoutWidget2)
+        self.statementsPlainTextEdit.setObjectName(u"statementsPlainTextEdit")
+
+        self.verticalLayout_2.addWidget(self.statementsPlainTextEdit)
 
         self.splitter.addWidget(self.verticalLayoutWidget2)
 
@@ -143,6 +156,7 @@ class Ui_EditTab(object):
         self.clearButton.clicked.connect(self.queryPlainTextEdit.clear)
         self.copyButton.clicked.connect(self.queryPlainTextEdit.copy)
         self.pasteButton.clicked.connect(self.queryPlainTextEdit.paste)
+        self.copyStatementsButton.clicked.connect(self.statementsPlainTextEdit.copy)
 
         QMetaObject.connectSlotsByName(EditTab)
     # setupUi
@@ -165,7 +179,9 @@ class Ui_EditTab(object):
         self.pasteButton.setText("")
         self.modificationRecipeLabel.setText(QCoreApplication.translate("EditTab", u"### Modification Recipe\n"
 "For each returned row of the Input Query, perform the following modifications (basic QuickStatements syntax). Use *?variable* to access specific fields of the query results.", None))
-        self.pushButton.setText(QCoreApplication.translate("EditTab", u"Generate All Modifications", None))
-        self.label_3.setText(QCoreApplication.translate("EditTab", u"### Generated Modifications", None))
+        self.generateButton.setText(QCoreApplication.translate("EditTab", u"Generate All Statements", None))
+        self.generatedStatementsLabel.setText(QCoreApplication.translate("EditTab", u"### Generated Statements\n"
+"These are in QuickStatements **V1 command** format.", None))
+        self.copyStatementsButton.setText("")
     # retranslateUi
 
