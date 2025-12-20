@@ -1,7 +1,7 @@
 from PySide6.QtCore import QSortFilterProxyModel
 from PySide6.QtWidgets import QWidget
 
-from ..backend.utils import stripUrlPart
+from ..backend.utils import stripUrlPartFromTable
 from ..backend.wikibasehelper import BASE_URL
 
 from .designer.querytab import Ui_QueryTab
@@ -26,10 +26,7 @@ class QueryTab(QWidget, Ui_QueryTab):
         result = self.model.wikibaseHelper.queryResult
         if not result:
             return
-        result = [
-            [stripUrlPart(el) if el.startswith(BASE_URL) else el for el in row]
-            for row in result
-        ]
+        result = stripUrlPartFromTable(BASE_URL, result)
         resultModel = QSortFilterProxyModel()
         resultModel.setSourceModel(SimpleTableModel(result))
         self.tableView.setModel(resultModel)

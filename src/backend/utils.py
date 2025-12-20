@@ -24,6 +24,12 @@ def stripUrlPart(url):
     return url.rsplit("/", 1)[-1]
 
 
+def stripUrlPartFromTable(url, table):
+    return [
+        [stripUrlPart(el) if el.startswith(url) else el for el in row] for row in table
+    ]
+
+
 def urlFromId(possibleId, baseUrl):
     propertyRegex = re.compile(r"^P\d+$")
     entityRegex = re.compile(r"^Q\d+$")
