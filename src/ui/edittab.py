@@ -10,10 +10,20 @@ class EditTab(QWidget, Ui_EditTab):
 
         self.model = model
 
+        self.copyButton.clicked.connect(self.copyQuery)
+        self.copyStatementsButton.clicked.connect(self.copyStatements)
         self.generateButton.clicked.connect(self.generateBatchStatements)
         self.model.batchEditor.statementGenerationDone.connect(
             self.updateBatchStatements
         )
+
+    def copyQuery(self):
+        self.queryPlainTextEdit.selectAll()
+        self.queryPlainTextEdit.copy()
+
+    def copyStatements(self):
+        self.statementsPlainTextEdit.selectAll()
+        self.statementsPlainTextEdit.copy()
 
     def generateBatchStatements(self):
         query = self.queryPlainTextEdit.toPlainText()

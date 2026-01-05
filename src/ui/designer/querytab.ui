@@ -145,22 +145,6 @@
    </hints>
   </connection>
   <connection>
-   <sender>copyButton</sender>
-   <signal>clicked()</signal>
-   <receiver>plainTextEdit</receiver>
-   <slot>copy()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>310</x>
-     <y>30</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>189</x>
-     <y>289</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
    <sender>clearButton</sender>
    <signal>clicked()</signal>
    <receiver>plainTextEdit</receiver>

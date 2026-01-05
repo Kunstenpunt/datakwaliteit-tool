@@ -15,8 +15,13 @@ class QueryTab(QWidget, Ui_QueryTab):
 
         self.model = model
 
+        self.copyButton.clicked.connect(self.copy)
         self.executeButton.clicked.connect(self.onExecuteButtonClicked)
         self.tableView.doubleClicked.connect(onTableDoubleClicked)
+
+    def copy(self):
+        self.plainTextEdit.selectAll()
+        self.plainTextEdit.copy()
 
     def onExecuteButtonClicked(self):
         query = self.plainTextEdit.toPlainText()

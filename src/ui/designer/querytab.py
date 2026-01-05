@@ -110,7 +110,6 @@ class Ui_QueryTab(object):
 
         self.retranslateUi(QueryTab)
         self.pasteButton.clicked.connect(self.plainTextEdit.paste)
-        self.copyButton.clicked.connect(self.plainTextEdit.copy)
         self.clearButton.clicked.connect(self.plainTextEdit.clear)
 
         QMetaObject.connectSlotsByName(QueryTab)

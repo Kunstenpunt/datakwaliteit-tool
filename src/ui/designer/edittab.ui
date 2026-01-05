@@ -171,6 +171,9 @@ These are in QuickStatements **V1 command** format.</string>
              <verstretch>0</verstretch>
             </sizepolicy>
            </property>
+           <property name="toolTip">
+            <string>Copy Statements</string>
+           </property>
            <property name="text">
             <string/>
            </property>
@@ -209,22 +212,6 @@ These are in QuickStatements **V1 command** format.</string>
    </hints>
   </connection>
   <connection>
-   <sender>copyButton</sender>
-   <signal>clicked()</signal>
-   <receiver>queryPlainTextEdit</receiver>
-   <slot>copy()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>420</x>
-     <y>65</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>244</x>
-     <y>159</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
    <sender>pasteButton</sender>
    <signal>clicked()</signal>
    <receiver>queryPlainTextEdit</receiver>
@@ -237,22 +224,6 @@ These are in QuickStatements **V1 command** format.</string>
     <hint type="destinationlabel">
      <x>244</x>
      <y>159</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>copyStatementsButton</sender>
-   <signal>clicked()</signal>
-   <receiver>statementsPlainTextEdit</receiver>
-   <slot>copy()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>831</x>
-     <y>46</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>645</x>
-     <y>295</y>
     </hint>
    </hints>
   </connection>

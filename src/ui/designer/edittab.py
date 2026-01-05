@@ -154,9 +154,7 @@ class Ui_EditTab(object):
 
         self.retranslateUi(EditTab)
         self.clearButton.clicked.connect(self.queryPlainTextEdit.clear)
-        self.copyButton.clicked.connect(self.queryPlainTextEdit.copy)
         self.pasteButton.clicked.connect(self.queryPlainTextEdit.paste)
-        self.copyStatementsButton.clicked.connect(self.statementsPlainTextEdit.copy)
 
         QMetaObject.connectSlotsByName(EditTab)
     # setupUi
@@ -182,6 +180,9 @@ class Ui_EditTab(object):
         self.generateButton.setText(QCoreApplication.translate("EditTab", u"Generate All Statements", None))
         self.generatedStatementsLabel.setText(QCoreApplication.translate("EditTab", u"### Generated Statements\n"
 "These are in QuickStatements **V1 command** format.", None))
+#if QT_CONFIG(tooltip)
+        self.copyStatementsButton.setToolTip(QCoreApplication.translate("EditTab", u"Copy Statements", None))
+#endif // QT_CONFIG(tooltip)
         self.copyStatementsButton.setText("")
     # retranslateUi
 
