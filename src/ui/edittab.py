@@ -1,3 +1,4 @@
+from PySide6.QtGui import QFont
 from PySide6.QtWidgets import QWidget
 
 from .designer.edittab import Ui_EditTab
@@ -9,6 +10,8 @@ class EditTab(QWidget, Ui_EditTab):
         self.setupUi(self)
 
         self.model = model
+
+        self.statementsPlainTextEdit.setFont(QFont("monospace"))
 
         self.copyButton.clicked.connect(self.copyQuery)
         self.copyStatementsButton.clicked.connect(self.copyStatements)
