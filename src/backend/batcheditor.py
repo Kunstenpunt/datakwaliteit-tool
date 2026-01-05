@@ -33,8 +33,15 @@ class BatchEditor(QObject):
     def _sanitizeRecipe(self):
         # Each command is in a new line or separated by "||"
         recipeSplit = re.split(r"\n|\|\|", self.recipe)
-        self.recipe = [step.strip() for step in recipeSplit]
-        self.recipe = [step for step in self.recipe if step != ""]
+        recipe = [step.strip() for step in recipeSplit]
+        recipe = [step for step in recipe if step != ""]
+        self.recipe = []
+        for step in recipe:
+            step = re.split(r"\t|\|", step)
+            step = [token.strip() for token in step]
+            step = [token for token in step if token != ""]
+            step = "\t".join(step)
+            self.recipe.append(step)
         self.recipe = "\n".join(self.recipe)
 
     def _executeQueryResult(self):
@@ -53,7 +60,6 @@ class BatchEditor(QObject):
             result += [recipeFormatStr.format(*row)]
 
         self.generatedStatements = "\n".join(result)
-        print(self.generatedStatements)
         self.statementGenerationDone.emit()
 
     def _prepareRecipeFormatStr(self, header):
