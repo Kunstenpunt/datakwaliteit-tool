@@ -8,6 +8,7 @@ from PySide6.QtWidgets import (
 )
 
 from .backend.model import Model
+from .ui.configurationtab import ConfigurationTab
 from .ui.constrainttab import ConstraintsTab
 from .ui.edittab import EditTab
 from .ui.querytab import QueryTab
@@ -25,6 +26,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.tabWidget.addTab(ConstraintsTab(self.model), "Constraints")
         self.tabWidget.addTab(QueryTab(self.model), "Query")
         self.tabWidget.addTab(EditTab(self.model), "Edit")
+        self.tabWidget.addTab(ConfigurationTab(self.model), "Configuration")
         self.queryIndicator = QProgressBar()
         self.queryIndicator.setRange(0, 0)
         self.queryIndicator.setMaximumWidth(128)
