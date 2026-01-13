@@ -2,10 +2,9 @@ from PySide6.QtCore import QSortFilterProxyModel
 from PySide6.QtWidgets import QWidget
 
 from ..backend.utils import stripUrlPartFromTable
-from ..backend.wikibasehelper import BASE_URL
 
 from .designer.querytab import Ui_QueryTab
-from .simpletablemodel import headerResizeNeatly, onTableDoubleClicked, SimpleTableModel
+from .simpletablemodel import headerResizeNeatly, SimpleTableModel, TableClickHandler
 
 
 class QueryTab(QWidget, Ui_QueryTab):
@@ -17,7 +16,8 @@ class QueryTab(QWidget, Ui_QueryTab):
 
         self.copyButton.clicked.connect(self.copy)
         self.executeButton.clicked.connect(self.onExecuteButtonClicked)
-        self.tableView.doubleClicked.connect(onTableDoubleClicked)
+        tableClickHandler = TableClickHandler(self.model.wikibaseHelper.getBaseUrl())
+        self.tableView.doubleClicked.connect(tableClickHandler.onTableDoubleClicked)
 
     def copy(self):
         self.plainTextEdit.selectAll()
@@ -31,7 +31,7 @@ class QueryTab(QWidget, Ui_QueryTab):
         result = self.model.wikibaseHelper.queryResult
         if not result:
             return
-        result = stripUrlPartFromTable(BASE_URL, result)
+        result = stripUrlPartFromTable(self.model.wikibaseHelper.getBaseUrl(), result)
         resultModel = QSortFilterProxyModel()
         resultModel.setSourceModel(SimpleTableModel(result))
         self.tableView.setModel(resultModel)

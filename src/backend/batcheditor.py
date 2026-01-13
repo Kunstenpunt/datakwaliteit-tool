@@ -3,7 +3,6 @@ import re
 from PySide6.QtCore import QObject, Signal
 
 from .utils import stripUrlPartFromTable
-from .wikibasehelper import BASE_URL
 
 
 class BatchEditor(QObject):
@@ -53,7 +52,9 @@ class BatchEditor(QObject):
         if type(self.inputData) != list or len(self.inputData) == 0:
             return
 
-        self.inputData = stripUrlPartFromTable(BASE_URL, self.inputData)
+        self.inputData = stripUrlPartFromTable(
+            self.wikibaseHelper.getBaseUrl(), self.inputData
+        )
         recipeFormatStr = self._prepareRecipeFormatStr(self.inputData[0])
 
         for row in self.inputData[1:]:

@@ -4,9 +4,8 @@ from wikibaseintegrator import WikibaseIntegrator
 from wikibaseintegrator.wbi_config import config
 from wikibaseintegrator.wbi_helpers import execute_sparql_query
 
+from .configuration import ExtraWikibaseKey, WbiConfigKey
 from .utils import queryResultToList
-
-BASE_URL = "https://kg.kunsten.be"
 
 
 class QueryWorker(QObject):
@@ -36,25 +35,39 @@ class WikibaseHelper(QObject):
     _queryResultAvailable = Signal()
     _readyForNewQuery = Signal()
 
-    def __init__(self):
+    def __init__(self, configuration):
         super().__init__()
 
+        self._configuration = configuration
+        wbiConfigPairs = self._configuration.getWikibaseConfig()
+        for key in WbiConfigKey:
+            value = wbiConfigPairs.get(key)
+            if value is not None:
+                config[key] = value
+        
+        self._instanceOfPid = wbiConfigPairs.get(ExtraWikibaseKey.INSTANCE_OF_PID)
+        self._subclassOfPid = wbiConfigPairs.get(ExtraWikibaseKey.SUBCLASS_OF_PID)
+
         # The necessary configuration for the wikibase instance of Kunstenpunt
-        config["DEFAULT_LANGUAGE"] = "nl"
-        config["WIKIBASE_URL"] = "https://kg.kunsten.be"
-        config["MEDIAWIKI_API_URL"] = "https://kg.kunsten.be/w/api.php"
-        config["MEDIAWIKI_INDEX_URL"] = "https://kg.kunsten.be/w/index.php"
-        config["MEDIAWIKI_REST_URL"] = "https://kg.kunsten.be/w/rest.php"
-        config["SPARQL_ENDPOINT_URL"] = (
-            "https://kg.kunsten.be/query/proxy/wdqs/bigdata/namespace/wdq/sparql"
-        )
+        # config[WbiConfigKey.DEFAULT_LANGUAGE] = "nl"
+        # config[WbiConfigKey.WIKIBASE_URL] = "https://kg.kunsten.be"
+        # config[WbiConfigKey.MEDIAWIKI_API_URL] = "https://kg.kunsten.be/w/api.php"
+        # config[WbiConfigKey.MEDIAWIKI_INDEX_URL] = "https://kg.kunsten.be/w/index.php"
+        # config[WbiConfigKey.MEDIAWIKI_REST_URL] = "https://kg.kunsten.be/w/rest.php"
+        # config[WbiConfigKey.SPARQL_ENDPOINT_URL] = (
+        #     "https://kg.kunsten.be/query/proxy/wdqs/bigdata/namespace/wdq/sparql"
+        # )
+        # config[WbiConfigKey.PROPERTY_CONSTRAINT_PID] = "P85"
+
+        if wbiConfigPairs == {}:
+            self._configuration.setWikibaseConfig(config)
         # All used prefixes to keep queries in other code more lean looking
-        self.queryPrefixes = """
-            PREFIX kp:<https://kg.kunsten.be/entity/>
-            PREFIX kpt:<https://kg.kunsten.be/prop/direct/>
-            PREFIX kpp:<https://kg.kunsten.be/prop/>
-            PREFIX kpps:<https://kg.kunsten.be/prop/statement/>
-            PREFIX kppq:<https://kg.kunsten.be/prop/qualifier/>
+        self.queryPrefixes = f"""
+            PREFIX kp:<{ config[WbiConfigKey.WIKIBASE_URL] }/entity/>
+            PREFIX kpt:<{ config[WbiConfigKey.WIKIBASE_URL] }/prop/direct/>
+            PREFIX kpp:<{ config[WbiConfigKey.WIKIBASE_URL] }/prop/>
+            PREFIX kpps:<{ config[WbiConfigKey.WIKIBASE_URL] }/prop/statement/>
+            PREFIX kppq:<{ config[WbiConfigKey.WIKIBASE_URL] }/prop/qualifier/>
         """
 
         self.executingQuery = False
@@ -114,3 +127,21 @@ class WikibaseHelper(QObject):
     def queryThreadDestroyed(self):
         self.executingQuery = False
         self._readyForNewQuery.emit()
+
+    def getPropertyConstraintPid(self):
+        return config[WbiConfigKey.PROPERTY_CONSTRAINT_PID]
+
+    def getDefaultLanguage(self):
+        return config[WbiConfigKey.DEFAULT_LANGUAGE]
+    
+    def getBaseUrl(self):
+        return config[WbiConfigKey.WIKIBASE_URL]
+
+    def getPureUrl(self):
+        return config[WbiConfigKey.WIKIBASE_URL].replace("https://", "").replace("http://", "")
+    
+    def getInstanceOfPid(self):
+        return self._instanceOfPid
+    
+    def getSubclassOfPid(self):
+        return self._subclassOfPid
