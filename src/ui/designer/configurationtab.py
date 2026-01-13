@@ -97,6 +97,36 @@ class Ui_ConfigurationTab(object):
 
         self.wikibaseConfigurationFormLayout.setWidget(5, QFormLayout.ItemRole.FieldRole, self.sparqlEndpointUrlLineEdit)
 
+        self.propertyConstraintPidLabel = QLabel(ConfigurationTab)
+        self.propertyConstraintPidLabel.setObjectName(u"propertyConstraintPidLabel")
+
+        self.wikibaseConfigurationFormLayout.setWidget(6, QFormLayout.ItemRole.LabelRole, self.propertyConstraintPidLabel)
+
+        self.instanceOfPidLabel = QLabel(ConfigurationTab)
+        self.instanceOfPidLabel.setObjectName(u"instanceOfPidLabel")
+
+        self.wikibaseConfigurationFormLayout.setWidget(7, QFormLayout.ItemRole.LabelRole, self.instanceOfPidLabel)
+
+        self.propertyConstraintPidLineEdit = QLineEdit(ConfigurationTab)
+        self.propertyConstraintPidLineEdit.setObjectName(u"propertyConstraintPidLineEdit")
+
+        self.wikibaseConfigurationFormLayout.setWidget(6, QFormLayout.ItemRole.FieldRole, self.propertyConstraintPidLineEdit)
+
+        self.instanceOfPidLineEdit = QLineEdit(ConfigurationTab)
+        self.instanceOfPidLineEdit.setObjectName(u"instanceOfPidLineEdit")
+
+        self.wikibaseConfigurationFormLayout.setWidget(7, QFormLayout.ItemRole.FieldRole, self.instanceOfPidLineEdit)
+
+        self.subclassOfPidLabel = QLabel(ConfigurationTab)
+        self.subclassOfPidLabel.setObjectName(u"subclassOfPidLabel")
+
+        self.wikibaseConfigurationFormLayout.setWidget(8, QFormLayout.ItemRole.LabelRole, self.subclassOfPidLabel)
+
+        self.subclassOfPidLineEdit = QLineEdit(ConfigurationTab)
+        self.subclassOfPidLineEdit.setObjectName(u"subclassOfPidLineEdit")
+
+        self.wikibaseConfigurationFormLayout.setWidget(8, QFormLayout.ItemRole.FieldRole, self.subclassOfPidLineEdit)
+
 
         self.verticalLayout.addLayout(self.wikibaseConfigurationFormLayout)
 
@@ -178,6 +208,13 @@ class Ui_ConfigurationTab(object):
         self.mediawikiRestUrlLineEdit.setPlaceholderText(QCoreApplication.translate("ConfigurationTab", u"https://www.wikidata.org/w/rest.php", None))
         self.sparqlEndpointUrlLabel.setText(QCoreApplication.translate("ConfigurationTab", u"SPARQL Endpoint URL", None))
         self.sparqlEndpointUrlLineEdit.setPlaceholderText(QCoreApplication.translate("ConfigurationTab", u"https://query.wikidata.org/sparql", None))
+        self.propertyConstraintPidLabel.setText(QCoreApplication.translate("ConfigurationTab", u"Property Constraint PID", None))
+        self.instanceOfPidLabel.setText(QCoreApplication.translate("ConfigurationTab", u"Instance Of PID", None))
+        self.propertyConstraintPidLineEdit.setPlaceholderText(QCoreApplication.translate("ConfigurationTab", u"P2302", None))
+        self.instanceOfPidLineEdit.setText("")
+        self.instanceOfPidLineEdit.setPlaceholderText(QCoreApplication.translate("ConfigurationTab", u"P31", None))
+        self.subclassOfPidLabel.setText(QCoreApplication.translate("ConfigurationTab", u"Subclass Of PID", None))
+        self.subclassOfPidLineEdit.setPlaceholderText(QCoreApplication.translate("ConfigurationTab", u"P279", None))
         self.botLoginTitleLabel.setText(QCoreApplication.translate("ConfigurationTab", u"### Bot Login (needed for QuickStatements)", None))
         self.botUsernameLabel.setText(QCoreApplication.translate("ConfigurationTab", u"Bot Username", None))
         self.botPasswordLabel.setText(QCoreApplication.translate("ConfigurationTab", u"Bot Password", None))

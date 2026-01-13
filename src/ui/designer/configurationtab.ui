@@ -115,6 +115,51 @@
          </property>
         </widget>
        </item>
+       <item row="6" column="0">
+        <widget class="QLabel" name="propertyConstraintPidLabel">
+         <property name="text">
+          <string>Property Constraint PID</string>
+         </property>
+        </widget>
+       </item>
+       <item row="7" column="0">
+        <widget class="QLabel" name="instanceOfPidLabel">
+         <property name="text">
+          <string>Instance Of PID</string>
+         </property>
+        </widget>
+       </item>
+       <item row="6" column="1">
+        <widget class="QLineEdit" name="propertyConstraintPidLineEdit">
+         <property name="placeholderText">
+          <string>P2302</string>
+         </property>
+        </widget>
+       </item>
+       <item row="7" column="1">
+        <widget class="QLineEdit" name="instanceOfPidLineEdit">
+         <property name="text">
+          <string/>
+         </property>
+         <property name="placeholderText">
+          <string>P31</string>
+         </property>
+        </widget>
+       </item>
+       <item row="8" column="0">
+        <widget class="QLabel" name="subclassOfPidLabel">
+         <property name="text">
+          <string>Subclass Of PID</string>
+         </property>
+        </widget>
+       </item>
+       <item row="8" column="1">
+        <widget class="QLineEdit" name="subclassOfPidLineEdit">
+         <property name="placeholderText">
+          <string>P279</string>
+         </property>
+        </widget>
+       </item>
       </layout>
      </item>
      <item>
