@@ -349,7 +349,7 @@ class ValueTypeConstraint(Constraint):
         self.qualifiersUpdated.emit()
 
     def _queryViolations(self):
-        if self.relation != self.wikibaseHelper.getInstanceOfPid():
+        if not self.relation or self.relation != self.wikibaseHelper.getInstanceOfPid():
             return
         query = f"""
             SELECT ?statement ?entity ?entityLabel ?value ?valueLabel
@@ -479,7 +479,7 @@ class SubjectTypeConstraint(Constraint):
         self.qualifiersUpdated.emit()
 
     def _queryViolations(self):
-        if self.relation != self.wikibaseHelper.getInstanceOfPid():
+        if not self.relation or self.relation != self.wikibaseHelper.getInstanceOfPid():
             return
         query = f"""
             SELECT (SAMPLE(?statement) AS ?statement) ?entity ?entityLabel
