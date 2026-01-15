@@ -40,10 +40,14 @@ class WikibaseHelper(QObject):
 
         self._configuration = configuration
         wbiConfigPairs = self._configuration.getWikibaseConfig()
+        allWbiKeysObtained = True
         for key in WbiConfigKey:
             value = wbiConfigPairs.get(key)
-            if value is not None:
+            if value:
                 config[key] = value
+            else:
+                allWbiKeysObtained = False
+            
         
         self._instanceOfPid = wbiConfigPairs.get(ExtraWikibaseKey.INSTANCE_OF_PID)
         self._subclassOfPid = wbiConfigPairs.get(ExtraWikibaseKey.SUBCLASS_OF_PID)
@@ -59,7 +63,7 @@ class WikibaseHelper(QObject):
         # )
         # config[WbiConfigKey.PROPERTY_CONSTRAINT_PID] = "P85"
 
-        if wbiConfigPairs == {}:
+        if not allWbiKeysObtained:
             self._configuration.setWikibaseConfig(config)
         # All used prefixes to keep queries in other code more lean looking
         self.queryPrefixes = f"""
