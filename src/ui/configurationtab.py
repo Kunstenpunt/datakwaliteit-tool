@@ -11,29 +11,64 @@ class ConfigurationTab(QWidget, Ui_ConfigurationTab):
 
         self.model = model
 
+        self.discardButton.clicked.connect(self.loadConfig)
         self.saveButton.clicked.connect(self.saveConfig)
+
+        self.lineEdits = {
+            self.wikibaseUrlLineEdit: WbiConfigKey.WIKIBASE_URL,
+            self.defaultLanguageLineEdit: WbiConfigKey.DEFAULT_LANGUAGE,
+            self.mediawikiApiUrlLineEdit: WbiConfigKey.MEDIAWIKI_API_URL,
+            self.mediawikiIndexUrlLineEdit: WbiConfigKey.MEDIAWIKI_INDEX_URL,
+            self.mediawikiRestUrlLineEdit: WbiConfigKey.MEDIAWIKI_REST_URL,
+            self.sparqlEndpointUrlLineEdit: WbiConfigKey.SPARQL_ENDPOINT_URL,
+            self.propertyConstraintPidLineEdit: WbiConfigKey.PROPERTY_CONSTRAINT_PID,
+            self.instanceOfPidLineEdit: ExtraWikibaseKey.INSTANCE_OF_PID,
+            self.subclassOfPidLineEdit: ExtraWikibaseKey.SUBCLASS_OF_PID,
+        }
+
+        for lineEdit, key in self.lineEdits.items():
+            self.setupLineEdit(lineEdit, key)
+
+        self.loadConfig()
+
+    def setupLineEdit(self, lineEdit, key):
+        lineEdit.textEdited.connect(self.onTextEdited(lineEdit, key))
+
+    def onTextEdited(self, lineEdit, key):
+        def callback(text):
+            lineEdit.wbiValueModified = (
+                text != self.model.configuration.getWikibaseConfig().get(key)
+            )
+            self.updateFontLineEdit(lineEdit)
+            self.updateEnabledButtons()
+
+        return callback
+
+    def updateFontLineEdit(self, lineEdit):
+        font = lineEdit.font()
+        font.setBold(lineEdit.wbiValueModified and lineEdit.text() != "")
+        lineEdit.setFont(font)
 
     def loadConfig(self):
         config = self.model.configuration.getWikibaseConfig()
-        self.wikibaseUrlLineEdit.setText(config.get(WbiConfigKey.WIKIBASE_URL))
-        self.defaultLanguageLineEdit.setText(config.get(WbiConfigKey.DEFAULT_LANGUAGE))
-        self.mediawikiApiUrlLineEdit.setText(config.get(WbiConfigKey.MEDIAWIKI_API_URL))
-        self.mediawikiIndexUrlLineEdit.setText(config.get(WbiConfigKey.MEDIAWIKI_INDEX_URL))
-        self.mediawikiRestUrlLineEdit.setText(config.get(WbiConfigKey.MEDIAWIKI_REST_URL))
-        self.sparqlEndpointUrlLineEdit.setText(config.get(WbiConfigKey.SPARQL_ENDPOINT_URL))
-        self.propertyConstraintPidLineEdit.setText(config.get(WbiConfigKey.PROPERTY_CONSTRAINT_PID))
-        self.instanceOfPidLineEdit.setText(config.get(ExtraWikibaseKey.INSTANCE_OF_PID))
-        self.subclassOfPidLineEdit.setText(config.get(ExtraWikibaseKey.SUBCLASS_OF_PID))
+        for lineEdit, key in self.lineEdits.items():
+            lineEdit.setText(config.get(key))
+            lineEdit.wbiValueModified = False
+            self.updateFontLineEdit(lineEdit)
+        self.updateEnabledButtons()
 
     def saveConfig(self):
         config = {}
-        config[WbiConfigKey.WIKIBASE_URL] = self.wikibaseUrlLineEdit.text()
-        config[WbiConfigKey.DEFAULT_LANGUAGE] = self.defaultLanguageLineEdit.text()
-        config[WbiConfigKey.MEDIAWIKI_API_URL] = self.mediawikiApiUrlLineEdit.text()
-        config[WbiConfigKey.MEDIAWIKI_INDEX_URL] = self.mediawikiIndexUrlLineEdit.text()
-        config[WbiConfigKey.MEDIAWIKI_REST_URL] = self.mediawikiRestUrlLineEdit.text()
-        config[WbiConfigKey.SPARQL_ENDPOINT_URL] = self.sparqlEndpointUrlLineEdit.text()
-        config[WbiConfigKey.PROPERTY_CONSTRAINT_PID] = self.propertyConstraintPidLineEdit.text()
-        config[ExtraWikibaseKey.INSTANCE_OF_PID] = self.instanceOfPidLineEdit.text()
-        config[ExtraWikibaseKey.SUBCLASS_OF_PID] = self.subclassOfPidLineEdit.text()
+        for lineEdit, key in self.lineEdits.items():
+            config[key] = lineEdit.text()
         self.model.configuration.setWikibaseConfig(config)
+        self.loadConfig()
+
+    def updateEnabledButtons(self):
+        for lineEdit in self.lineEdits.keys():
+            if lineEdit.wbiValueModified:
+                self.saveButton.setEnabled(True)
+                self.discardButton.setEnabled(True)
+                return
+        self.saveButton.setEnabled(False)
+        self.discardButton.setEnabled(False)

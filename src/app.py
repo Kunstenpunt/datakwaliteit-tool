@@ -57,7 +57,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     def _onCurrentTabChanged(self, index):
         if (index == self.configurationTabIndex):
-            self.tabWidget.currentWidget().loadConfig()
+            pass
 
     def copyQueryToClipboard(self):
         query = textwrap.dedent(self.model.wikibaseHelper.mostRecentQuery).lstrip()
