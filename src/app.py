@@ -27,7 +27,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.tabWidget.addTab(ConstraintsTab(self.model), "Constraints")
         self.tabWidget.addTab(QueryTab(self.model), "Query")
         self.tabWidget.addTab(EditTab(self.model), "Edit")
-        self.configurationTabIndex = self.tabWidget.addTab(ConfigurationTab(self.model), "Configuration")
+        self.configurationTabIndex = self.tabWidget.addTab(
+            ConfigurationTab(self.model), "Configuration"
+        )
         self.tabWidget.currentChanged.connect(self._onCurrentTabChanged)
         self.queryIndicator = QProgressBar()
         self.queryIndicator.setRange(0, 0)
@@ -45,6 +47,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.model.wikibaseHelper.queryStarted.connect(self.onQueryStarted)
         self.model.wikibaseHelper.queryDone.connect(self.onQueryDone)
 
+        # Load constrained properties on startup
+        self.model.constraintAnalyzer.updateConstraints()
+
     def onQueryStarted(self):
         self.queryIndicator.show()
         self.queryIndicatorLabel.setText("Running query...")
@@ -56,7 +61,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         )
 
     def _onCurrentTabChanged(self, index):
-        if (index == self.configurationTabIndex):
+        if index == self.configurationTabIndex:
             pass
 
     def copyQueryToClipboard(self):

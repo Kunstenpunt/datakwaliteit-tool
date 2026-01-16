@@ -23,7 +23,7 @@ class ConstraintsTab(QWidget, Ui_ConstraintTab):
         self.validateButton.setEnabled(False)
         self.exportButton.setEnabled(False)
 
-        self.reloadButton.clicked.connect(self.onReloadButtonClicked)
+        self.reloadButton.clicked.connect(self.updateConstraints)
         self.validateAllButton.clicked.connect(self.validateAll)
         self.validateButton.clicked.connect(self.onValidateButtonClicked)
         self.exportAllButton.clicked.connect(self.exportAllValidated)
@@ -47,10 +47,8 @@ class ConstraintsTab(QWidget, Ui_ConstraintTab):
         self.model.constraintAnalyzer.validateAllDone.connect(
             self.updateValidateAllLabel
         )
-        # Automatically perform query for constrainted properties on startup
-        self.model.constraintAnalyzer.updateConstraints()
 
-    def onReloadButtonClicked(self):
+    def updateConstraints(self):
         self.model.constraintAnalyzer.updateConstraints()
 
     def onConstrainedPropertiesUpdated(self):
