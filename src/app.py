@@ -2,6 +2,7 @@ import textwrap
 
 from PySide6.QtGui import QGuiApplication
 from PySide6.QtWidgets import (
+    QLabel,
     QMainWindow,
     QProgressBar,
     QPushButton,
@@ -33,15 +34,26 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.queryIndicator.setMaximumWidth(128)
         self.statusbar.addWidget(self.queryIndicator)
         self.queryIndicator.hide()
+        self.queryIndicatorLabel = QLabel()
+        self.statusbar.addWidget(self.queryIndicatorLabel)
 
         self.copyQueryButton = QPushButton()
         self.copyQueryButton.setText("Copy Last Query to Clipboard")
         self.copyQueryButton.clicked.connect(self.copyQueryToClipboard)
         self.statusbar.addPermanentWidget(self.copyQueryButton)
 
-        self.model.wikibaseHelper.queryStarted.connect(self.queryIndicator.show)
-        self.model.wikibaseHelper.queryDone.connect(self.queryIndicator.hide)
-        self.model.wikibaseHelper.queryDone.connect(self.reportQueryStatus)
+        self.model.wikibaseHelper.queryStarted.connect(self.onQueryStarted)
+        self.model.wikibaseHelper.queryDone.connect(self.onQueryDone)
+
+    def onQueryStarted(self):
+        self.queryIndicator.show()
+        self.queryIndicatorLabel.setText("Running query...")
+
+    def onQueryDone(self):
+        self.queryIndicator.hide()
+        self.queryIndicatorLabel.setText(
+            "LAST QUERY FAILED" if self.model.wikibaseHelper.queryResult == None else ""
+        )
 
     def _onCurrentTabChanged(self, index):
         if (index == self.configurationTabIndex):
@@ -54,9 +66,3 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             prefixes = textwrap.dedent(self.model.wikibaseHelper.queryPrefixes).lstrip()
             query = f"{prefixes}\n{query}"
         clipboard.setText(query)
-
-    def reportQueryStatus(self):
-        if self.model.wikibaseHelper.queryResult == None:
-            self.statusbar.showMessage("LAST QUERY FAILED!")
-        else:
-            self.statusbar.clearMessage()
