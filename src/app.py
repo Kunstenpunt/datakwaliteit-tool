@@ -9,6 +9,7 @@ from PySide6.QtWidgets import (
 )
 
 from .backend.model import Model
+from .ui.configurationtab import ConfigurationTab
 from .ui.constrainttab import ConstraintsTab
 from .ui.edittab import EditTab
 from .ui.querytab import QueryTab
@@ -26,6 +27,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.tabWidget.addTab(ConstraintsTab(self.model), "Constraints")
         self.tabWidget.addTab(QueryTab(self.model), "Query")
         self.tabWidget.addTab(EditTab(self.model), "Edit")
+        self.configurationTabIndex = self.tabWidget.addTab(
+            ConfigurationTab(self.model), "Configuration"
+        )
+        self.tabWidget.currentChanged.connect(self._onCurrentTabChanged)
         self.queryIndicator = QProgressBar()
         self.queryIndicator.setRange(0, 0)
         self.queryIndicator.setMaximumWidth(128)
@@ -42,6 +47,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.model.wikibaseHelper.queryStarted.connect(self.onQueryStarted)
         self.model.wikibaseHelper.queryDone.connect(self.onQueryDone)
 
+        # Load constrained properties on startup
+        self.model.constraintAnalyzer.updateConstraints()
+
     def onQueryStarted(self):
         self.queryIndicator.show()
         self.queryIndicatorLabel.setText("Running query...")
@@ -51,6 +59,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.queryIndicatorLabel.setText(
             "LAST QUERY FAILED" if self.model.wikibaseHelper.queryResult == None else ""
         )
+
+    def _onCurrentTabChanged(self, index):
+        if index == self.configurationTabIndex:
+            pass
 
     def copyQueryToClipboard(self):
         query = textwrap.dedent(self.model.wikibaseHelper.mostRecentQuery).lstrip()

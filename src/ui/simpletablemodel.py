@@ -8,17 +8,21 @@ from PySide6.QtWidgets import QHeaderView
 
 from ..backend.constraints import ValidationState
 from ..backend.utils import urlFromId
-from ..backend.wikibasehelper import BASE_URL
 
 
 MAXIMUM_AUTO_TABLE_SECTION_WIDTH = 200
 
 
-def onTableDoubleClicked(index):
-    possibleID = index.data()
-    url = urlFromId(possibleID, BASE_URL)
-    if url:
-        QDesktopServices.openUrl(QUrl(url))
+class TableClickHandler:
+    def __init__(self, baseUrl):
+        super().__init__()
+        self.baseUrl = baseUrl
+
+    def onTableDoubleClicked(self, index):
+        possibleID = index.data()
+        url = urlFromId(possibleID, self.baseUrl)
+        if url:
+            QDesktopServices.openUrl(QUrl(url))
 
 
 def headerResizeNeatly(header):

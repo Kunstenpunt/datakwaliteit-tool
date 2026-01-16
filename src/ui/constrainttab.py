@@ -1,10 +1,11 @@
-from PySide6.QtCore import QSortFilterProxyModel, QStandardPaths
-from PySide6.QtWidgets import QWidget
+from PySide6.QtCore import QFileInfo, QSortFilterProxyModel, QStandardPaths
+from PySide6.QtWidgets import QFileDialog, QWidget
 
 from ..backend.constraints import ValidationMode, ValidationState
+from ..backend.export import Exporter
 
 from .designer.constrainttab import Ui_ConstraintTab
-from .simpletablemodel import headerResizeNeatly, onTableDoubleClicked, SimpleTableModel
+from .simpletablemodel import headerResizeNeatly, SimpleTableModel, TableClickHandler
 
 
 class ConstraintsTab(QWidget, Ui_ConstraintTab):
@@ -13,6 +14,7 @@ class ConstraintsTab(QWidget, Ui_ConstraintTab):
         self.setupUi(self)
 
         self.model = model
+        self.exporter = Exporter(self.model.wikibaseHelper)
         self.exportDir = QStandardPaths.writableLocation(
             QStandardPaths.StandardLocation.DocumentsLocation,
         )
@@ -21,7 +23,7 @@ class ConstraintsTab(QWidget, Ui_ConstraintTab):
         self.validateButton.setEnabled(False)
         self.exportButton.setEnabled(False)
 
-        self.reloadButton.clicked.connect(self.onReloadButtonClicked)
+        self.reloadButton.clicked.connect(self.updateConstraints)
         self.validateAllButton.clicked.connect(self.validateAll)
         self.validateButton.clicked.connect(self.onValidateButtonClicked)
         self.exportAllButton.clicked.connect(self.exportAllValidated)
@@ -30,8 +32,9 @@ class ConstraintsTab(QWidget, Ui_ConstraintTab):
         self.changeLimitMode()
         self.sortedCheckBox.checkStateChanged.connect(self.changeLimitSorted)
         self.changeLimitSorted()
-        self.propertiesTableView.doubleClicked.connect(onTableDoubleClicked)
-        self.violationsTableView.doubleClicked.connect(onTableDoubleClicked)
+        tableClickHandler = TableClickHandler(self.model.wikibaseHelper.getBaseUrl())
+        self.propertiesTableView.doubleClicked.connect(tableClickHandler.onTableDoubleClicked)
+        self.violationsTableView.doubleClicked.connect(tableClickHandler.onTableDoubleClicked)
         self.model.constraintAnalyzer.constrainedPropertiesUpdated.connect(
             self.onConstrainedPropertiesUpdated
         )
@@ -44,10 +47,8 @@ class ConstraintsTab(QWidget, Ui_ConstraintTab):
         self.model.constraintAnalyzer.validateAllDone.connect(
             self.updateValidateAllLabel
         )
-        # Automatically perform query for constrainted properties on startup
-        self.model.constraintAnalyzer.updateConstraints()
 
-    def onReloadButtonClicked(self):
+    def updateConstraints(self):
         self.model.constraintAnalyzer.updateConstraints()
 
     def onConstrainedPropertiesUpdated(self):
@@ -204,7 +205,7 @@ class ConstraintsTab(QWidget, Ui_ConstraintTab):
                 fileName += ".xlsx"
         self.exportDir = QFileInfo(fileName).absolutePath()
         exportUrl = self.exportUrlCheckBox.isChecked()
-        exportSingleConstraint(constraint, fileName, exportUrl)
+        self.exporter.exportSingleConstraint(constraint, fileName, exportUrl)
 
     def exportAllValidated(self):
         validatedConstraints = sorted(
@@ -232,4 +233,4 @@ class ConstraintsTab(QWidget, Ui_ConstraintTab):
                 fileName += ".xlsx"
         self.exportDir = QFileInfo(fileName).absolutePath()
         exportUrl = self.exportAllUrlCheckBox.isChecked()
-        exportMultipleConstraints(validatedConstraints, fileName, exportUrl)
+        self.exporter.exportMultipleConstraints(validatedConstraints, fileName, exportUrl)
