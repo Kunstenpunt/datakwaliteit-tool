@@ -60,7 +60,8 @@ class ConfigurationTab(QWidget, Ui_ConfigurationTab):
     def saveConfig(self):
         config = {}
         for lineEdit, key in self.lineEdits.items():
-            config[key] = lineEdit.text()
+            if lineEdit.wbiValueModified:
+                config[key] = lineEdit.text()
         self.model.configuration.setWikibaseConfig(config)
         self.loadConfig()
 
