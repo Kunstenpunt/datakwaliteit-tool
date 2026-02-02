@@ -49,6 +49,21 @@ class ConfigurationTab(QWidget, Ui_ConfigurationTab):
         font.setBold(lineEdit.wbiValueModified and lineEdit.text() != "")
         lineEdit.setFont(font)
 
+    def cleanUpLineEditText(self, lineEdit):
+        text = lineEdit.text().strip()
+
+        # Strip trailing "/" for correct wbi_config parameters
+        if lineEdit in [
+            self.wikibaseUrlLineEdit,
+            self.mediawikiApiUrlLineEdit,
+            self.mediawikiIndexUrlLineEdit,
+            self.mediawikiRestUrlLineEdit,
+            self.sparqlEndpointUrlLineEdit,
+        ]:
+            text = text.rstrip("/")
+
+        lineEdit.setText(text)
+
     def loadConfig(self):
         config = self.model.configuration.getWikibaseConfig()
         for lineEdit, key in self.lineEdits.items():
@@ -61,6 +76,7 @@ class ConfigurationTab(QWidget, Ui_ConfigurationTab):
         config = {}
         for lineEdit, key in self.lineEdits.items():
             if lineEdit.wbiValueModified:
+                self.cleanUpLineEditText(lineEdit)
                 config[key] = lineEdit.text()
         self.model.configuration.setWikibaseConfig(config)
         self.loadConfig()
