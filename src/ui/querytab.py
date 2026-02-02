@@ -16,8 +16,12 @@ class QueryTab(QWidget, Ui_QueryTab):
 
         self.copyButton.clicked.connect(self.copy)
         self.executeButton.clicked.connect(self.onExecuteButtonClicked)
-        tableClickHandler = TableClickHandler(self.model.wikibaseHelper.getBaseUrl())
-        self.tableView.doubleClicked.connect(tableClickHandler.onTableDoubleClicked)
+        self.tableClickHandler = TableClickHandler(
+            self.model.wikibaseHelper.getBaseUrl()
+        )
+        self.tableView.doubleClicked.connect(
+            self.tableClickHandler.onTableDoubleClicked
+        )
 
     def copy(self):
         self.plainTextEdit.selectAll()
