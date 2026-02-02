@@ -237,4 +237,6 @@ class ConstraintsTab(QWidget, Ui_ConstraintTab):
                 fileName += ".xlsx"
         self.exportDir = QFileInfo(fileName).absolutePath()
         exportUrl = self.exportAllUrlCheckBox.isChecked()
-        self.exporter.exportMultipleConstraints(validatedConstraints, fileName, exportUrl)
+        self.exporter.exportMultipleConstraints(
+            validatedConstraints, fileName, exportUrl
+        )
