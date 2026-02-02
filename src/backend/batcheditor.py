@@ -65,6 +65,8 @@ class BatchEditor(QObject):
 
     def _prepareRecipeFormatStr(self, header):
         recipeFormatStr = self.recipe
-        for i, varName in enumerate(header):
+        # Sort from long to short to make sure we do not replace substrings of variable names.
+        headerSorted = sorted(enumerate(header), key=lambda i: len(i[1]), reverse=True)
+        for i, varName in headerSorted:
             recipeFormatStr = recipeFormatStr.replace("?" + varName, f"{{{i}}}")
         return recipeFormatStr
