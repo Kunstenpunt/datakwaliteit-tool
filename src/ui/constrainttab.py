@@ -44,6 +44,15 @@ class ConstraintsTab(QWidget, Ui_ConstraintTab):
         self.model.constraintAnalyzer.focusedPropertyConstraintUpdated.connect(
             self.onFocusedPropertyConstraintUpdated
         )
+        self.model.constraintAnalyzer.focusedPropertyConstraintInputCountUpdated.connect(
+            self.updateFocusedPropertyConstraintInputCount
+        )
+        self.model.constraintAnalyzer.focusedPropertyConstraintQualifiersUpdated.connect(
+            self.updateFocusedPropertyConstraintLabel
+        )
+        self.model.constraintAnalyzer.focusedPropertyConstraintViolationsUpdated.connect(
+            self.updateViolationsTableView
+        )
         self.model.constraintAnalyzer.validateAllDone.connect(
             self.updateValidateAllLabel
         )
@@ -89,15 +98,6 @@ class ConstraintsTab(QWidget, Ui_ConstraintTab):
 
     def onFocusedPropertyConstraintUpdated(self):
         focusedPropertyConstraint = self.model.constraintAnalyzer.focusedConstraint
-        focusedPropertyConstraint.violationsUpdated.connect(
-            self.updateViolationsTableView
-        )
-        focusedPropertyConstraint.qualifiersUpdated.connect(
-            self.updateFocusedPropertyConstraintLabel
-        )
-        focusedPropertyConstraint.inputCountChanged.connect(
-            self.updateFocusedPropertyConstraintInputCount
-        )
         self.updateFocusedPropertyConstraintLabel()
         self.updateFocusedPropertyConstraintInputCount()
         self.limitComboBox.setCurrentIndex(
@@ -108,8 +108,6 @@ class ConstraintsTab(QWidget, Ui_ConstraintTab):
         self.sortedCheckBox.setChecked(focusedPropertyConstraint.sort)
         self.validateButton.setEnabled(focusedPropertyConstraint.implemented)
         self.updateViolationsTableView()
-        focusedPropertyConstraint.queryQualifiers()
-        focusedPropertyConstraint.queryInputCount()
 
     def updateFocusedPropertyConstraintLabel(self):
         constraint = self.model.constraintAnalyzer.focusedConstraint

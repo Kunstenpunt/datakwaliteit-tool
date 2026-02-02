@@ -6,6 +6,7 @@ from .utils import stripUrlPart
 
 # idee: eis dat alle entiteiten en properties die mappen op properties van wikidata hetzelfde label hebben in het Engels -> op die manier steeds correcte mapping
 
+
 class Item:
     def __init__(self, identifier, label):
         self.identifier = identifier
@@ -43,52 +44,164 @@ class ValidationInputCountType(Enum):
     OTHER = 2
 
 
-class Constraint(QObject):
-    violationsUpdated = Signal()
+class ConstraintHelper(QObject):
     qualifiersUpdated = Signal()
+    violationsUpdated = Signal()
 
-    inputCountChanged = Signal()
-    validationStateChanged = Signal()
+    inputCountUpdated = Signal()
+    validationStateUpdated = Signal()
 
+    def __init__(self, wikibaseHelper):
+        super().__init__()
+        self.constraint = None
+        self.wikibaseHelper = wikibaseHelper
+
+    def queryInputCount(self, c):
+        if not c:
+            return
+
+        countType = c.validationInputCountType
+        if countType == ValidationInputCountType.STATEMENTS:
+            query = f"""
+                SELECT (COUNT(*) as ?count)
+                WHERE
+                {{
+                    ?entity kpp:{c.property.identifier} ?statement
+                }}
+            """
+        elif countType == c.validationInputCountType.ENTITIES:
+            query = f"""
+                SELECT ?count
+                WHERE
+                {{
+                    SERVICE wikibase:mwapi
+                    {{
+                        bd:serviceParam wikibase:endpoint "{self.wikibaseHelper.getPureUrl()}";
+                            wikibase:api "Search"; wikibase:limit "once" ;
+                            mwapi:srsearch "haswbstatement:{c.property.identifier}" ;
+                            mwapi:srlimit "1" ; mwapi:srprop "" ; mwapi:srsort "none" ; mwapi:srnamespace "*" .
+                        ?count wikibase:apiOutput '//searchinfo[1]/@totalhits'.
+                    }}
+                }}
+            """
+        else:
+            print(f"Querying input count not implemented for {c}")
+            return
+
+        self.wikibaseHelper.executeQuery(query, self.queryInputCountResult, c)
+
+    def queryInputCountResult(self):
+        self.constraint = self.wikibaseHelper.callbackData
+        if self.constraint is None:
+            return
+
+        result = self.wikibaseHelper.queryResult
+        if result is None:
+            return
+
+        self.constraint.inputCount = int(result[1][0])
+        self.inputCountUpdated.emit()
+
+    def queryQualifiers(self, c):
+        if c is None or c.qualifiersObtained:
+            return
+
+        query = c.getQualifiersQuery()
+        if query is None:
+            return
+
+        self.wikibaseHelper.executeQuery(query, self.queryQualifiersResult, c)
+
+    def queryQualifiersResult(self):
+        self.constraint = self.wikibaseHelper.callbackData
+        if not self.constraint:
+            return
+
+        result = self.wikibaseHelper.queryResult
+        if not result:
+            self.updateValidationState(ValidationState.FAILED)
+            return
+
+        self.constraint.updateQualifiers(result)
+
+        if self.constraint.qualifiersObtained:
+            self.qualifiersUpdated.emit()
+        else:
+            self.updateValidationState(ValidationState.FAILED)
+            return
+        
+
+        # if this qualifier query was a prerequisite of a validation query, continue with that validation
+        if self.constraint.doValidation:
+            self.queryViolations(self.constraint)
+
+    def queryViolations(self, c):
+        self.constraint = c
+        self.updateValidationState(ValidationState.VALIDATING)
+
+        if not self.constraint.qualifiersObtained:
+            self.constraint.doValidation = True
+            self.queryQualifiers(self.constraint)
+            return
+
+        query = self.constraint.getViolationsQuery()
+        if query is None:
+            return
+
+        self.wikibaseHelper.executeQuery(
+            query, self.queryViolationsResult, self.constraint
+        )
+
+    def queryViolationsResult(self):
+        self.constraint = self.wikibaseHelper.callbackData
+        if not self.constraint:
+            return
+
+        result = self.wikibaseHelper.queryResult
+        if not result:
+            self.updateValidationState(ValidationState.FAILED)
+            return
+
+        self.constraint.updateViolations(result)
+
+        self.constraint = self.constraint
+        if self.constraint.violations is not None:
+            self.updateValidationState(
+                ValidationState.VALIDATED
+                if self.constraint.validationMode == ValidationMode.NO_LIMIT
+                else ValidationState.PARTIAL
+            )
+            self.violationsUpdated.emit()
+        else:
+            self.updateValidationState(ValidationState.FAILED)
+
+    def updateValidationState(self, validationState):
+        if self.constraint.validationState != validationState:
+            self.constraint.validationState = validationState
+            self.validationStateUpdated.emit()
+
+
+class Constraint:
     def __init__(self, identifier, label, prop, wikibaseHelper):
         super().__init__()
 
-        self._inputCount = -1
-        self._validationState = ValidationState.UNVALIDATED
+        self.inputCount = -1
+        self.validationState = ValidationState.UNVALIDATED
 
+        self.doValidation = False
         self.identifier = identifier
         self.implemented = False
         self.label = label
         self.property = prop
         self.qualifiersObtained = False
-        self.wikibaseHelper = wikibaseHelper
         self.validationInputCountType = ValidationInputCountType.OTHER
         self.violations = None
+        self.wikibaseHelper = wikibaseHelper
 
         self.limit = 100000
         self.offset = 0
         self.sort = False
         self.validationMode = ValidationMode.NO_LIMIT
-
-        self.qualifiersUpdated.connect(self._onQualifiersUpdated)
-
-    @property
-    def validationState(self):
-        return self._validationState
-
-    @validationState.setter
-    def validationState(self, value):
-        self._validationState = value
-        self.validationStateChanged.emit()
-
-    @property
-    def inputCount(self):
-        return self._inputCount
-
-    @inputCount.setter
-    def inputCount(self, value):
-        self._inputCount = int(value)
-        self.inputCountChanged.emit()
 
     def __str__(self):
         return f"{self.label} ({self.identifier})"
@@ -105,67 +218,13 @@ class Constraint(QObject):
     def pretty(self):
         return f'"{self.label}" ({self.identifier})\non "{self.property.label}" ({self.property.identifier})'
 
-    def queryQualifiers(self):
+    def getQualifiersQuery(self):
         print(f"Querying qualfiers not implemented for {self}")
+        return None
 
-    def queryInputCount(self):
-        countType = self.validationInputCountType
-        if countType == ValidationInputCountType.STATEMENTS:
-            query = f"""
-                SELECT (COUNT(*) as ?count)
-                WHERE
-                {{
-                    ?entity kpp:{self.property.identifier} ?statement
-                }}
-            """
-        elif countType == self.validationInputCountType.ENTITIES:
-            query = f"""
-                SELECT ?count
-                WHERE
-                {{
-                    SERVICE wikibase:mwapi
-                    {{
-                        bd:serviceParam wikibase:endpoint "{ self.wikibaseHelper.getPureUrl() }";
-                            wikibase:api "Search"; wikibase:limit "once" ;
-                            mwapi:srsearch "haswbstatement:{self.property.identifier}" ;
-                            mwapi:srlimit "1" ; mwapi:srprop "" ; mwapi:srsort "none" ; mwapi:srnamespace "*" .
-                        ?count wikibase:apiOutput '//searchinfo[1]/@totalhits'.
-                    }}
-                }}
-            """
-        else:
-            print(f"Querying input count not implemented for {self}")
-            return
-
-        self.wikibaseHelper.executeQuery(query, self._queryInputCountResult)
-
-    def _queryInputCountResult(self):
-        result = self.wikibaseHelper.queryResult
-        if not result:
-            pass
-        self.inputCount = result[1][0]
-
-    def queryViolations(self):
-        self.validationState = ValidationState.VALIDATING
-        if hasattr(self, "_queryViolations"):
-            if not self.qualifiersObtained:
-                self.qualifiersUpdated.connect(self._queryViolations)
-                self.queryQualifiers()
-            else:
-                self._queryViolations()
-        else:
-            print(f"Querying violations not implemented for {self}")
-            self.validationState = ValidationState.FAILED
-
-    def _onQualifiersUpdated(self):
-        self.qualifiersObtained = True
-
-    def _validationSuccessful(self):
-        self.validationState = (
-            ValidationState.VALIDATED
-            if self.validationMode == ValidationMode.NO_LIMIT
-            else ValidationState.PARTIAL
-        )
+    def getViolationsQuery(self):
+        print(f"Querying violations not implemented for {self}")
+        return None
 
 
 # https://www.wikidata.org/wiki/Help:Property_constraints_portal/Single_value
@@ -184,10 +243,8 @@ class SingleValueConstraint(Constraint):
             label += f"\nseparator(s): {[str(s) for s in self.separators]}"
         return label
 
-    def queryQualifiers(self):
-        if self.qualifiersObtained:
-            return
-        query = f"""
+    def getQualifiersQuery(self):
+        return f"""
             SELECT DISTINCT ?separator ?separatorLabel
             WHERE
             {{
@@ -204,20 +261,19 @@ class SingleValueConstraint(Constraint):
                 SERVICE wikibase:label {{ bd:serviceParam wikibase:language "{ self.wikibaseHelper.getDefaultLanguage() }" . }}
             }}
         """
-        self.wikibaseHelper.executeQuery(query, self._queryQualifiersResult)
 
-    def _queryQualifiersResult(self):
-        result = self.wikibaseHelper.queryResult
-        if not result:
-            self.validationState = ValidationState.FAILED
+    def updateQualifiers(self, result):
+        if len(result) < 1:
             return
+
         self.separators = []
         for [identifier, label] in result[1:]:
             self.separators.append(Property(stripUrlPart(identifier), label))
-        self.qualifiersUpdated.emit()
 
-    def _queryViolations(self):
-        query = f"""
+        self.qualifiersObtained = True
+
+    def getViolationsQuery(self):
+        return f"""
             SELECT (SAMPLE(?statement) AS ?statement) ?entity ?entityLabel ?valueCount
 
             WITH
@@ -263,18 +319,10 @@ class SingleValueConstraint(Constraint):
             }}
             GROUP BY ?entity ?entityLabel ?valueCount"""
 
-        self.wikibaseHelper.executeQuery(query, self._queryViolationsResult)
-
-    def _queryViolationsResult(self):
-        result = self.wikibaseHelper.queryResult
-        if result:
-            self.violations = [
-                [stripUrlPart(s), stripUrlPart(e), eL, v] for [s, e, eL, v] in result
-            ]
-            self._validationSuccessful()
-        else:
-            self.validationState = ValidationState.FAILED
-        self.violationsUpdated.emit()
+    def updateViolations(self, result):
+        self.violations = [
+            [stripUrlPart(s), stripUrlPart(e), eL, v] for [s, e, eL, v] in result
+        ]
 
 
 # https://www.wikidata.org/wiki/Help:Property_constraints_portal/Value_class
@@ -284,19 +332,17 @@ class ValueTypeConstraint(Constraint):
         self.implemented = True
         self.validationInputCountType = ValidationInputCountType.STATEMENTS
 
-        self.classes = []
+        self.classes = None
         self.relation = None
 
     def pretty(self):
         label = super().pretty()
-        if len(self.classes):
+        if self.classes is not None and len(self.classes):
             label += f"\nclass(es): {[str(s) for s in self.classes]}"
         return label
 
-    def queryQualifiers(self):
-        if self.qualifiersObtained:
-            return
-        query = f"""
+    def getQualifiersQuery(self):
+        return f"""
             SELECT DISTINCT ?class ?classLabel ?relation ?relationLabel
             WHERE
             {{
@@ -328,13 +374,12 @@ class ValueTypeConstraint(Constraint):
                 SERVICE wikibase:label {{ bd:serviceParam wikibase:language "{ self.wikibaseHelper.getDefaultLanguage() }" . }}
             }}
         """
-        self.wikibaseHelper.executeQuery(query, self._queryQualifiersResult)
 
-    def _queryQualifiersResult(self):
-        result = self.wikibaseHelper.queryResult
-        if not result:
-            self.validationState = ValidationState.FAILED
+    def updateQualifiers(self, result):
+        if len(result) < 1:
             return
+
+        self.classes = []
         for [classId, classLabel, relationId, relationLabel] in result[1:]:
             classId = stripUrlPart(classId)
             relationId = stripUrlPart(relationId)
@@ -342,16 +387,13 @@ class ValueTypeConstraint(Constraint):
                 print(
                     f'ValueTypeConstraint for relation "{relationLabel}" is currently unsupported.'
                 )
-                self.validationState = ValidationState.FAILED
-                self.relation = None
+                return
             self.classes.append(Property(classId, classLabel))
         self.relation = self.wikibaseHelper.getInstanceOfPid()
-        self.qualifiersUpdated.emit()
+        self.qualifiersObtained = True
 
-    def _queryViolations(self):
-        if not self.relation or self.relation != self.wikibaseHelper.getInstanceOfPid():
-            return
-        query = f"""
+    def getViolationsQuery(self):
+        return f"""
             SELECT ?statement ?entity ?entityLabel ?value ?valueLabel
 
             WITH
@@ -392,19 +434,11 @@ class ValueTypeConstraint(Constraint):
                 SERVICE wikibase:label {{ bd:serviceParam wikibase:language "{ self.wikibaseHelper.getDefaultLanguage() }" }}
             }}"""
 
-        self.wikibaseHelper.executeQuery(query, self._queryViolationsResult)
-
-    def _queryViolationsResult(self):
-        result = self.wikibaseHelper.queryResult
-        if result:
-            self.violations = [
-                [stripUrlPart(s), stripUrlPart(e), eL, stripUrlPart(v), vL]
-                for [s, e, eL, v, vL] in result
-            ]
-            self._validationSuccessful()
-        else:
-            self.validationState = ValidationState.FAILED
-        self.violationsUpdated.emit()
+    def updateViolations(self, result):
+        self.violations = [
+            [stripUrlPart(s), stripUrlPart(e), eL, stripUrlPart(v), vL]
+            for [s, e, eL, v, vL] in result
+        ]
 
 
 # https://www.wikidata.org/wiki/Help:Property_constraints_portal/Subject_class
@@ -414,19 +448,17 @@ class SubjectTypeConstraint(Constraint):
         self.implemented = True
         self.validationInputCountType = ValidationInputCountType.ENTITIES
 
-        self.classes = []
+        self.classes = None
         self.relation = None
 
     def pretty(self):
         label = super().pretty()
-        if len(self.classes):
+        if self.classes is not None and len(self.classes):
             label += f"\nclass(es): {[str(s) for s in self.classes]}"
         return label
 
-    def queryQualifiers(self):
-        if self.qualifiersObtained:
-            return
-        query = f"""
+    def getQualifiersQuery(self):
+        return f"""
             SELECT DISTINCT ?class ?classLabel ?relation ?relationLabel
             WHERE
             {{
@@ -458,13 +490,12 @@ class SubjectTypeConstraint(Constraint):
                 SERVICE wikibase:label {{ bd:serviceParam wikibase:language "{ self.wikibaseHelper.getDefaultLanguage() }" . }}
             }}
         """
-        self.wikibaseHelper.executeQuery(query, self._queryQualifiersResult)
 
-    def _queryQualifiersResult(self):
-        result = self.wikibaseHelper.queryResult
-        if not result:
-            self.validationState = ValidationState.FAILED
+    def updateQualifiers(self, result):
+        if len(result) < 1:
             return
+
+        self.classes = []
         for [classId, classLabel, relationId, relationLabel] in result[1:]:
             classId = stripUrlPart(classId)
             relationId = stripUrlPart(relationId)
@@ -472,16 +503,13 @@ class SubjectTypeConstraint(Constraint):
                 print(
                     f'SubjectTypeConstraint for relation "{relationLabel}" is currently unsupported.'
                 )
-                self.validationState = ValidationState.FAILED
-                self.relation = None
+                return
             self.classes.append(Property(classId, classLabel))
         self.relation = self.wikibaseHelper.getInstanceOfPid()
-        self.qualifiersUpdated.emit()
+        self.qualifiersObtained = True
 
-    def _queryViolations(self):
-        if not self.relation or self.relation != self.wikibaseHelper.getInstanceOfPid():
-            return
-        query = f"""
+    def getViolationsQuery(self):
+        return f"""
             SELECT (SAMPLE(?statement) AS ?statement) ?entity ?entityLabel
 
             WITH
@@ -523,18 +551,10 @@ class SubjectTypeConstraint(Constraint):
             }}
             GROUP BY ?entity ?entityLabel"""
 
-        self.wikibaseHelper.executeQuery(query, self._queryViolationsResult)
-
-    def _queryViolationsResult(self):
-        result = self.wikibaseHelper.queryResult
-        if result:
-            self.violations = [
-                [stripUrlPart(s), stripUrlPart(e), eL] for [s, e, eL] in result
-            ]
-            self._validationSuccessful()
-        else:
-            self.validationState = ValidationState.FAILED
-        self.violationsUpdated.emit()
+    def updateViolations(self, result):
+        self.violations = [
+            [stripUrlPart(s), stripUrlPart(e), eL] for [s, e, eL] in result
+        ]
 
 
 # https://www.wikidata.org/wiki/Help:Property_constraints_portal/Required_qualifiers
@@ -554,10 +574,8 @@ class RequiredQualifierConstraint(Constraint):
             )
         return label
 
-    def queryQualifiers(self):
-        if self.qualifiersObtained:
-            return
-        query = f"""
+    def getQualifiersQuery(self):
+        return f"""
             SELECT DISTINCT ?prop ?propLabel
             WHERE
             {{
@@ -577,21 +595,19 @@ class RequiredQualifierConstraint(Constraint):
                 SERVICE wikibase:label {{ bd:serviceParam wikibase:language "{ self.wikibaseHelper.getDefaultLanguage() }" . }}
             }}
         """
-        self.wikibaseHelper.executeQuery(query, self._queryQualifiersResult)
 
-    def _queryQualifiersResult(self):
-        result = self.wikibaseHelper.queryResult
-        if not result:
-            self.validationState = ValidationState.FAILED
+    def updateQualifiers(self, result):
+        if len(result) < 1:
             return
+
         self.requiredQualifiers = []
         for [propId, propLabel] in result[1:]:
             propId = stripUrlPart(propId)
             self.requiredQualifiers.append(Property(propId, propLabel))
-        self.qualifiersUpdated.emit()
+        self.qualifiersObtained = True
 
-    def _queryViolations(self):
-        query = f"""
+    def getViolationsQuery(self):
+        return f"""
             SELECT ?statement ?entity ?entityLabel
             
             WITH
@@ -633,18 +649,10 @@ class RequiredQualifierConstraint(Constraint):
                 SERVICE wikibase:label {{ bd:serviceParam wikibase:language "{ self.wikibaseHelper.getDefaultLanguage() }" }}
             }}"""
 
-        self.wikibaseHelper.executeQuery(query, self._queryViolationsResult)
-
-    def _queryViolationsResult(self):
-        result = self.wikibaseHelper.queryResult
-        if result:
-            self.violations = [
-                [stripUrlPart(s), stripUrlPart(e), eL] for [s, e, eL] in result
-            ]
-            self._validationSuccessful()
-        else:
-            self.validationState = ValidationState.FAILED
-        self.violationsUpdated.emit()
+    def updateViolations(self, result):
+        self.violations = [
+            [stripUrlPart(s), stripUrlPart(e), eL] for [s, e, eL] in result
+        ]
 
 
 # https://www.wikidata.org/wiki/Help:Property_constraints_portal/Qualifiers
@@ -662,10 +670,8 @@ class AllowedQualifiersConstraint(Constraint):
             label += f"\nallowed qualifiers: {[str(q) for q in self.allowedQualifiers]}"
         return label
 
-    def queryQualifiers(self):
-        if self.qualifiersObtained:
-            return
-        query = f"""
+    def getQualifiersQuery(self):
+        return f"""
             SELECT DISTINCT ?prop ?propLabel
             WHERE
             {{
@@ -685,21 +691,19 @@ class AllowedQualifiersConstraint(Constraint):
                 SERVICE wikibase:label {{ bd:serviceParam wikibase:language "{ self.wikibaseHelper.getDefaultLanguage() }" . }}
             }}
         """
-        self.wikibaseHelper.executeQuery(query, self._queryQualifiersResult)
 
-    def _queryQualifiersResult(self):
-        result = self.wikibaseHelper.queryResult
-        if not result:
-            self.validationState = ValidationState.FAILED
+    def updateQualifiers(self, result):
+        if len(result) < 1:
             return
+
         self.allowedQualifiers = []
         for [propId, propLabel] in result[1:]:
             propId = stripUrlPart(propId)
             self.allowedQualifiers.append(Property(propId, propLabel))
-        self.qualifiersUpdated.emit()
+        self.qualifiersObtained = True
 
-    def _queryViolations(self):
-        query = f"""
+    def getViolationsQuery(self):
+        return f"""
             SELECT ?statement ?entity ?entityLabel
 
             WITH
@@ -742,18 +746,10 @@ class AllowedQualifiersConstraint(Constraint):
                 SERVICE wikibase:label {{ bd:serviceParam wikibase:language "{ self.wikibaseHelper.getDefaultLanguage() }" }}
             }}"""
 
-        self.wikibaseHelper.executeQuery(query, self._queryViolationsResult)
-
-    def _queryViolationsResult(self):
-        result = self.wikibaseHelper.queryResult
-        if result:
-            self.violations = [
-                [stripUrlPart(s), stripUrlPart(e), eL] for [s, e, eL] in result
-            ]
-            self._validationSuccessful()
-        else:
-            self.validationState = ValidationState.FAILED
-        self.violationsUpdated.emit()
+    def updateViolations(self, result):
+        self.violations = [
+            [stripUrlPart(s), stripUrlPart(e), eL] for [s, e, eL] in result
+        ]
 
 
 # https://www.wikidata.org/wiki/Help:Property_constraints_portal/Conflicts_with
@@ -771,10 +767,8 @@ class ConflictsWithConstraint(Constraint):
             label += f"\nconflicting statements: {[f"{str(p)}{" " + str(v) if v else ""}" for [p,v] in self.conflictingStatements]}"
         return label
 
-    def queryQualifiers(self):
-        if self.qualifiersObtained:
-            return
-        query = f"""
+    def getQualifiersQuery(self):
+        return f"""
             SELECT DISTINCT ?prop ?propLabel ?value ?valueLabel
             WHERE
             {{
@@ -807,20 +801,19 @@ class ConflictsWithConstraint(Constraint):
         """
         self.wikibaseHelper.executeQuery(query, self._queryQualifiersResult)
 
-    def _queryQualifiersResult(self):
-        result = self.wikibaseHelper.queryResult
-        if not result:
-            self.validationState = ValidationState.FAILED
+    def updateQualifiers(self, result):
+        if len(result) < 1:
             return
+
         self.conflictingStatements = []
         for [propId, propLabel, valueId, valueLabel] in result[1:]:
             prop = Property(stripUrlPart(propId), propLabel)
             value = Item(valueId, valueLabel) if valueId else None
             self.conflictingStatements.append([prop, value])
-        self.qualifiersUpdated.emit()
+        self.qualifiersObtained = True
 
-    def _queryViolations(self):
-        query = f"""
+    def getViolationsQuery(self):
+        return f"""
             SELECT (SAMPLE(?statement) AS ?statement) ?entity ?entityLabel
 
             WITH
@@ -865,18 +858,10 @@ class ConflictsWithConstraint(Constraint):
             }}
             GROUP BY ?entity ?entityLabel"""
 
-        self.wikibaseHelper.executeQuery(query, self._queryViolationsResult)
-
-    def _queryViolationsResult(self):
-        result = self.wikibaseHelper.queryResult
-        if result:
-            self.violations = [
-                [stripUrlPart(s), stripUrlPart(e), eL] for [s, e, eL] in result
-            ]
-            self._validationSuccessful()
-        else:
-            self.validationState = ValidationState.FAILED
-        self.violationsUpdated.emit()
+    def updateViolations(self, result):
+        self.violations = [
+            [stripUrlPart(s), stripUrlPart(e), eL] for [s, e, eL] in result
+        ]
 
 
 # https://www.wikidata.org/wiki/Help:Property_constraints_portal/Unique_value
@@ -894,10 +879,8 @@ class DistinctValuesConstraint(Constraint):
             label += f"\nseparator(s): {[str(s) for s in self.separators]}"
         return label
 
-    def queryQualifiers(self):
-        if self.qualifiersObtained:
-            return
-        query = f"""
+    def getQualifiersQuery(self):
+        return f"""
             SELECT DISTINCT ?separator ?separatorLabel
             WHERE
             {{
@@ -914,13 +897,11 @@ class DistinctValuesConstraint(Constraint):
                 SERVICE wikibase:label {{ bd:serviceParam wikibase:language "{ self.wikibaseHelper.getDefaultLanguage() }" . }}
             }}
         """
-        self.wikibaseHelper.executeQuery(query, self._queryQualifiersResult)
 
-    def _queryQualifiersResult(self):
-        result = self.wikibaseHelper.queryResult
-        if not result:
-            self.validationState = ValidationState.FAILED
+    def updateQualifiers(self, result):
+        if len(result) < 1:
             return
+
         self.separators = []
         for [identifier, label] in result[1:]:
             self.separators.append(Property(stripUrlPart(identifier), label))
@@ -928,10 +909,10 @@ class DistinctValuesConstraint(Constraint):
             print(
                 "Warning: validation hasn't been tested yet with separators, could explode violently."
             )
-        self.qualifiersUpdated.emit()
+        self.qualifiersObtained = True
 
-    def _queryViolations(self):
-        query = f"""
+    def getViolationsQuery(self):
+        return f"""
             # Note that the actual number of returned output rows will be
             # different from the choosen number if output is limited.
             #
@@ -989,19 +970,11 @@ class DistinctValuesConstraint(Constraint):
                 SERVICE wikibase:label {{ bd:serviceParam wikibase:language "{ self.wikibaseHelper.getDefaultLanguage() }" . }}
             }}"""
 
-        self.wikibaseHelper.executeQuery(query, self._queryViolationsResult)
-
-    def _queryViolationsResult(self):
-        result = self.wikibaseHelper.queryResult
-        if result:
-            self.violations = [
-                [stripUrlPart(s), stripUrlPart(e), e_l, stripUrlPart(v), v_l]
-                for [s, e, e_l, v, v_l] in result
-            ]
-            self._validationSuccessful()
-        else:
-            self.validationState = ValidationState.FAILED
-        self.violationsUpdated.emit()
+    def updateViolations(self, result):
+        self.violations = [
+            [stripUrlPart(s), stripUrlPart(e), e_l, stripUrlPart(v), v_l]
+            for [s, e, e_l, v, v_l] in result
+        ]
 
 
 # https://www.wikidata.org/wiki/Help:Property_constraints_portal/Format
@@ -1019,10 +992,8 @@ class FormatConstraint(Constraint):
             label += f"\nformat: {self.format}"
         return label
 
-    def queryQualifiers(self):
-        if self.qualifiersObtained:
-            return
-        query = f"""
+    def getQualifiersQuery(self):
+        return f"""
             SELECT DISTINCT ?format
             WHERE
             {{
@@ -1038,18 +1009,16 @@ class FormatConstraint(Constraint):
                 FILTER (str(?formatQualifierLabel) = "format as a regular expression")
             }}
         """
-        self.wikibaseHelper.executeQuery(query, self._queryQualifiersResult)
 
-    def _queryQualifiersResult(self):
-        result = self.wikibaseHelper.queryResult
-        if not result or len(result) < 2:
-            self.validationState = ValidationState.FAILED
+    def updateQualifiers(self, result):
+        if len(result) < 2:
             return
-        self.format = result[1][0]
-        self.qualifiersUpdated.emit()
 
-    def _queryViolations(self):
-        query = f"""
+        self.format = result[1][0]
+        self.qualifiersObtained = True
+
+    def getViolationsQuery(self):
+        return f"""
             SELECT ?statement ?entity ?entityLabel ?value
 
             WITH
@@ -1090,24 +1059,16 @@ class FormatConstraint(Constraint):
                 SERVICE wikibase:label {{ bd:serviceParam wikibase:language "{ self.wikibaseHelper.getDefaultLanguage() }" }}
             }}"""
 
-        self.wikibaseHelper.executeQuery(query, self._queryViolationsResult)
-
-    def _queryViolationsResult(self):
-        result = self.wikibaseHelper.queryResult
-        if result:
-            self.violations = [
-                [
-                    stripUrlPart(s),
-                    stripUrlPart(e),
-                    e_l,
-                    v,
-                ]
-                for [s, e, e_l, v] in result
+    def updateViolations(self, result):
+        self.violations = [
+            [
+                stripUrlPart(s),
+                stripUrlPart(e),
+                e_l,
+                v,
             ]
-            self._validationSuccessful()
-        else:
-            self.validationState = ValidationState.FAILED
-        self.violationsUpdated.emit()
+            for [s, e, e_l, v] in result
+        ]
 
 
 # https://www.wikidata.org/wiki/Help:Property_constraints_portal/Item
@@ -1125,10 +1086,8 @@ class ItemRequiresStatementConstraint(Constraint):
             label += f"\nrequiredStatement: {[f"{str(s[0])} = " + ", ".join(str(v) for v in s[1:]) for s in self.requiredStatements.values()]}"
         return label
 
-    def queryQualifiers(self):
-        if self.qualifiersObtained:
-            return
-        query = f"""
+    def getQualifiersQuery(self):
+        return f"""
             SELECT DISTINCT ?prop ?propLabel ?value ?valueLabel
             WHERE
             {{
@@ -1159,13 +1118,11 @@ class ItemRequiresStatementConstraint(Constraint):
                 SERVICE wikibase:label {{ bd:serviceParam wikibase:language "{ self.wikibaseHelper.getDefaultLanguage() }" . }}
             }}
         """
-        self.wikibaseHelper.executeQuery(query, self._queryQualifiersResult)
 
-    def _queryQualifiersResult(self):
-        result = self.wikibaseHelper.queryResult
-        if not result:
-            self.validationState = ValidationState.FAILED
+    def updateQualifiers(self, result):
+        if len(result) < 1:
             return
+
         self.requiredStatements = {}
         for [propId, propLabel, valueId, valueLabel] in result[1:]:
             prop = Property(stripUrlPart(propId), propLabel)
@@ -1174,10 +1131,10 @@ class ItemRequiresStatementConstraint(Constraint):
                 self.requiredStatements[prop.identifier] = [prop]
             if valueId != None:
                 self.requiredStatements[prop.identifier].append(value)
-        self.qualifiersUpdated.emit()
+        self.qualifiersObtained = True
 
-    def _queryViolations(self):
-        query = f"""
+    def getViolationsQuery(self):
+        return f"""
             SELECT (SAMPLE(?statement) AS ?statement) ?entity ?entityLabel
 
             WITH
@@ -1222,18 +1179,10 @@ class ItemRequiresStatementConstraint(Constraint):
             }}
             GROUP BY ?entity ?entityLabel"""
 
-        self.wikibaseHelper.executeQuery(query, self._queryViolationsResult)
-
-    def _queryViolationsResult(self):
-        result = self.wikibaseHelper.queryResult
-        if result:
-            self.violations = [
-                [stripUrlPart(s), stripUrlPart(e), eL] for [s, e, eL] in result
-            ]
-            self._validationSuccessful()
-        else:
-            self.validationState = ValidationState.FAILED
-        self.violationsUpdated.emit()
+    def updateViolations(self, result):
+        self.violations = [
+            [stripUrlPart(s), stripUrlPart(e), eL] for [s, e, eL] in result
+        ]
 
 
 # https://www.wikidata.org/wiki/Help:Property_constraints_portal/Target_required_claim
@@ -1251,10 +1200,8 @@ class ValueRequiresStatementConstraint(Constraint):
             label += f"\nrequiredStatement: {[f"{str(s[0])} = " + ", ".join(str(v) for v in s[1:]) for s in self.requiredStatements.values()]}"
         return label
 
-    def queryQualifiers(self):
-        if self.qualifiersObtained:
-            return
-        query = f"""
+    def getQualifiersQuery(self):
+        return f"""
             SELECT DISTINCT ?prop ?propLabel ?value ?valueLabel
             WHERE
             {{
@@ -1285,13 +1232,11 @@ class ValueRequiresStatementConstraint(Constraint):
                 SERVICE wikibase:label {{ bd:serviceParam wikibase:language "{ self.wikibaseHelper.getDefaultLanguage() }" . }}
             }}
         """
-        self.wikibaseHelper.executeQuery(query, self._queryQualifiersResult)
 
-    def _queryQualifiersResult(self):
-        result = self.wikibaseHelper.queryResult
-        if not result:
-            self.validationState = ValidationState.FAILED
+    def updateQualifiers(self, result):
+        if len(result) < 1:
             return
+
         self.requiredStatements = {}
         for [propId, propLabel, valueId, valueLabel] in result[1:]:
             prop = Property(stripUrlPart(propId), propLabel)
@@ -1301,10 +1246,10 @@ class ValueRequiresStatementConstraint(Constraint):
             if valueId != None:
                 self.requiredStatements[prop.identifier].append(value)
 
-        self.qualifiersUpdated.emit()
+        self.qualifiersObtained = True
 
-    def _queryViolations(self):
-        query = f"""
+    def getViolationsQuery(self):
+        return f"""
             SELECT ?statement ?value ?valueLabel
 
             WITH
@@ -1347,18 +1292,10 @@ class ValueRequiresStatementConstraint(Constraint):
                 SERVICE wikibase:label {{ bd:serviceParam wikibase:language "{ self.wikibaseHelper.getDefaultLanguage() }" }}
             }}"""
 
-        self.wikibaseHelper.executeQuery(query, self._queryViolationsResult)
-
-    def _queryViolationsResult(self):
-        result = self.wikibaseHelper.queryResult
-        if result:
-            self.violations = [
-                [stripUrlPart(s), stripUrlPart(e), eL] for [s, e, eL] in result
-            ]
-            self._validationSuccessful()
-        else:
-            self.validationState = ValidationState.FAILED
-        self.violationsUpdated.emit()
+    def updateViolations(self, result):
+        self.violations = [
+            [stripUrlPart(s), stripUrlPart(e), eL] for [s, e, eL] in result
+        ]
 
 
 CONSTRAINT_MAP = {
@@ -1380,12 +1317,23 @@ class ConstraintAnalyzer(QObject):
     constrainedPropertiesUpdated = Signal()
     constrainedPropertyValidationStateChanged = Signal()
     focusedPropertyConstraintUpdated = Signal()
+    focusedPropertyConstraintInputCountUpdated = Signal()
+    focusedPropertyConstraintQualifiersUpdated = Signal()
+    focusedPropertyConstraintViolationsUpdated = Signal()
     validateAllDone = Signal()
 
     def __init__(self, wikibaseHelper):
         super().__init__()
 
         self.wikibaseHelper = wikibaseHelper
+
+        self.constraintHelper = ConstraintHelper(self.wikibaseHelper)
+        self.constraintHelper.inputCountUpdated.connect(self.onInputCountUpdated)
+        self.constraintHelper.qualifiersUpdated.connect(self.onQualifiersUpdated)
+        self.constraintHelper.violationsUpdated.connect(self.onViolationsUpdated)
+        self.constraintHelper.validationStateUpdated.connect(self.validateNextInQueue)
+        self.constraintHelper.validationStateUpdated.connect(self.constrainedPropertyValidationStateChanged)
+
         self.constraints = {}
         self.focusedConstraint = None
         self.validationQueue = []
@@ -1440,12 +1388,6 @@ class ConstraintAnalyzer(QObject):
             constraint = constType(
                 consId, consLabel, Property(propId, propLabel), self.wikibaseHelper
             )
-            constraint.validationStateChanged.connect(
-                self.constrainedPropertyValidationStateChanged
-            )
-
-            constraint.qualifiersUpdated.connect(self.validateNextInQueue)
-            constraint.violationsUpdated.connect(self.validateNextInQueue)
 
             self.constraints[consId, propId] = constraint
 
@@ -1471,6 +1413,8 @@ class ConstraintAnalyzer(QObject):
         if constraint:
             self.focusedConstraint = constraint
             self.focusedPropertyConstraintUpdated.emit()
+        self.constraintHelper.queryQualifiers(constraint)
+        self.constraintHelper.queryInputCount(constraint)
 
     def validateFocusedConstraint(self, validationMode, limit, offset, sort):
         self.focusedConstraint.validationMode = validationMode
@@ -1480,7 +1424,7 @@ class ConstraintAnalyzer(QObject):
         if self.validatingQueue:
             self.validationQueue.append(self.focusedConstraint)
         else:
-            self.focusedConstraint.queryViolations()
+            self.constraintHelper.queryViolations(self.focusedConstraint)
 
     def validatingAll(self):
         return len(self.validationQueue) != 0
@@ -1495,6 +1439,10 @@ class ConstraintAnalyzer(QObject):
         self.validateNextInQueue()
 
     def validateNextInQueue(self):
+        c = self.constraintHelper.constraint
+        if c is not None and c.validationState == ValidationState.VALIDATING:
+            return
+
         if not self.validationQueue:
             self.validateAllDone.emit()
             self.validatingQueue = False
@@ -1504,11 +1452,23 @@ class ConstraintAnalyzer(QObject):
             constraint.implemented
             and constraint.validationState == ValidationState.UNVALIDATED
         ):
-            if not constraint.qualifiersObtained:
-                constraint.queryQualifiers()
-            else:
-                self.validationQueue.pop()
-                constraint.queryViolations()
+            self.validationQueue.pop()
+            self.constraintHelper.queryViolations(constraint)
         else:
             self.validationQueue.pop()
             self.validateNextInQueue()
+
+    def onInputCountUpdated(self):
+        c = self.constraintHelper.constraint
+        if c == self.focusedConstraint:
+            self.focusedPropertyConstraintInputCountUpdated.emit()
+
+    def onQualifiersUpdated(self):
+        c = self.constraintHelper.constraint
+        if c == self.focusedConstraint:
+            self.focusedPropertyConstraintQualifiersUpdated.emit()
+
+    def onViolationsUpdated(self):
+        c = self.constraintHelper.constraint
+        if c == self.focusedConstraint:
+            self.focusedPropertyConstraintViolationsUpdated.emit()

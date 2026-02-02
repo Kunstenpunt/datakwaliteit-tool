@@ -46,6 +46,8 @@ class WikibaseHelper(QObject):
         )
         self.loadExtraWikibaseConfig()
 
+        self.callbackConnection = None
+        self.callbackData = None
         self.executingQuery = False
         self.mostRecentQuery = None
         self.queryQueue = []
@@ -91,29 +93,29 @@ class WikibaseHelper(QObject):
         # Clear the query queue now that the config has changed.
         self.queryQueue = []
 
-    def executeQuery(self, queryString, callback):
-        self.queryQueue.append((queryString, callback))
+    def executeQuery(self, queryString, callback, data=None):
+        self.queryQueue.append((queryString, callback, data))
         if len(self.queryQueue) == 1 and not self.executingQuery:
             self.handleQueryQueue()
 
     def handleQueryQueue(self):
         if not self.queryQueue:
             return
-        (queryString, callback) = self.queryQueue.pop(0)
-        self.processQuery(queryString, callback)
+        (queryString, callback, data) = self.queryQueue.pop(0)
+        self.processQuery(queryString, callback, data)
 
-    def processQuery(self, queryString, callback):
+    def processQuery(self, queryString, callback, data):
         if self.executingQuery:
             return
         else:
             self.executingQuery = True
 
-        try:
-            self._queryResultAvailable.disconnect()
-        except TypeError:
-            pass
+        if self.callbackConnection:
+            self._queryResultAvailable.disconnect(self.callbackConnection)
 
-        self._queryResultAvailable.connect(callback)
+        self.callbackConnection = self._queryResultAvailable.connect(callback)
+
+        self.callbackData = data
 
         self.queryThread = QThread()
         self.queryWorker = QueryWorker(queryString, self.queryPrefixes)
