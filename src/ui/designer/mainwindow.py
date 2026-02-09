@@ -19,7 +19,7 @@ from PySide6.QtWidgets import (QApplication, QMainWindow, QSizePolicy, QStatusBa
     QTabWidget, QVBoxLayout, QWidget)
 
 class Ui_MainWindow(object):
-    def setupUi(self, MainWindow):
+    def setupUi(self, MainWindow): # type: ignore
         if not MainWindow.objectName():
             MainWindow.setObjectName(u"MainWindow")
         MainWindow.resize(1600, 900)
@@ -42,12 +42,12 @@ class Ui_MainWindow(object):
         self.statusbar.setObjectName(u"statusbar")
         MainWindow.setStatusBar(self.statusbar)
 
-        self.retranslateUi(MainWindow)
+        self.retranslateUi(MainWindow) # type: ignore
 
         QMetaObject.connectSlotsByName(MainWindow)
     # setupUi
 
-    def retranslateUi(self, MainWindow):
+    def retranslateUi(self, MainWindow): # type: ignore
         MainWindow.setWindowTitle(QCoreApplication.translate("MainWindow", u"Kunstenpunt Datakwaliteit Tool", None))
     # retranslateUi
 

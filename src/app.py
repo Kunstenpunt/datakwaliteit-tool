@@ -18,9 +18,9 @@ from .ui.designer.mainwindow import Ui_MainWindow
 
 
 class MainWindow(QMainWindow, Ui_MainWindow):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
-        self.setupUi(self)
+        self.setupUi(self)  # type: ignore
 
         self.model = Model()
 
@@ -50,21 +50,21 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         # Load constrained properties on startup
         self.model.constraintAnalyzer.updateConstraints()
 
-    def onQueryStarted(self):
+    def onQueryStarted(self) -> None:
         self.queryIndicator.show()
         self.queryIndicatorLabel.setText("Running query...")
 
-    def onQueryDone(self):
+    def onQueryDone(self) -> None:
         self.queryIndicator.hide()
         self.queryIndicatorLabel.setText(
             "LAST QUERY FAILED" if self.model.wikibaseHelper.queryResult == None else ""
         )
 
-    def _onCurrentTabChanged(self, index):
+    def _onCurrentTabChanged(self, index: int) -> None:
         if index == self.configurationTabIndex:
             pass
 
-    def copyQueryToClipboard(self):
+    def copyQueryToClipboard(self) -> None:
         query = textwrap.dedent(self.model.wikibaseHelper.mostRecentQuery).lstrip()
         clipboard = QGuiApplication.clipboard()
         if not "PREFIX" in query:

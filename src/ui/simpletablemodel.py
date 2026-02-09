@@ -1,5 +1,9 @@
+from typing import Sequence
+
 from PySide6.QtCore import (
     QAbstractTableModel,
+    QModelIndex,
+    QPersistentModelIndex,
     Qt,
     QUrl,
 )
@@ -14,29 +18,33 @@ MAXIMUM_AUTO_TABLE_SECTION_WIDTH = 200
 
 
 class TableClickHandler:
-    def __init__(self, baseUrl):
+    def __init__(self, baseUrl: str) -> None:
         super().__init__()
         self.baseUrl = baseUrl
 
-    def onTableDoubleClicked(self, index):
+    def onTableDoubleClicked(self, index: QModelIndex) -> None:
         possibleID = index.data()
         url = urlFromId(possibleID, self.baseUrl)
         if url:
             QDesktopServices.openUrl(QUrl(url))
 
 
-def headerResizeNeatly(header):
+def headerResizeNeatly(header: QHeaderView) -> None:
     header.setMaximumSectionSize(MAXIMUM_AUTO_TABLE_SECTION_WIDTH)
     header.resizeSections(QHeaderView.ResizeMode.ResizeToContents)
     header.setMaximumSectionSize(-1)
 
 
 class SimpleTableModel(QAbstractTableModel):
-    def __init__(self, data):
+    def __init__(self, data: Sequence[Sequence[object]]) -> None:
         super().__init__()
-        self._data = data
+        self._data: list[list[object]] = [list(inner) for inner in data]
 
-    def data(self, index, role):
+    def data(
+        self,
+        index: QModelIndex | QPersistentModelIndex,
+        role: int = Qt.ItemDataRole.DisplayRole,
+    ) -> object:
         if role == Qt.ItemDataRole.DisplayRole:
             data = self._data[index.row() + 1][index.column()]
             if type(data) == type(True):
@@ -70,18 +78,35 @@ class SimpleTableModel(QAbstractTableModel):
             if type(data) == type(True) or type(data) == ValidationState:
                 return QBrush(Qt.GlobalColor.white)
 
-    def rowCount(self, index):
+        return None
+
+    def rowCount(
+        self, parent: QModelIndex | QPersistentModelIndex = QModelIndex()
+    ) -> int:
         return len(self._data) - 1
 
-    def columnCount(self, index):
+    def columnCount(
+        self, parent: QModelIndex | QPersistentModelIndex = QModelIndex()
+    ) -> int:
         return len(self._data[0])
 
-    def headerData(self, section, orientation, role):
+    def headerData(
+        self,
+        section: int,
+        orientation: Qt.Orientation,
+        role: int = Qt.ItemDataRole.DisplayRole,
+    ) -> object:
         if role == Qt.ItemDataRole.DisplayRole:
             if orientation == Qt.Orientation.Horizontal:
                 return self._data[0][section]
+        return None
 
-    def setData(self, index, value, role=None):
+    def setData(
+        self,
+        index: QModelIndex | QPersistentModelIndex,
+        value: object,
+        role: int = Qt.ItemDataRole.DisplayRole,
+    ) -> bool:
         self._data[index.row() + 1][index.column()] = value
         self.dataChanged.emit(index, index)
         return True

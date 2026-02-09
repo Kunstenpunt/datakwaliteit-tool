@@ -1,17 +1,18 @@
-from PySide6.QtCore import QFileInfo, QSortFilterProxyModel, QStandardPaths
+from PySide6.QtCore import QFileInfo, QModelIndex, QSortFilterProxyModel, QStandardPaths
 from PySide6.QtWidgets import QFileDialog, QWidget
 
 from ..backend.constraints import ValidationMode, ValidationState
 from ..backend.export import Exporter
+from ..backend.model import Model
 
 from .designer.constrainttab import Ui_ConstraintTab
 from .simpletablemodel import headerResizeNeatly, SimpleTableModel, TableClickHandler
 
 
 class ConstraintsTab(QWidget, Ui_ConstraintTab):
-    def __init__(self, model):
+    def __init__(self, model: Model) -> None:
         super().__init__()
-        self.setupUi(self)
+        self.setupUi(self)  # type: ignore
 
         self.model = model
         self.exporter = Exporter(self.model.wikibaseHelper)
@@ -63,11 +64,11 @@ class ConstraintsTab(QWidget, Ui_ConstraintTab):
             self.updateValidateAllLabel
         )
 
-    def updateConstraints(self):
+    def updateConstraints(self) -> None:
         self.model.constraintAnalyzer.updateConstraints()
 
-    def onConstrainedPropertiesUpdated(self):
-        header = [
+    def onConstrainedPropertiesUpdated(self) -> None:
+        headerLabels = [
             "Prop ID",
             "Prop label",
             "Constraint ID",
@@ -75,7 +76,7 @@ class ConstraintsTab(QWidget, Ui_ConstraintTab):
             "Implemented",
             "Validated",
         ]
-        data = [header] + self.model.constraintAnalyzer.getConstraintsListFull()
+        data = [headerLabels] + self.model.constraintAnalyzer.getConstraintsListFull()
         sortableDataModel = QSortFilterProxyModel()
         sortableDataModel.setSourceModel(SimpleTableModel(data))
         self.propertiesTableView.setModel(sortableDataModel)
@@ -87,14 +88,19 @@ class ConstraintsTab(QWidget, Ui_ConstraintTab):
         if len(data) > 1:
             self.propertiesTableView.selectRow(0)
 
-    def onConstrainedPropertyValidationStateChanged(self):
+    def onConstrainedPropertyValidationStateChanged(self) -> None:
         data = self.model.constraintAnalyzer.getConstraintsListFull()
-        model = self.propertiesTableView.model().sourceModel()
+        model = self.propertiesTableView.model()
+        if not isinstance(model, QSortFilterProxyModel):
+            return
+        sourceModel = model.sourceModel()
         validatedColumnIndex = 5
         for rowIndex, row in enumerate(data):
-            model.setData(model.index(rowIndex, validatedColumnIndex), row[5])
+            sourceModel.setData(
+                sourceModel.index(rowIndex, validatedColumnIndex), row[5]
+            )
 
-    def onPropertySelectionChanged(self, current, _):
+    def onPropertySelectionChanged(self, current: QModelIndex, _: QModelIndex) -> None:
         if current == None:
             return
         tableModel = current.model()
@@ -102,8 +108,10 @@ class ConstraintsTab(QWidget, Ui_ConstraintTab):
         constraintId = tableModel.data(tableModel.index(current.row(), 2))
         self.model.constraintAnalyzer.setFocusedConstraint(propId, constraintId)
 
-    def onFocusedPropertyConstraintUpdated(self):
+    def onFocusedPropertyConstraintUpdated(self) -> None:
         focusedPropertyConstraint = self.model.constraintAnalyzer.focusedConstraint
+        if not focusedPropertyConstraint:
+            return
         self.updateFocusedPropertyConstraintLabel()
         self.updateFocusedPropertyConstraintInputCount()
         self.limitComboBox.setCurrentIndex(
@@ -115,18 +123,22 @@ class ConstraintsTab(QWidget, Ui_ConstraintTab):
         self.validateButton.setEnabled(focusedPropertyConstraint.implemented)
         self.updateViolationsTableView()
 
-    def updateFocusedPropertyConstraintLabel(self):
+    def updateFocusedPropertyConstraintLabel(self) -> None:
         constraint = self.model.constraintAnalyzer.focusedConstraint
+        if not constraint:
+            return
         self.labelRight.setText(constraint.pretty())
 
-    def updateFocusedPropertyConstraintInputCount(self):
+    def updateFocusedPropertyConstraintInputCount(self) -> None:
         constraint = self.model.constraintAnalyzer.focusedConstraint
+        if not constraint:
+            return
         if constraint.inputCount != -1:
             self.inputRowsLabel.setText(f"Rows to check: {constraint.inputCount:,}")
         else:
             self.inputRowsLabel.setText(f"Rows to check: ?")
 
-    def changeLimitMode(self):
+    def changeLimitMode(self) -> None:
         if self.limitComboBox.currentIndex() == ValidationMode.NO_LIMIT.value:
             self.limitLabel.hide()
             self.limitSpinBox.hide()
@@ -140,27 +152,27 @@ class ConstraintsTab(QWidget, Ui_ConstraintTab):
             self.pageSpinBox.show()
             self.sortedCheckBox.show()
 
-    def changeLimitSorted(self):
+    def changeLimitSorted(self) -> None:
         # Page should not be selectable if limiting random input
         self.pageSpinBox.setEnabled(self.sortedCheckBox.isChecked())
         self.pageLabel.setEnabled(self.sortedCheckBox.isChecked())
         self.pageSpinBox.setValue(1)
 
-    def validateAll(self):
+    def validateAll(self) -> None:
         if not self.model.constraintAnalyzer.validatingAll():
             self.model.constraintAnalyzer.validateAll()
         else:
             self.model.constraintAnalyzer.stopValidatingAll()
         self.updateValidateAllLabel()
 
-    def updateValidateAllLabel(self):
+    def updateValidateAllLabel(self) -> None:
         self.validateAllButton.setText(
             "Stop Validating All"
             if self.model.constraintAnalyzer.validatingAll()
             else "Validate All"
         )
 
-    def onValidateButtonClicked(self):
+    def onValidateButtonClicked(self) -> None:
         limitMode = ValidationMode(self.limitComboBox.currentIndex())
         sort = self.sortedCheckBox.isChecked()
         limit = self.limitSpinBox.value()
@@ -170,8 +182,11 @@ class ConstraintsTab(QWidget, Ui_ConstraintTab):
             limitMode, limit, offset, sort
         )
 
-    def updateViolationsTableView(self):
-        data = self.model.constraintAnalyzer.focusedConstraint.violations
+    def updateViolationsTableView(self) -> None:
+        constraint = self.model.constraintAnalyzer.focusedConstraint
+        if not constraint:
+            return
+        data = constraint.violations
         self.exportButton.setEnabled(data != None)
         if data == None:
             self.violationsTableView.setModel(None)
@@ -188,8 +203,10 @@ class ConstraintsTab(QWidget, Ui_ConstraintTab):
             f"{violations} violation{"s" if violations != 1 else ""} found."
         )
 
-    def exportSingleConstraint(self):
+    def exportSingleConstraint(self) -> None:
         constraint = self.model.constraintAnalyzer.focusedConstraint
+        if not constraint:
+            return
         defaultFileName = f"constraint_violations_{constraint.property.identifier}_{constraint.identifier}"
         if constraint.validationState == ValidationState.PARTIAL:
             defaultFileName += "_partial"
@@ -211,7 +228,7 @@ class ConstraintsTab(QWidget, Ui_ConstraintTab):
         exportUrl = self.exportUrlCheckBox.isChecked()
         self.exporter.exportSingleConstraint(constraint, fileName, exportUrl)
 
-    def exportAllValidated(self):
+    def exportAllValidated(self) -> None:
         validatedConstraints = sorted(
             [
                 c

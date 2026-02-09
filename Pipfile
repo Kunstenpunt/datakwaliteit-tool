@@ -10,6 +10,7 @@ odswriter = "*"
 xlsxwriter = "*"
 imageio = "*"
 black = "*"
+mypy = "*"
 
 [dev-packages]
 

@@ -1,23 +1,24 @@
-from PySide6.QtCore import Signal, QObject, QThread
+from typing import Callable, Optional, Sequence
 
-from wikibaseintegrator import WikibaseIntegrator
+from PySide6.QtCore import Signal, QMetaObject, QObject, QThread
+
 from wikibaseintegrator.wbi_config import config
 from wikibaseintegrator.wbi_helpers import execute_sparql_query
 
-from .configuration import ExtraWikibaseKey, WbiConfigKey
-from .utils import queryResultToList
+from .configuration import Configuration, ExtraWikibaseKey, WbiConfigKey
+from .utils import queryResultToList, stringOrDefault
 
 
 class QueryWorker(QObject):
     finished = Signal()
 
-    def __init__(self, query, prefixes):
+    def __init__(self, query: str, prefixes: str) -> None:
         super().__init__()
         self.query = query
         self.prefixes = None if "PREFIX" in query else prefixes
-        self.resultList = None
+        self.resultList: Optional[Sequence[Sequence[str]]] = None
 
-    def run(self):
+    def run(self) -> None:
         result = None
         try:
             result = execute_sparql_query(
@@ -35,10 +36,20 @@ class WikibaseHelper(QObject):
     _queryResultAvailable = Signal()
     _readyForNewQuery = Signal()
 
-    def __init__(self, configuration):
+    def __init__(self, configuration: Configuration) -> None:
         super().__init__()
 
         self._configuration = configuration
+        self._instanceOfPid = ""
+        self._subclassOfPid = ""
+
+        self.callbackConnection: Optional[QMetaObject.Connection] = None
+        self.callbackData: Optional[object] = None
+        self.executingQuery = False
+        self.mostRecentQuery = ""
+        self.queryQueue: list[tuple[str, Callable[[], None], object]] = []
+        self.queryResult: Optional[Sequence[Sequence[str]]] = None
+
         self._configuration.wbiConfigChanged.connect(self.loadWbiConfig)
         self.loadWbiConfig()
         self._configuration.extraWikibaseConfigChanged.connect(
@@ -46,18 +57,9 @@ class WikibaseHelper(QObject):
         )
         self.loadExtraWikibaseConfig()
 
-        self.callbackConnection = None
-        self.callbackData = None
-        self.executingQuery = False
-        self.mostRecentQuery = None
-        self.queryQueue = []
-        self.queryResult = None
-        self.queryThread = None
-        self.queryWorker = None
-
         self._readyForNewQuery.connect(self.handleQueryQueue)
 
-    def loadWbiConfig(self):
+    def loadWbiConfig(self) -> None:
         wbiConfigPairs = self._configuration.getWikibaseConfig()
         allWbiKeysObtained = True
         for key in WbiConfigKey:
@@ -84,27 +86,31 @@ class WikibaseHelper(QObject):
         # Clear the query queue now that the config has changed.
         self.queryQueue = []
 
-    def loadExtraWikibaseConfig(self):
+    def loadExtraWikibaseConfig(self) -> None:
         wbiConfigPairs = self._configuration.getWikibaseConfig()
 
-        self._instanceOfPid = wbiConfigPairs.get(ExtraWikibaseKey.INSTANCE_OF_PID)
-        self._subclassOfPid = wbiConfigPairs.get(ExtraWikibaseKey.SUBCLASS_OF_PID)
+        self._instanceOfPid = wbiConfigPairs.get(ExtraWikibaseKey.INSTANCE_OF_PID, "")
+        self._subclassOfPid = wbiConfigPairs.get(ExtraWikibaseKey.SUBCLASS_OF_PID, "")
 
         # Clear the query queue now that the config has changed.
         self.queryQueue = []
 
-    def executeQuery(self, queryString, callback, data=None):
+    def executeQuery(
+        self, queryString: str, callback: Callable[[], None], data: object = None
+    ) -> None:
         self.queryQueue.append((queryString, callback, data))
         if len(self.queryQueue) == 1 and not self.executingQuery:
             self.handleQueryQueue()
 
-    def handleQueryQueue(self):
+    def handleQueryQueue(self) -> None:
         if not self.queryQueue:
             return
         (queryString, callback, data) = self.queryQueue.pop(0)
         self.processQuery(queryString, callback, data)
 
-    def processQuery(self, queryString, callback, data):
+    def processQuery(
+        self, queryString: str, callback: Callable[[], None], data: object
+    ) -> None:
         if self.executingQuery:
             return
         else:
@@ -131,33 +137,33 @@ class WikibaseHelper(QObject):
         self.queryStarted.emit()
         self.queryThread.start()
 
-    def queryWorkerFinished(self):
+    def queryWorkerFinished(self) -> None:
         self.queryResult = self.queryWorker.resultList
         self._queryResultAvailable.emit()
         self.queryDone.emit()
 
-    def queryThreadDestroyed(self):
+    def queryThreadDestroyed(self) -> None:
         self.executingQuery = False
         self._readyForNewQuery.emit()
 
-    def getPropertyConstraintPid(self):
-        return config[WbiConfigKey.PROPERTY_CONSTRAINT_PID]
+    def getPropertyConstraintPid(self) -> str:
+        return stringOrDefault(config[WbiConfigKey.PROPERTY_CONSTRAINT_PID])
 
-    def getDefaultLanguage(self):
-        return config[WbiConfigKey.DEFAULT_LANGUAGE]
+    def getDefaultLanguage(self) -> str:
+        return stringOrDefault(config[WbiConfigKey.DEFAULT_LANGUAGE])
 
-    def getBaseUrl(self):
-        return config[WbiConfigKey.WIKIBASE_URL]
+    def getBaseUrl(self) -> str:
+        return stringOrDefault(config[WbiConfigKey.WIKIBASE_URL])
 
-    def getPureUrl(self):
+    def getPureUrl(self) -> str:
         return (
-            config[WbiConfigKey.WIKIBASE_URL]
+            stringOrDefault(config[WbiConfigKey.WIKIBASE_URL])
             .replace("https://", "")
             .replace("http://", "")
         )
 
-    def getInstanceOfPid(self):
+    def getInstanceOfPid(self) -> str:
         return self._instanceOfPid
 
-    def getSubclassOfPid(self):
+    def getSubclassOfPid(self) -> str:
         return self._subclassOfPid

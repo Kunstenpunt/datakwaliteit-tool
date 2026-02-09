@@ -20,7 +20,7 @@ from PySide6.QtWidgets import (QApplication, QHBoxLayout, QHeaderView, QLabel,
     QTableView, QVBoxLayout, QWidget)
 
 class Ui_QueryTab(object):
-    def setupUi(self, QueryTab):
+    def setupUi(self, QueryTab): # type: ignore
         if not QueryTab.objectName():
             QueryTab.setObjectName(u"QueryTab")
         QueryTab.resize(746, 567)
@@ -108,14 +108,14 @@ class Ui_QueryTab(object):
         self.horizontalLayout.addWidget(self.splitter)
 
 
-        self.retranslateUi(QueryTab)
+        self.retranslateUi(QueryTab) # type: ignore
         self.pasteButton.clicked.connect(self.plainTextEdit.paste)
         self.clearButton.clicked.connect(self.plainTextEdit.clear)
 
         QMetaObject.connectSlotsByName(QueryTab)
     # setupUi
 
-    def retranslateUi(self, QueryTab):
+    def retranslateUi(self, QueryTab): # type: ignore
         QueryTab.setWindowTitle(QCoreApplication.translate("QueryTab", u"Form", None))
         self.labelLeft.setText(QCoreApplication.translate("QueryTab", u"Fill in the SPARQL query you want to execute.", None))
 #if QT_CONFIG(tooltip)

@@ -5,7 +5,7 @@ from .wikibasehelper import WikibaseHelper
 
 
 class Model:
-    def __init__(self):
+    def __init__(self) -> None:
         self.configuration = Configuration()
         self.wikibaseHelper = WikibaseHelper(self.configuration)
         self.constraintAnalyzer = ConstraintAnalyzer(self.wikibaseHelper)

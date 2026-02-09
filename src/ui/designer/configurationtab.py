@@ -20,7 +20,7 @@ from PySide6.QtWidgets import (QApplication, QFormLayout, QHBoxLayout, QLabel,
     QVBoxLayout, QWidget)
 
 class Ui_ConfigurationTab(object):
-    def setupUi(self, ConfigurationTab):
+    def setupUi(self, ConfigurationTab): # type: ignore
         if not ConfigurationTab.objectName():
             ConfigurationTab.setObjectName(u"ConfigurationTab")
         ConfigurationTab.resize(701, 567)
@@ -188,12 +188,12 @@ class Ui_ConfigurationTab(object):
         self.verticalLayout_2.addLayout(self.buttonHorizontalLayout)
 
 
-        self.retranslateUi(ConfigurationTab)
+        self.retranslateUi(ConfigurationTab) # type: ignore
 
         QMetaObject.connectSlotsByName(ConfigurationTab)
     # setupUi
 
-    def retranslateUi(self, ConfigurationTab):
+    def retranslateUi(self, ConfigurationTab): # type: ignore
         ConfigurationTab.setWindowTitle(QCoreApplication.translate("ConfigurationTab", u"Form", None))
         self.wikibaseConfigTitleLabel.setText(QCoreApplication.translate("ConfigurationTab", u"### Wikibase Configuration", None))
         self.wikibaseUrlLabel.setText(QCoreApplication.translate("ConfigurationTab", u"Wikibase URL", None))

@@ -1,4 +1,5 @@
 from enum import StrEnum
+from typing import Mapping
 
 from PySide6.QtCore import Signal, QObject, QSettings
 
@@ -35,12 +36,12 @@ class Configuration(QObject):
     wbiConfigChanged = Signal()
     extraWikibaseConfigChanged = Signal()
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
 
         self.settings = QSettings(ORGANISATION_NAME, APPLICATION_NAME)
 
-    def getWikibaseConfig(self):
+    def getWikibaseConfig(self) -> Mapping[str, str]:
         self.settings.beginGroup(WBI_CONFIGURATION_KEY)
         result = {
             key: self.settings.value(key)
@@ -50,7 +51,7 @@ class Configuration(QObject):
         self.settings.endGroup()
         return result
 
-    def setWikibaseConfig(self, data):
+    def setWikibaseConfig(self, data: Mapping[str, str | int | bool | None]) -> None:
         wbiModified = False
         extraModified = False
 
@@ -61,10 +62,10 @@ class Configuration(QObject):
                 self.settings.setValue(key, value)
                 wbiModified = True
 
-        for key in ExtraWikibaseKey:
-            value = data.get(key)
+        for keyExtra in ExtraWikibaseKey:
+            value = data.get(keyExtra)
             if value is not None:
-                self.settings.setValue(key, value)
+                self.settings.setValue(keyExtra, value)
                 extraModified = True
 
         self.settings.endGroup()

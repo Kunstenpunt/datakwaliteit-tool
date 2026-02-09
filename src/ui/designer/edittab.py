@@ -20,7 +20,7 @@ from PySide6.QtWidgets import (QApplication, QFrame, QHBoxLayout, QLabel,
     QVBoxLayout, QWidget)
 
 class Ui_EditTab(object):
-    def setupUi(self, EditTab):
+    def setupUi(self, EditTab): # type: ignore
         if not EditTab.objectName():
             EditTab.setObjectName(u"EditTab")
         EditTab.resize(860, 536)
@@ -152,14 +152,14 @@ class Ui_EditTab(object):
         self.horizontalLayout.addWidget(self.splitter)
 
 
-        self.retranslateUi(EditTab)
+        self.retranslateUi(EditTab) # type: ignore
         self.clearButton.clicked.connect(self.queryPlainTextEdit.clear)
         self.pasteButton.clicked.connect(self.queryPlainTextEdit.paste)
 
         QMetaObject.connectSlotsByName(EditTab)
     # setupUi
 
-    def retranslateUi(self, EditTab):
+    def retranslateUi(self, EditTab): # type: ignore
         EditTab.setWindowTitle(QCoreApplication.translate("EditTab", u"Form", None))
         self.inputQueryLabel.setText(QCoreApplication.translate("EditTab", u"### Input Query\n"
 "The results of this query will be used to make modifications.", None))
