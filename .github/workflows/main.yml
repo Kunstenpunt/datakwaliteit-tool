@@ -1,0 +1,19 @@
+name: mypy-typing-check
+on:
+  pull_request:
+    branches:
+      - main
+jobs:
+  mypy:
+    name: Run mypy static type check in strict mode.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+          cache: 'pipenv'
+      - name: Install pipenv
+        run: curl https://raw.githubusercontent.com/pypa/pipenv/master/get-pipenv.py | python
+      - run: pipenv install
+      - run: pipenv run mypy --strict --follow-untyped-imports run.py
