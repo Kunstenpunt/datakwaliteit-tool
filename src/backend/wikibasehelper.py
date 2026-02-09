@@ -9,11 +9,11 @@ from .configuration import Configuration, ExtraWikibaseKey, WbiConfigKey
 from .utils import queryResultToList, stringOrDefault
 
 
-class QueryWorker(QObject):
-    finished = Signal()
+class QueryWorker(QThread):
+    resultReady = Signal()
 
-    def __init__(self, query: str, prefixes: str) -> None:
-        super().__init__()
+    def __init__(self, parent: QObject, query: str, prefixes: str) -> None:
+        super().__init__(parent)
         self.query = query
         self.prefixes = None if "PREFIX" in query else prefixes
         self.resultList: Optional[Sequence[Sequence[str]]] = None
@@ -27,7 +27,7 @@ class QueryWorker(QObject):
         except Exception as e:
             print(e)
         self.resultList = queryResultToList(result)
-        self.finished.emit()
+        self.resultReady.emit()
 
 
 class WikibaseHelper(QObject):
@@ -123,26 +123,21 @@ class WikibaseHelper(QObject):
 
         self.callbackData = data
 
-        self.queryThread = QThread()
-        self.queryWorker = QueryWorker(queryString, self.queryPrefixes)
-        self.queryWorker.moveToThread(self.queryThread)
-        self.queryThread.started.connect(self.queryWorker.run)
-        self.queryWorker.finished.connect(self.queryWorkerFinished)
-        self.queryWorker.finished.connect(self.queryThread.quit)
+        self.queryWorker = QueryWorker(self, queryString, self.queryPrefixes)
+        self.queryWorker.resultReady.connect(self.queryWorkerResultReady)
         self.queryWorker.finished.connect(self.queryWorker.deleteLater)
-        self.queryThread.finished.connect(self.queryThread.deleteLater)
-        self.queryThread.destroyed.connect(self.queryThreadDestroyed)
+        self.queryWorker.destroyed.connect(self.queryWorkerDestroyed)
 
         self.mostRecentQuery = queryString
         self.queryStarted.emit()
-        self.queryThread.start()
+        self.queryWorker.start()
 
-    def queryWorkerFinished(self) -> None:
+    def queryWorkerResultReady(self) -> None:
         self.queryResult = self.queryWorker.resultList
         self._queryResultAvailable.emit()
         self.queryDone.emit()
 
-    def queryThreadDestroyed(self) -> None:
+    def queryWorkerDestroyed(self) -> None:
         self.executingQuery = False
         self._readyForNewQuery.emit()
 
