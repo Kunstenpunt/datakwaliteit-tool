@@ -21,7 +21,7 @@ from PySide6.QtWidgets import (QAbstractItemView, QApplication, QCheckBox, QComb
     QSplitter, QTableView, QVBoxLayout, QWidget)
 
 class Ui_ConstraintTab(object):
-    def setupUi(self, ConstraintTab):
+    def setupUi(self, ConstraintTab): # type: ignore
         if not ConstraintTab.objectName():
             ConstraintTab.setObjectName(u"ConstraintTab")
         ConstraintTab.resize(954, 657)
@@ -233,12 +233,12 @@ class Ui_ConstraintTab(object):
         self.verticalLayout.addWidget(self.splitter)
 
 
-        self.retranslateUi(ConstraintTab)
+        self.retranslateUi(ConstraintTab) # type: ignore
 
         QMetaObject.connectSlotsByName(ConstraintTab)
     # setupUi
 
-    def retranslateUi(self, ConstraintTab):
+    def retranslateUi(self, ConstraintTab): # type: ignore
         ConstraintTab.setWindowTitle(QCoreApplication.translate("ConstraintTab", u"Form", None))
         self.labelLeft.setText(QCoreApplication.translate("ConstraintTab", u"Constrained Properties", None))
         self.validateAllButton.setText(QCoreApplication.translate("ConstraintTab", u"Validate All", None))

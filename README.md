@@ -43,3 +43,10 @@ If you want to generate a release binary, use `pyside6-deploy` which is part of 
 - mediawiki rest url: "https://www.wikidata.org/w/rest.php"
 - sparql endpoint url: "https://query.wikidata.org/sparql"
 - property constraint pid: "P2302"
+
+## Static type checking
+This application uses the `typing` module to add type hints and allows for static type checking using `mypy`.
+
+```mypy --strict --follow-untyped-imports path/to/file.py```
+
+The `--strict` argument enables certain extra strict checking flags. The `--follow-untyped-imports` is needed for now because of the `wikibaseintegrator` module import.

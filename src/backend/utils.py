@@ -1,36 +1,38 @@
 import re
+from typing import Any, Optional, Sequence
 
 
-def queryResultToList(queryResult):
-    if not queryResult:
-        return None
-    # First row is the header
-    header = queryResult["head"]["vars"]
-    result = [header]
-    # Next come the value rows
-    for queryRow in queryResult["results"]["bindings"]:
-        resultRow = []
-        for variableName in header:
-            resultRow.append(
-                queryRow[variableName]["value"] if variableName in queryRow else None
-            )
-        result.append(resultRow)
+def queryResultToList(queryResult: Any) -> Optional[Sequence[Sequence[str]]]:
+    try:
+        # First row is the header
+        header = queryResult["head"]["vars"]
+        result = [header]
+        # Next come the value rows
+        for queryRow in queryResult["results"]["bindings"]:
+            resultRow = []
+            for variableName in header:
+                resultRow.append(
+                    queryRow[variableName]["value"]
+                    if variableName in queryRow
+                    else None
+                )
+            result.append(resultRow)
+    except:
+        result = None
     return result
 
 
-def stripUrlPart(url):
-    if not url:
-        return None
+def stripUrlPart(url: str) -> str:
     return url.rsplit("/", 1)[-1]
 
 
-def stripUrlPartFromTable(url, table):
+def stripUrlPartFromTable(url: str, table: Sequence[Sequence[str]]) -> Sequence[Sequence[str]]:
     return [
         [stripUrlPart(el) if el.startswith(url) else el for el in row] for row in table
     ]
 
 
-def urlFromId(possibleId, baseUrl):
+def urlFromId(possibleId: str, baseUrl: str) -> Optional[str]:
     propertyRegex = re.compile(r"^P\d+$")
     entityRegex = re.compile(r"^Q\d+$")
     statementRegex = re.compile(r"^[PQ]\d+-[A-Za-z0-9\-]+$")
@@ -43,7 +45,7 @@ def urlFromId(possibleId, baseUrl):
         return None
 
 
-def alignTabColumns(text, tabWidth, nCols):
+def alignTabColumns(text: str, tabWidth: int, nCols: int) -> str:
     """Modify tab separated text to create aligned columns
 
     This function will take an input text containing data in columns that are separated by single tabs, and add tabs
@@ -74,3 +76,7 @@ def alignTabColumns(text, tabWidth, nCols):
             result += "\t" * nTabs
         result += "\n"
     return result
+
+
+def stringOrDefault(value: Any, default: str = "") -> str:
+    return value if type(value) == str else default
