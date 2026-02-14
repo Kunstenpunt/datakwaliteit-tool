@@ -2,7 +2,7 @@ from typing import Callable
 
 from PySide6.QtWidgets import QLineEdit, QWidget
 
-from ..backend.configuration import ExtraWikibaseKey, WbiConfigKey
+from ..backend.configuration import ExtraWikibaseConfigKey, WbiConfigKey
 from ..backend.model import Model
 
 from .designer.configurationtab import Ui_ConfigurationTab
@@ -26,8 +26,8 @@ class ConfigurationTab(QWidget, Ui_ConfigurationTab):
             self.mediawikiRestUrlLineEdit: WbiConfigKey.MEDIAWIKI_REST_URL,
             self.sparqlEndpointUrlLineEdit: WbiConfigKey.SPARQL_ENDPOINT_URL,
             self.propertyConstraintPidLineEdit: WbiConfigKey.PROPERTY_CONSTRAINT_PID,
-            self.instanceOfPidLineEdit: ExtraWikibaseKey.INSTANCE_OF_PID,
-            self.subclassOfPidLineEdit: ExtraWikibaseKey.SUBCLASS_OF_PID,
+            self.instanceOfPidLineEdit: ExtraWikibaseConfigKey.INSTANCE_OF_PID,
+            self.subclassOfPidLineEdit: ExtraWikibaseConfigKey.SUBCLASS_OF_PID,
         }
 
         self.lineEditsWbiValueModified = {

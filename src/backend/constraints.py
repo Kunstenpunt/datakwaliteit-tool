@@ -160,7 +160,7 @@ class ConstraintHelper(QObject):
             print(f"Querying input count not implemented for {c}")
             return
 
-        self.wikibaseHelper.executeQuery(query, self.queryInputCountResult, c)
+        self.wikibaseHelper.queueQueryForExecution(query, self.queryInputCountResult, c)
 
     def queryInputCountResult(self) -> None:
         if not isinstance(self.wikibaseHelper.callbackData, Constraint):
@@ -187,7 +187,7 @@ class ConstraintHelper(QObject):
         if query is None:
             return
 
-        self.wikibaseHelper.executeQuery(query, self.queryQualifiersResult, c)
+        self.wikibaseHelper.queueQueryForExecution(query, self.queryQualifiersResult, c)
 
     def queryQualifiersResult(self) -> None:
         if not isinstance(self.wikibaseHelper.callbackData, Constraint):
@@ -226,7 +226,7 @@ class ConstraintHelper(QObject):
         if query is None:
             return
 
-        self.wikibaseHelper.executeQuery(
+        self.wikibaseHelper.queueQueryForExecution(
             query, self.queryViolationsResult, self.constraint
         )
 
@@ -1509,7 +1509,7 @@ class ConstraintAnalyzer(QObject):
                     }}
                 }}
                 """
-        self.wikibaseHelper.executeQuery(query, self._updateConstraintsResult)
+        self.wikibaseHelper.queueQueryForExecution(query, self._updateConstraintsResult)
 
     def _updateConstraintsResult(self) -> None:
         result = self.wikibaseHelper.queryResult
