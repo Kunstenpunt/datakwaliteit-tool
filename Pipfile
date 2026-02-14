@@ -11,6 +11,7 @@ xlsxwriter = "*"
 imageio = "*"
 black = "*"
 mypy = "*"
+pytest = "*"
 
 [dev-packages]
 
