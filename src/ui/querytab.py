@@ -30,7 +30,7 @@ class QueryTab(QWidget, Ui_QueryTab):
 
     def onExecuteButtonClicked(self) -> None:
         query = self.plainTextEdit.toPlainText()
-        self.model.wikibaseHelper.executeQuery(query, self.onQueryResult)
+        self.model.wikibaseHelper.queueQueryForExecution(query, self.onQueryResult)
 
     def onQueryResult(self) -> None:
         result = self.model.wikibaseHelper.queryResult

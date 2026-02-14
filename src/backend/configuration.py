@@ -1,4 +1,5 @@
 from enum import StrEnum
+from itertools import chain
 from typing import Mapping
 
 from PySide6.QtCore import Signal, QObject, QSettings
@@ -22,7 +23,7 @@ class WbiConfigKey(StrEnum):
     PROPERTY_CONSTRAINT_PID = "PROPERTY_CONSTRAINT_PID"
 
 
-class ExtraWikibaseKey(StrEnum):
+class ExtraWikibaseConfigKey(StrEnum):
     """
     Extra keys that configure a wikibase instance that are needed, but do not
     exaclty match a config key for the wikibaseintegrator package.
@@ -32,6 +33,9 @@ class ExtraWikibaseKey(StrEnum):
     SUBCLASS_OF_PID = "SUBCLASS_OF_PID"
 
 
+CONFIG_KEY_TYPES = [WbiConfigKey, ExtraWikibaseConfigKey]
+
+
 class Configuration(QObject):
     wbiConfigChanged = Signal()
     extraWikibaseConfigChanged = Signal()
@@ -39,38 +43,42 @@ class Configuration(QObject):
     def __init__(self) -> None:
         super().__init__()
 
-        self.settings = QSettings(ORGANISATION_NAME, APPLICATION_NAME)
+        self._settings = QSettings(ORGANISATION_NAME, APPLICATION_NAME)
+        self._keyTypeModified = {keyType: False for keyType in CONFIG_KEY_TYPES}
 
     def getWikibaseConfig(self) -> Mapping[str, str]:
-        self.settings.beginGroup(WBI_CONFIGURATION_KEY)
+        self._settings.beginGroup(WBI_CONFIGURATION_KEY)
         result = {
-            key: self.settings.value(key)
-            for key in self.settings.allKeys()
-            if key in WbiConfigKey or key in ExtraWikibaseKey
+            key: self._settings.value(key)
+            for key in self._settings.allKeys()
+            if key in chain(*CONFIG_KEY_TYPES)  # type: ignore
         }
-        self.settings.endGroup()
+        self._settings.endGroup()
         return result
 
-    def setWikibaseConfig(self, data: Mapping[str, str | int | bool | None]) -> None:
-        wbiModified = False
-        extraModified = False
+    def setWikibaseConfig(
+        self, newSettings: Mapping[str, str | int | bool | None]
+    ) -> None:
 
-        self.settings.beginGroup(WBI_CONFIGURATION_KEY)
-        for key in WbiConfigKey:
-            value = data.get(key)
+        self._settings.beginGroup(WBI_CONFIGURATION_KEY)
+        for keyType in CONFIG_KEY_TYPES:
+            self._setSettingsValuesForKeyType(newSettings, keyType)
+        self._settings.endGroup()
+
+        self._emitSignalsIfNeeded()
+
+    def _setSettingsValuesForKeyType(
+        self, newSettings: Mapping[str, str | int | bool | None], keyType: type[StrEnum]
+    ) -> None:
+        self._keyTypeModified[keyType] = False
+        for key in keyType:
+            value = newSettings.get(key)
             if value is not None:
-                self.settings.setValue(key, value)
-                wbiModified = True
+                self._settings.setValue(key, value)
+                self._keyTypeModified[keyType] = True
 
-        for keyExtra in ExtraWikibaseKey:
-            value = data.get(keyExtra)
-            if value is not None:
-                self.settings.setValue(keyExtra, value)
-                extraModified = True
-
-        self.settings.endGroup()
-
-        if wbiModified:
+    def _emitSignalsIfNeeded(self) -> None:
+        if self._keyTypeModified[WbiConfigKey]:
             self.wbiConfigChanged.emit()
-        if extraModified:
+        if self._keyTypeModified[ExtraWikibaseConfigKey]:
             self.extraWikibaseConfigChanged.emit()

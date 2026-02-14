@@ -2,7 +2,7 @@ import re
 from typing import Any, Optional, Sequence
 
 
-def queryResultToList(queryResult: Any) -> Optional[Sequence[Sequence[str]]]:
+def queryResultToTable(queryResult: Any) -> Optional[Sequence[Sequence[str]]]:
     try:
         # First row is the header
         header = queryResult["head"]["vars"]

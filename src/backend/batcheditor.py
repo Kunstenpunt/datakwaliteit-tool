@@ -29,7 +29,7 @@ class BatchEditor(QObject):
         self.recipe = recipe
         self._sanitizeRecipe()
 
-        self.wikibaseHelper.executeQuery(self.query, self._executeQueryResult)
+        self.wikibaseHelper.queueQueryForExecution(self.query, self._executeQueryResult)
 
     def _sanitizeRecipe(self) -> None:
         # Each command is in a new line or separated by "||"

@@ -1,33 +1,36 @@
-from typing import Callable, Optional, Sequence
+from typing import Any, Callable, Optional, Sequence
 
 from PySide6.QtCore import Signal, QMetaObject, QObject, QThread
 
 from wikibaseintegrator.wbi_config import config
 from wikibaseintegrator.wbi_helpers import execute_sparql_query
 
-from .configuration import Configuration, ExtraWikibaseKey, WbiConfigKey
-from .utils import queryResultToList, stringOrDefault
+from .configuration import Configuration, ExtraWikibaseConfigKey, WbiConfigKey
+from .utils import queryResultToTable, stringOrDefault
 
 
-class QueryWorker(QThread):
+class QueryThread(QThread):
     resultReady = Signal()
 
     def __init__(self, parent: QObject, query: str, prefixes: str) -> None:
         super().__init__(parent)
         self.query = query
         self.prefixes = None if "PREFIX" in query else prefixes
-        self.resultList: Optional[Sequence[Sequence[str]]] = None
+        self.resultTable: Optional[Sequence[Sequence[str]]] = None
 
     def run(self) -> None:
-        result = None
+        result = self._executeQuery()
+        self.resultTable = queryResultToTable(result)
+        self.resultReady.emit()
+
+    def _executeQuery(self) -> Any:
         try:
-            result = execute_sparql_query(
+            return execute_sparql_query(
                 self.query, self.prefixes, max_retries=1, retry_after=1
             )
         except Exception as e:
             print(e)
-        self.resultList = queryResultToList(result)
-        self.resultReady.emit()
+            return None
 
 
 class WikibaseHelper(QObject):
@@ -40,26 +43,32 @@ class WikibaseHelper(QObject):
         super().__init__()
 
         self._configuration = configuration
+
+        self._callbackConnection: Optional[QMetaObject.Connection] = None
+        self._executingQuery = False
         self._instanceOfPid = ""
+        self._queryQueue: list[tuple[str, Callable[[], None], object]] = []
         self._subclassOfPid = ""
 
-        self.callbackConnection: Optional[QMetaObject.Connection] = None
         self.callbackData: Optional[object] = None
-        self.executingQuery = False
         self.mostRecentQuery = ""
-        self.queryQueue: list[tuple[str, Callable[[], None], object]] = []
         self.queryResult: Optional[Sequence[Sequence[str]]] = None
 
-        self._configuration.wbiConfigChanged.connect(self.loadWbiConfig)
-        self.loadWbiConfig()
+        self._connectSignals()
+        self._loadConfigs()
+
+    def _connectSignals(self) -> None:
+        self._configuration.wbiConfigChanged.connect(self._loadWbiConfig)
         self._configuration.extraWikibaseConfigChanged.connect(
-            self.loadExtraWikibaseConfig
+            self._loadExtraWikibaseConfig
         )
-        self.loadExtraWikibaseConfig()
+        self._readyForNewQuery.connect(self._handleNextQueryInQueue)
 
-        self._readyForNewQuery.connect(self.handleQueryQueue)
+    def _loadConfigs(self) -> None:
+        self._loadWbiConfig()
+        self._loadExtraWikibaseConfig()
 
-    def loadWbiConfig(self) -> None:
+    def _loadWbiConfig(self) -> None:
         wbiConfigPairs = self._configuration.getWikibaseConfig()
         allWbiKeysObtained = True
         for key in WbiConfigKey:
@@ -84,61 +93,65 @@ class WikibaseHelper(QObject):
         """
 
         # Clear the query queue now that the config has changed.
-        self.queryQueue = []
+        self._queryQueue = []
 
-    def loadExtraWikibaseConfig(self) -> None:
+    def _loadExtraWikibaseConfig(self) -> None:
         wbiConfigPairs = self._configuration.getWikibaseConfig()
 
-        self._instanceOfPid = wbiConfigPairs.get(ExtraWikibaseKey.INSTANCE_OF_PID, "")
-        self._subclassOfPid = wbiConfigPairs.get(ExtraWikibaseKey.SUBCLASS_OF_PID, "")
+        self._instanceOfPid = wbiConfigPairs.get(
+            ExtraWikibaseConfigKey.INSTANCE_OF_PID, ""
+        )
+        self._subclassOfPid = wbiConfigPairs.get(
+            ExtraWikibaseConfigKey.SUBCLASS_OF_PID, ""
+        )
 
         # Clear the query queue now that the config has changed.
-        self.queryQueue = []
+        self._queryQueue = []
 
-    def executeQuery(
+    def queueQueryForExecution(
         self, queryString: str, callback: Callable[[], None], data: object = None
     ) -> None:
-        self.queryQueue.append((queryString, callback, data))
-        if len(self.queryQueue) == 1 and not self.executingQuery:
-            self.handleQueryQueue()
+        self._queryQueue.append((queryString, callback, data))
+        if len(self._queryQueue) == 1 and not self._executingQuery:
+            self._handleNextQueryInQueue()
 
-    def handleQueryQueue(self) -> None:
-        if not self.queryQueue:
+    def _handleNextQueryInQueue(self) -> None:
+        if not self._queryQueue:
             return
-        (queryString, callback, data) = self.queryQueue.pop(0)
-        self.processQuery(queryString, callback, data)
+        (queryString, callback, data) = self._queryQueue.pop(0)
+        self._executeQueryOnThread(queryString, callback, data)
 
-    def processQuery(
+    def _executeQueryOnThread(
         self, queryString: str, callback: Callable[[], None], data: object
     ) -> None:
-        if self.executingQuery:
+        if self._executingQuery:
             return
         else:
-            self.executingQuery = True
+            self._executingQuery = True
 
-        if self.callbackConnection:
-            self._queryResultAvailable.disconnect(self.callbackConnection)
+        if self._callbackConnection:
+            self._queryResultAvailable.disconnect(self._callbackConnection)
 
-        self.callbackConnection = self._queryResultAvailable.connect(callback)
+        self._callbackConnection = self._queryResultAvailable.connect(callback)
 
         self.callbackData = data
 
-        self.queryWorker = QueryWorker(self, queryString, self.queryPrefixes)
-        self.queryWorker.resultReady.connect(self.queryWorkerResultReady)
-        self.queryWorker.finished.connect(self.queryWorker.deleteLater)
-        self.queryWorker.destroyed.connect(self.queryWorkerDestroyed)
+        self.queryThread = QueryThread(self, queryString, self.queryPrefixes)
+        self.queryThread.resultReady.connect(self._onQueryThreadResultReady)
+        self.queryThread.finished.connect(self.queryThread.deleteLater)
+        self.queryThread.destroyed.connect(self._onQueryThreadDestroyed)
 
         self.mostRecentQuery = queryString
         self.queryStarted.emit()
-        self.queryWorker.start()
+        self.queryThread.start()
 
-    def queryWorkerResultReady(self) -> None:
-        self.queryResult = self.queryWorker.resultList
+    def _onQueryThreadResultReady(self) -> None:
+        self.queryResult = self.queryThread.resultTable
         self._queryResultAvailable.emit()
         self.queryDone.emit()
 
-    def queryWorkerDestroyed(self) -> None:
-        self.executingQuery = False
+    def _onQueryThreadDestroyed(self) -> None:
+        self._executingQuery = False
         self._readyForNewQuery.emit()
 
     def getPropertyConstraintPid(self) -> str:
