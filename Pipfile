@@ -12,6 +12,8 @@ imageio = "*"
 black = "*"
 mypy = "*"
 pytest = "*"
+coverage = "*"
+pytest-qt = "*"
 
 [dev-packages]
 
