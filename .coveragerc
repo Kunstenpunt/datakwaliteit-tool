@@ -1,0 +1,5 @@
+[run]
+source=./src
+
+[report]
+ignore_errors = true
