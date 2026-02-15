@@ -1,3 +1,4 @@
+import re
 from typing import Any, Callable, Optional, Sequence
 
 from PySide6.QtCore import Signal, QMetaObject, QObject, QThread
@@ -12,11 +13,16 @@ from .utils import queryResultToTable, stringOrDefault
 class QueryThread(QThread):
     resultReady = Signal()
 
-    def __init__(self, parent: QObject, query: str, prefixes: str) -> None:
+    _prefixPattern = re.compile(r"^\s*PREFIX", re.MULTILINE)
+
+    def __init__(self, parent: QObject, query: str, defaultPrefixes: str) -> None:
         super().__init__(parent)
-        self.query = query
-        self.prefixes = None if "PREFIX" in query else prefixes
+        self._query = query
+        self._prefixes = None if self.prefixesPresentInQuery() else defaultPrefixes
         self.resultTable: Optional[Sequence[Sequence[str]]] = None
+
+    def prefixesPresentInQuery(self) -> bool:
+        return bool(self._prefixPattern.match(self._query))
 
     def run(self) -> None:
         result = self._executeQuery()
@@ -26,7 +32,7 @@ class QueryThread(QThread):
     def _executeQuery(self) -> Any:
         try:
             return execute_sparql_query(
-                self.query, self.prefixes, max_retries=1, retry_after=1
+                self._query, self._prefixes, max_retries=1, retry_after=1
             )
         except Exception as e:
             print(e)
