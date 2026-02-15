@@ -22,7 +22,7 @@ class QueryThread(QThread):
         self.resultTable: Optional[Sequence[Sequence[str]]] = None
 
     def prefixesPresentInQuery(self) -> bool:
-        return bool(self._prefixPattern.match(self._query))
+        return bool(self._prefixPattern.search(self._query))
 
     def run(self) -> None:
         result = self._executeQuery()
