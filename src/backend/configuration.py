@@ -36,49 +36,49 @@ class ExtraWikibaseConfigKey(StrEnum):
 CONFIG_KEY_TYPES = [WbiConfigKey, ExtraWikibaseConfigKey]
 
 
-class Configuration(QObject):
-    wbiConfigChanged = Signal()
-    extraWikibaseConfigChanged = Signal()
+class ConfigHandler(QObject):
+    configChanged = Signal()
 
     def __init__(self) -> None:
         super().__init__()
 
         self._settings = QSettings(ORGANISATION_NAME, APPLICATION_NAME)
-        self._keyTypeModified = {keyType: False for keyType in CONFIG_KEY_TYPES}
+        self._modified = False
 
-    def getWikibaseConfig(self) -> Mapping[str, str]:
+    def getWikibaseConfigPairs(self) -> Mapping[str, str | int | bool | None]:
         self._settings.beginGroup(WBI_CONFIGURATION_KEY)
-        result = {
+        configPairs = {
             key: self._settings.value(key)
             for key in self._settings.allKeys()
             if key in chain(*CONFIG_KEY_TYPES)  # type: ignore
         }
         self._settings.endGroup()
-        return result
+        return configPairs
 
-    def setWikibaseConfig(
-        self, newSettings: Mapping[str, str | int | bool | None]
+    def setWikibaseConfigPairs(
+        self, newConfigPairs: Mapping[str, str | int | bool | None]
     ) -> None:
 
+        self._modified = False
         self._settings.beginGroup(WBI_CONFIGURATION_KEY)
         for keyType in CONFIG_KEY_TYPES:
-            self._setSettingsValuesForKeyType(newSettings, keyType)
+            self._setSettingsValuesForKeyType(newConfigPairs, keyType)
         self._settings.endGroup()
 
-        self._emitSignalsIfNeeded()
+        self._emitSignalIfNeeded()
 
     def _setSettingsValuesForKeyType(
-        self, newSettings: Mapping[str, str | int | bool | None], keyType: type[StrEnum]
+        self,
+        newConfigPairs: Mapping[str, str | int | bool | None],
+        keyType: type[StrEnum],
     ) -> None:
-        self._keyTypeModified[keyType] = False
         for key in keyType:
-            value = newSettings.get(key)
-            if value is not None:
+            if key in newConfigPairs:
+                value = newConfigPairs[key]
                 self._settings.setValue(key, value)
-                self._keyTypeModified[keyType] = True
+                self._modified = True
 
-    def _emitSignalsIfNeeded(self) -> None:
-        if self._keyTypeModified[WbiConfigKey]:
-            self.wbiConfigChanged.emit()
-        if self._keyTypeModified[ExtraWikibaseConfigKey]:
-            self.extraWikibaseConfigChanged.emit()
+    def _emitSignalIfNeeded(self) -> None:
+        if self._modified:
+            self._modified = False
+            self.configChanged.emit()

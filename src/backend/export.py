@@ -6,16 +6,16 @@ import xlsxwriter as xlsx
 from PySide6.QtCore import QObject
 
 from .constraints import Constraint, ValidationState
-from .utils import stringOrDefault, urlFromId
-from .wikibasehelper import WikibaseHelper
+from .utils import urlFromId
+from .wikibasehelper import WikibaseConfig
 
 
 class Exporter(QObject):
 
-    def __init__(self, wikibaseHelper: WikibaseHelper) -> None:
+    def __init__(self, wikibaseConfig: WikibaseConfig) -> None:
         super().__init__()
 
-        self.wikibaseHelper = wikibaseHelper
+        self.wikibaseConfig = wikibaseConfig
 
     def _getSheetData(
         self, constraint: Constraint, exportUrl: bool
@@ -24,7 +24,7 @@ class Exporter(QObject):
         sheetData = constraint.violations or []
         if exportUrl:
             sheetData = [
-                [urlFromId(el, self.wikibaseHelper.getBaseUrl()) or el for el in row]
+                [urlFromId(el, self.wikibaseConfig.getBaseUrl()) or el for el in row]
                 for row in sheetData
             ]
         return (sheetName, sheetData)

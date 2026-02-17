@@ -44,8 +44,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.copyQueryButton.clicked.connect(self.copyQueryToClipboard)
         self.statusbar.addPermanentWidget(self.copyQueryButton)
 
-        self.model.wikibaseHelper.queryStarted.connect(self.onQueryStarted)
-        self.model.wikibaseHelper.queryDone.connect(self.onQueryDone)
+        self.model.wikibaseQueryRunner.queryStarted.connect(self.onQueryStarted)
+        self.model.wikibaseQueryRunner.queryDone.connect(self.onQueryDone)
 
         # Load constrained properties on startup
         self.model.constraintAnalyzer.updateConstraints()
@@ -57,7 +57,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     def onQueryDone(self) -> None:
         self.queryIndicator.hide()
         self.queryIndicatorLabel.setText(
-            "LAST QUERY FAILED" if self.model.wikibaseHelper.queryResult == None else ""
+            "LAST QUERY FAILED"
+            if self.model.wikibaseQueryRunner.queryResult == None
+            else ""
         )
 
     def _onCurrentTabChanged(self, index: int) -> None:
@@ -65,9 +67,11 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             pass
 
     def copyQueryToClipboard(self) -> None:
-        query = textwrap.dedent(self.model.wikibaseHelper.mostRecentQuery).lstrip()
+        query = textwrap.dedent(self.model.wikibaseQueryRunner.mostRecentQuery).lstrip()
         clipboard = QGuiApplication.clipboard()
         if not "PREFIX" in query:
-            prefixes = textwrap.dedent(self.model.wikibaseHelper.queryPrefixes).lstrip()
+            prefixes = textwrap.dedent(
+                self.model.wikibaseQueryRunner.queryPrefixes
+            ).lstrip()
             query = f"{prefixes}\n{query}"
         clipboard.setText(query)

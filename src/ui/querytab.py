@@ -18,7 +18,7 @@ class QueryTab(QWidget, Ui_QueryTab):
         self.copyButton.clicked.connect(self.copy)
         self.executeButton.clicked.connect(self.onExecuteButtonClicked)
         self.tableClickHandler = TableClickHandler(
-            self.model.wikibaseHelper.getBaseUrl()
+            self.model.wikibaseConfig.getBaseUrl()
         )
         self.tableView.doubleClicked.connect(
             self.tableClickHandler.onTableDoubleClicked
@@ -30,13 +30,13 @@ class QueryTab(QWidget, Ui_QueryTab):
 
     def onExecuteButtonClicked(self) -> None:
         query = self.plainTextEdit.toPlainText()
-        self.model.wikibaseHelper.queueQueryForExecution(query, self.onQueryResult)
+        self.model.wikibaseQueryRunner.queueQueryForExecution(query, self.onQueryResult)
 
     def onQueryResult(self) -> None:
-        result = self.model.wikibaseHelper.queryResult
+        result = self.model.wikibaseQueryRunner.queryResult
         if not result:
             return
-        result = stripUrlPartFromTable(self.model.wikibaseHelper.getBaseUrl(), result)
+        result = stripUrlPartFromTable(self.model.wikibaseConfig.getBaseUrl(), result)
         resultModel = QSortFilterProxyModel()
         resultModel.setSourceModel(SimpleTableModel(result))
         self.tableView.setModel(resultModel)
