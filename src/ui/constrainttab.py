@@ -15,7 +15,7 @@ class ConstraintsTab(QWidget, Ui_ConstraintTab):
         self.setupUi(self)  # type: ignore
 
         self.model = model
-        self.exporter = Exporter(self.model.wikibaseHelper)
+        self.exporter = Exporter(self.model.wikibaseConfig)
         self.exportDir = QStandardPaths.writableLocation(
             QStandardPaths.StandardLocation.DocumentsLocation,
         )
@@ -34,7 +34,7 @@ class ConstraintsTab(QWidget, Ui_ConstraintTab):
         self.sortedCheckBox.checkStateChanged.connect(self.changeLimitSorted)
         self.changeLimitSorted()
         self.tableClickHandler = TableClickHandler(
-            self.model.wikibaseHelper.getBaseUrl()
+            self.model.wikibaseConfig.getBaseUrl()
         )
         self.propertiesTableView.doubleClicked.connect(
             self.tableClickHandler.onTableDoubleClicked

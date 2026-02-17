@@ -6,8 +6,66 @@ from PySide6.QtCore import Signal, QMetaObject, QObject, QThread
 from wikibaseintegrator.wbi_config import config
 from wikibaseintegrator.wbi_helpers import execute_sparql_query
 
-from .configuration import Configuration, ExtraWikibaseConfigKey, WbiConfigKey
+from .configuration import ConfigHandler, ExtraWikibaseConfigKey, WbiConfigKey
 from .utils import queryResultToTable, stringOrDefault
+
+
+class WikibaseConfig(QObject):
+    wikibaseConfigChanged = Signal()
+
+    def __init__(self, configHandler: ConfigHandler) -> None:
+        super().__init__()
+
+        self._configHandler = configHandler
+        self._instanceOfPid = ""
+        self._subclassOfPid = ""
+
+        self._configHandler.configChanged.connect(self._loadWikibaseConfig)
+        self._loadWikibaseConfig()
+
+    def _loadWikibaseConfig(self) -> None:
+        wbiConfigPairs = self._configHandler.getWikibaseConfigPairs()
+        allWbiKeysObtained = True
+        for key in WbiConfigKey:
+            value = wbiConfigPairs.get(key)
+            if value:
+                config[key] = value
+            else:
+                allWbiKeysObtained = False
+
+        # This will cause this function to be called again, but only once as then all keys will be obtained.
+        if not allWbiKeysObtained:
+            self._configHandler.setWikibaseConfigPairs(config)
+            return
+
+        self._instanceOfPid = stringOrDefault(
+            wbiConfigPairs.get(ExtraWikibaseConfigKey.INSTANCE_OF_PID, "")
+        )
+        self._subclassOfPid = stringOrDefault(
+            wbiConfigPairs.get(ExtraWikibaseConfigKey.SUBCLASS_OF_PID, "")
+        )
+
+    def getPropertyConstraintPid(self) -> str:
+        return stringOrDefault(config[WbiConfigKey.PROPERTY_CONSTRAINT_PID])
+
+    def getDefaultLanguage(self) -> str:
+        return stringOrDefault(config[WbiConfigKey.DEFAULT_LANGUAGE])
+
+    def getBaseUrl(self) -> str:
+        return stringOrDefault(config[WbiConfigKey.WIKIBASE_URL])
+
+    def getPureUrl(self) -> str:
+        return (
+            stringOrDefault(config[WbiConfigKey.WIKIBASE_URL])
+            .replace("https://", "")
+            .replace("http://", "")
+        )
+
+    def getInstanceOfPid(self) -> str:
+        return self._instanceOfPid
+
+    def getSubclassOfPid(self) -> str:
+        return self._subclassOfPid
 
 
 class QueryThread(QThread):
@@ -39,57 +97,34 @@ class QueryThread(QThread):
             return None
 
 
-class WikibaseHelper(QObject):
+class WikibaseQueryRunner(QObject):
     queryStarted = Signal()  # For loading indicator
     queryDone = Signal()  # For loading indicator
     _queryResultAvailable = Signal()
     _readyForNewQuery = Signal()
 
-    def __init__(self, configuration: Configuration) -> None:
+    def __init__(self, wikibaseConfig: WikibaseConfig) -> None:
         super().__init__()
 
-        self._configuration = configuration
+        self._wikibaseConfig = wikibaseConfig
+        self._updatePrefixes()
 
         self._callbackConnection: Optional[QMetaObject.Connection] = None
         self._executingQuery = False
-        self._instanceOfPid = ""
         self._queryQueue: list[tuple[str, Callable[[], None], object]] = []
-        self._subclassOfPid = ""
 
         self.callbackData: Optional[object] = None
         self.mostRecentQuery = ""
         self.queryResult: Optional[Sequence[Sequence[str]]] = None
 
         self._connectSignals()
-        self._loadConfigs()
 
     def _connectSignals(self) -> None:
-        self._configuration.wbiConfigChanged.connect(self._loadWbiConfig)
-        self._configuration.extraWikibaseConfigChanged.connect(
-            self._loadExtraWikibaseConfig
-        )
+        self._wikibaseConfig.wikibaseConfigChanged.connect(self._queryQueue.clear)
+        self._wikibaseConfig.wikibaseConfigChanged.connect(self._updatePrefixes)
         self._readyForNewQuery.connect(self._handleNextQueryInQueue)
 
-    def _loadConfigs(self) -> None:
-        self._loadWbiConfig()
-        self._loadExtraWikibaseConfig()
-
-    def _loadWbiConfig(self) -> None:
-        wbiConfigPairs = self._configuration.getWikibaseConfig()
-        allWbiKeysObtained = True
-        for key in WbiConfigKey:
-            value = wbiConfigPairs.get(key)
-            if value:
-                config[key] = value
-            else:
-                allWbiKeysObtained = False
-
-        # This will cause this function to be called again, but only once as then all keys will be obtained.
-        if not allWbiKeysObtained:
-            self._configuration.setWikibaseConfig(config)
-            return
-
-        # All used prefixes to keep queries in other code more lean looking
+    def _updatePrefixes(self) -> None:
         self.queryPrefixes = f"""
             PREFIX kp:<{ config[WbiConfigKey.WIKIBASE_URL] }/entity/>
             PREFIX kpt:<{ config[WbiConfigKey.WIKIBASE_URL] }/prop/direct/>
@@ -97,22 +132,6 @@ class WikibaseHelper(QObject):
             PREFIX kpps:<{ config[WbiConfigKey.WIKIBASE_URL] }/prop/statement/>
             PREFIX kppq:<{ config[WbiConfigKey.WIKIBASE_URL] }/prop/qualifier/>
         """
-
-        # Clear the query queue now that the config has changed.
-        self._queryQueue = []
-
-    def _loadExtraWikibaseConfig(self) -> None:
-        wbiConfigPairs = self._configuration.getWikibaseConfig()
-
-        self._instanceOfPid = wbiConfigPairs.get(
-            ExtraWikibaseConfigKey.INSTANCE_OF_PID, ""
-        )
-        self._subclassOfPid = wbiConfigPairs.get(
-            ExtraWikibaseConfigKey.SUBCLASS_OF_PID, ""
-        )
-
-        # Clear the query queue now that the config has changed.
-        self._queryQueue = []
 
     def queueQueryForExecution(
         self, queryString: str, callback: Callable[[], None], data: object = None
@@ -159,25 +178,3 @@ class WikibaseHelper(QObject):
     def _onQueryThreadDestroyed(self) -> None:
         self._executingQuery = False
         self._readyForNewQuery.emit()
-
-    def getPropertyConstraintPid(self) -> str:
-        return stringOrDefault(config[WbiConfigKey.PROPERTY_CONSTRAINT_PID])
-
-    def getDefaultLanguage(self) -> str:
-        return stringOrDefault(config[WbiConfigKey.DEFAULT_LANGUAGE])
-
-    def getBaseUrl(self) -> str:
-        return stringOrDefault(config[WbiConfigKey.WIKIBASE_URL])
-
-    def getPureUrl(self) -> str:
-        return (
-            stringOrDefault(config[WbiConfigKey.WIKIBASE_URL])
-            .replace("https://", "")
-            .replace("http://", "")
-        )
-
-    def getInstanceOfPid(self) -> str:
-        return self._instanceOfPid
-
-    def getSubclassOfPid(self) -> str:
-        return self._subclassOfPid

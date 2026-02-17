@@ -4,6 +4,7 @@ from PySide6.QtWidgets import QLineEdit, QWidget
 
 from ..backend.configuration import ExtraWikibaseConfigKey, WbiConfigKey
 from ..backend.model import Model
+from ..backend.utils import stringOrDefault
 
 from .designer.configurationtab import Ui_ConfigurationTab
 
@@ -45,7 +46,7 @@ class ConfigurationTab(QWidget, Ui_ConfigurationTab):
     def onTextEdited(self, lineEdit: QLineEdit, key: str) -> Callable[[str], None]:
         def callback(text: str) -> None:
             self.lineEditsWbiValueModified[lineEdit] = (
-                text != self.model.configuration.getWikibaseConfig().get(key)
+                text != self.model.configHandler.getWikibaseConfigPairs().get(key)
             )
             self.updateFontLineEdit(lineEdit)
             self.updateEnabledButtons()
@@ -73,9 +74,9 @@ class ConfigurationTab(QWidget, Ui_ConfigurationTab):
         lineEdit.setText(text)
 
     def loadConfig(self) -> None:
-        config = self.model.configuration.getWikibaseConfig()
+        config = self.model.configHandler.getWikibaseConfigPairs()
         for lineEdit, key in self.lineEditsToConfigKeys.items():
-            lineEdit.setText(config.get(key))
+            lineEdit.setText(stringOrDefault(config.get(key)))
             self.lineEditsWbiValueModified[lineEdit] = False
             self.updateFontLineEdit(lineEdit)
         self.updateEnabledButtons()
@@ -86,7 +87,7 @@ class ConfigurationTab(QWidget, Ui_ConfigurationTab):
             if self.lineEditsWbiValueModified[lineEdit]:
                 self.cleanUpLineEditText(lineEdit)
                 config[key] = lineEdit.text()
-        self.model.configuration.setWikibaseConfig(config)
+        self.model.configHandler.setWikibaseConfigPairs(config)
         self.loadConfig()
 
     def updateEnabledButtons(self) -> None:

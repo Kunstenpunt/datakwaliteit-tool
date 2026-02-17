@@ -4,7 +4,7 @@ from typing import Optional, Sequence
 from PySide6.QtCore import QObject, Signal
 
 from .utils import stripUrlPartFromTable
-from .wikibasehelper import WikibaseHelper
+from .wikibasehelper import WikibaseConfig, WikibaseQueryRunner
 
 
 class BatchEditor(QObject):
@@ -12,10 +12,13 @@ class BatchEditor(QObject):
     inputDataObtained = Signal()
     statementGenerationDone = Signal()
 
-    def __init__(self, wikibaseHelper: WikibaseHelper) -> None:
+    def __init__(
+        self, wikibaseConfig: WikibaseConfig, wikibaseQueryRunner: WikibaseQueryRunner
+    ) -> None:
         super().__init__()
 
-        self.wikibaseHelper = wikibaseHelper
+        self.wikibaseConfig = wikibaseConfig
+        self.wikibaseQueryRunner = wikibaseQueryRunner
 
         self.inputData: Optional[Sequence[Sequence[str]]] = None
         self.query = ""
@@ -29,7 +32,9 @@ class BatchEditor(QObject):
         self.recipe = recipe
         self._sanitizeRecipe()
 
-        self.wikibaseHelper.queueQueryForExecution(self.query, self._executeQueryResult)
+        self.wikibaseQueryRunner.queueQueryForExecution(
+            self.query, self._executeQueryResult
+        )
 
     def _sanitizeRecipe(self) -> None:
         # Each command is in a new line or separated by "||"
@@ -46,7 +51,7 @@ class BatchEditor(QObject):
         self.recipe = "\n".join(cleanRecipe)
 
     def _executeQueryResult(self) -> None:
-        self.inputData = self.wikibaseHelper.queryResult
+        self.inputData = self.wikibaseQueryRunner.queryResult
         self.inputDataObtained.emit()
 
     def _generateEditStatements(self) -> None:
@@ -55,7 +60,7 @@ class BatchEditor(QObject):
             return
 
         self.inputData = stripUrlPartFromTable(
-            self.wikibaseHelper.getBaseUrl(), self.inputData
+            self.wikibaseConfig.getBaseUrl(), self.inputData
         )
         recipeFormatStr = self._prepareRecipeFormatStr(self.inputData[0])
 

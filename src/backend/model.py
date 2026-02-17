@@ -1,12 +1,15 @@
 from .batcheditor import BatchEditor
-from .configuration import Configuration
+from .configuration import ConfigHandler
 from .constraints import ConstraintAnalyzer
-from .wikibasehelper import WikibaseHelper
+from .wikibasehelper import WikibaseConfig, WikibaseQueryRunner
 
 
 class Model:
     def __init__(self) -> None:
-        self.configuration = Configuration()
-        self.wikibaseHelper = WikibaseHelper(self.configuration)
-        self.constraintAnalyzer = ConstraintAnalyzer(self.wikibaseHelper)
-        self.batchEditor = BatchEditor(self.wikibaseHelper)
+        self.configHandler = ConfigHandler()
+        self.wikibaseConfig = WikibaseConfig(self.configHandler)
+        self.wikibaseQueryRunner = WikibaseQueryRunner(self.wikibaseConfig)
+        self.constraintAnalyzer = ConstraintAnalyzer(
+            self.wikibaseConfig, self.wikibaseQueryRunner
+        )
+        self.batchEditor = BatchEditor(self.wikibaseConfig, self.wikibaseQueryRunner)

@@ -5,7 +5,7 @@ from typing import Optional, Self, Sequence
 from PySide6.QtCore import Signal, QObject
 
 from .utils import stripUrlPart
-from .wikibasehelper import WikibaseHelper
+from .wikibasehelper import WikibaseConfig, WikibaseQueryRunner
 
 # idee: eis dat alle entiteiten en properties die mappen op properties van wikidata hetzelfde label hebben in het Engels -> op die manier steeds correcte mapping
 
@@ -65,7 +65,7 @@ class Constraint(Item):
         identifier: str,
         label: str,
         prop: Property,
-        wikibaseHelper: WikibaseHelper,
+        wikibaseConfig: WikibaseConfig,
     ) -> None:
         super().__init__(identifier, label)
 
@@ -78,7 +78,7 @@ class Constraint(Item):
         self.qualifiersObtained = False
         self.validationInputCountType = ValidationInputCountType.OTHER
         self.violations: Optional[Sequence[Sequence[str]]] = None
-        self.wikibaseHelper = wikibaseHelper
+        self.wikibaseConfig = wikibaseConfig
 
         self.limit = 100000
         self.offset = 0
@@ -123,10 +123,14 @@ class ConstraintHelper(QObject):
     inputCountUpdated = Signal()
     validationStateUpdated = Signal()
 
-    def __init__(self, wikibaseHelper: WikibaseHelper) -> None:
+    def __init__(
+        self, wikibaseConfig: WikibaseConfig, wikibaseQueryRunner: WikibaseQueryRunner
+    ) -> None:
         super().__init__()
         self.constraint: Optional[Constraint] = None
-        self.wikibaseHelper = wikibaseHelper
+
+        self.wikibaseConfig = wikibaseConfig
+        self.wikibaseQueryRunner = wikibaseQueryRunner
 
     def queryInputCount(self, c: Constraint) -> None:
         if not c:
@@ -148,7 +152,7 @@ class ConstraintHelper(QObject):
                 {{
                     SERVICE wikibase:mwapi
                     {{
-                        bd:serviceParam wikibase:endpoint "{self.wikibaseHelper.getPureUrl()}";
+                        bd:serviceParam wikibase:endpoint "{self.wikibaseConfig.getPureUrl()}";
                             wikibase:api "Search"; wikibase:limit "once" ;
                             mwapi:srsearch "haswbstatement:{c.property.identifier}" ;
                             mwapi:srlimit "1" ; mwapi:srprop "" ; mwapi:srsort "none" ; mwapi:srnamespace "*" .
@@ -160,15 +164,17 @@ class ConstraintHelper(QObject):
             print(f"Querying input count not implemented for {c}")
             return
 
-        self.wikibaseHelper.queueQueryForExecution(query, self.queryInputCountResult, c)
+        self.wikibaseQueryRunner.queueQueryForExecution(
+            query, self.queryInputCountResult, c
+        )
 
     def queryInputCountResult(self) -> None:
-        if not isinstance(self.wikibaseHelper.callbackData, Constraint):
+        if not isinstance(self.wikibaseQueryRunner.callbackData, Constraint):
             return
 
-        self.constraint = self.wikibaseHelper.callbackData
+        self.constraint = self.wikibaseQueryRunner.callbackData
 
-        result = self.wikibaseHelper.queryResult
+        result = self.wikibaseQueryRunner.queryResult
         # This checks both if result is None or if result is empty list
         if not result:
             return
@@ -187,15 +193,17 @@ class ConstraintHelper(QObject):
         if query is None:
             return
 
-        self.wikibaseHelper.queueQueryForExecution(query, self.queryQualifiersResult, c)
+        self.wikibaseQueryRunner.queueQueryForExecution(
+            query, self.queryQualifiersResult, c
+        )
 
     def queryQualifiersResult(self) -> None:
-        if not isinstance(self.wikibaseHelper.callbackData, Constraint):
+        if not isinstance(self.wikibaseQueryRunner.callbackData, Constraint):
             return
 
-        self.constraint = self.wikibaseHelper.callbackData
+        self.constraint = self.wikibaseQueryRunner.callbackData
 
-        result = self.wikibaseHelper.queryResult
+        result = self.wikibaseQueryRunner.queryResult
         # This checks both if result is None or if result is empty list
         if not result:
             self.updateValidationState(ValidationState.FAILED)
@@ -226,17 +234,17 @@ class ConstraintHelper(QObject):
         if query is None:
             return
 
-        self.wikibaseHelper.queueQueryForExecution(
+        self.wikibaseQueryRunner.queueQueryForExecution(
             query, self.queryViolationsResult, self.constraint
         )
 
     def queryViolationsResult(self) -> None:
-        if not isinstance(self.wikibaseHelper.callbackData, Constraint):
+        if not isinstance(self.wikibaseQueryRunner.callbackData, Constraint):
             return
 
-        self.constraint = self.wikibaseHelper.callbackData
+        self.constraint = self.wikibaseQueryRunner.callbackData
 
-        result = self.wikibaseHelper.queryResult
+        result = self.wikibaseQueryRunner.queryResult
         if not result:
             self.updateValidationState(ValidationState.FAILED)
             return
@@ -270,9 +278,9 @@ class SingleValueConstraint(Constraint):
         identifier: str,
         label: str,
         prop: Property,
-        wikibaseHelper: WikibaseHelper,
+        wikibaseConfig: WikibaseConfig,
     ) -> None:
-        super().__init__(identifier, label, prop, wikibaseHelper)
+        super().__init__(identifier, label, prop, wikibaseConfig)
         self.implemented = True
         self.validationInputCountType = ValidationInputCountType.STATEMENTS
 
@@ -289,17 +297,17 @@ class SingleValueConstraint(Constraint):
             SELECT DISTINCT ?separator ?separatorLabel
             WHERE
             {{
-                ?statement kpps:{self.wikibaseHelper.getPropertyConstraintPid()} kp:{self.identifier} .
-                kp:{self.property.identifier} kpp:{self.wikibaseHelper.getPropertyConstraintPid()} ?statement .
+                ?statement kpps:{self.wikibaseConfig.getPropertyConstraintPid()} kp:{self.identifier} .
+                kp:{self.property.identifier} kpp:{self.wikibaseConfig.getPropertyConstraintPid()} ?statement .
                 ?statement ?qualifier ?separator .
                 BIND (IRI(replace(str(?qualifier), str(kppq:), str(kp:)))  AS ?qualifierEntity)
                 SERVICE wikibase:label
                 {{
-                    bd:serviceParam wikibase:language "en,{self.wikibaseHelper.getDefaultLanguage()}".
+                    bd:serviceParam wikibase:language "en,{self.wikibaseConfig.getDefaultLanguage()}".
                     ?qualifierEntity rdfs:label ?qualifierLabel .
                 }}
                 FILTER (str(?qualifierLabel) = "separator")
-                SERVICE wikibase:label {{ bd:serviceParam wikibase:language "{ self.wikibaseHelper.getDefaultLanguage() }" . }}
+                SERVICE wikibase:label {{ bd:serviceParam wikibase:language "{ self.wikibaseConfig.getDefaultLanguage() }" . }}
             }}
         """
 
@@ -357,7 +365,7 @@ class SingleValueConstraint(Constraint):
             {{
                 INCLUDE %results
                 ?entity kpp:{self.property.identifier} ?statement
-                SERVICE wikibase:label {{ bd:serviceParam wikibase:language "{ self.wikibaseHelper.getDefaultLanguage() }" }}
+                SERVICE wikibase:label {{ bd:serviceParam wikibase:language "{ self.wikibaseConfig.getDefaultLanguage() }" }}
             }}
             GROUP BY ?entity ?entityLabel ?valueCount"""
 
@@ -377,9 +385,9 @@ class ValueTypeConstraint(Constraint):
         identifier: str,
         label: str,
         prop: Property,
-        wikibaseHelper: WikibaseHelper,
+        wikibaseConfig: WikibaseConfig,
     ) -> None:
-        super().__init__(identifier, label, prop, wikibaseHelper)
+        super().__init__(identifier, label, prop, wikibaseConfig)
         self.implemented = True
         self.validationInputCountType = ValidationInputCountType.STATEMENTS
 
@@ -397,15 +405,15 @@ class ValueTypeConstraint(Constraint):
             SELECT DISTINCT ?class ?classLabel ?relation ?relationLabel
             WHERE
             {{
-                ?statement kpps:{self.wikibaseHelper.getPropertyConstraintPid()} kp:{self.identifier} .
-                kp:{self.property.identifier} kpp:{self.wikibaseHelper.getPropertyConstraintPid()} ?statement .
+                ?statement kpps:{self.wikibaseConfig.getPropertyConstraintPid()} kp:{self.identifier} .
+                kp:{self.property.identifier} kpp:{self.wikibaseConfig.getPropertyConstraintPid()} ?statement .
                 OPTIONAL
                 {{
                     ?statement ?classQualifier ?class .
                     BIND (IRI(replace(str(?classQualifier), str(kppq:), str(kp:)))  AS ?classQualifierEntity) .
                     SERVICE wikibase:label
                     {{
-                        bd:serviceParam wikibase:language "en,{self.wikibaseHelper.getDefaultLanguage()}".
+                        bd:serviceParam wikibase:language "en,{self.wikibaseConfig.getDefaultLanguage()}".
                         ?classQualifierEntity rdfs:label ?classQualifierLabel .
                     }}
                     FILTER (str(?classQualifierLabel) = "class")
@@ -416,13 +424,13 @@ class ValueTypeConstraint(Constraint):
                     BIND (IRI(replace(str(?relationQualifier), str(kppq:), str(kp:)))  AS ?relationQualifierEntity) .
                     SERVICE wikibase:label
                     {{
-                        bd:serviceParam wikibase:language "en,{self.wikibaseHelper.getDefaultLanguage()}".
+                        bd:serviceParam wikibase:language "en,{self.wikibaseConfig.getDefaultLanguage()}".
                         ?relationQualifierEntity rdfs:label ?relationQualifierLabel .
                         ?relation rdfs:label ?relationLabel .
                     }}
                     FILTER (str(?relationQualifierLabel) = "relation")
                 }}
-                SERVICE wikibase:label {{ bd:serviceParam wikibase:language "{ self.wikibaseHelper.getDefaultLanguage() }" . }}
+                SERVICE wikibase:label {{ bd:serviceParam wikibase:language "{ self.wikibaseConfig.getDefaultLanguage() }" . }}
             }}
         """
 
@@ -441,9 +449,9 @@ class ValueTypeConstraint(Constraint):
                 classes.append(Property(classId, classLabel))
         except:
             return
-        
+
         self.classes = classes
-        self.relation = self.wikibaseHelper.getInstanceOfPid()
+        self.relation = self.wikibaseConfig.getInstanceOfPid()
         self.qualifiersObtained = True
 
     def getViolationsQuery(self) -> str:
@@ -485,7 +493,7 @@ class ValueTypeConstraint(Constraint):
             {{
                 INCLUDE %results
                 ?entity kpp:{self.property.identifier} ?statement .
-                SERVICE wikibase:label {{ bd:serviceParam wikibase:language "{ self.wikibaseHelper.getDefaultLanguage() }" }}
+                SERVICE wikibase:label {{ bd:serviceParam wikibase:language "{ self.wikibaseConfig.getDefaultLanguage() }" }}
             }}"""
 
     def updateViolations(self, result: Sequence[Sequence[str]]) -> None:
@@ -505,9 +513,9 @@ class SubjectTypeConstraint(Constraint):
         identifier: str,
         label: str,
         prop: Property,
-        wikibaseHelper: WikibaseHelper,
+        wikibaseConfig: WikibaseConfig,
     ) -> None:
-        super().__init__(identifier, label, prop, wikibaseHelper)
+        super().__init__(identifier, label, prop, wikibaseConfig)
         self.implemented = True
         self.validationInputCountType = ValidationInputCountType.ENTITIES
 
@@ -525,15 +533,15 @@ class SubjectTypeConstraint(Constraint):
             SELECT DISTINCT ?class ?classLabel ?relation ?relationLabel
             WHERE
             {{
-                ?statement kpps:{self.wikibaseHelper.getPropertyConstraintPid()} kp:{self.identifier} .
-                kp:{self.property.identifier} kpp:{self.wikibaseHelper.getPropertyConstraintPid()} ?statement .
+                ?statement kpps:{self.wikibaseConfig.getPropertyConstraintPid()} kp:{self.identifier} .
+                kp:{self.property.identifier} kpp:{self.wikibaseConfig.getPropertyConstraintPid()} ?statement .
                 OPTIONAL
                 {{
                     ?statement ?classQualifier ?class .
                     BIND (IRI(replace(str(?classQualifier), str(kppq:), str(kp:)))  AS ?classQualifierEntity) .
                     SERVICE wikibase:label
                     {{
-                        bd:serviceParam wikibase:language "en,{self.wikibaseHelper.getDefaultLanguage()}".
+                        bd:serviceParam wikibase:language "en,{self.wikibaseConfig.getDefaultLanguage()}".
                         ?classQualifierEntity rdfs:label ?classQualifierLabel .
                     }}
                     FILTER (str(?classQualifierLabel) = "class")
@@ -544,13 +552,13 @@ class SubjectTypeConstraint(Constraint):
                     BIND (IRI(replace(str(?relationQualifier), str(kppq:), str(kp:)))  AS ?relationQualifierEntity) .
                     SERVICE wikibase:label
                     {{
-                        bd:serviceParam wikibase:language "en,{self.wikibaseHelper.getDefaultLanguage()}".
+                        bd:serviceParam wikibase:language "en,{self.wikibaseConfig.getDefaultLanguage()}".
                         ?relationQualifierEntity rdfs:label ?relationQualifierLabel .
                         ?relation rdfs:label ?relationLabel .
                     }}
                     FILTER (str(?relationQualifierLabel) = "relation")
                 }}
-                SERVICE wikibase:label {{ bd:serviceParam wikibase:language "{ self.wikibaseHelper.getDefaultLanguage() }" . }}
+                SERVICE wikibase:label {{ bd:serviceParam wikibase:language "{ self.wikibaseConfig.getDefaultLanguage() }" . }}
             }}
         """
 
@@ -570,7 +578,7 @@ class SubjectTypeConstraint(Constraint):
             return
 
         self.classes = classes
-        self.relation = self.wikibaseHelper.getInstanceOfPid()
+        self.relation = self.wikibaseConfig.getInstanceOfPid()
         self.qualifiersObtained = True
 
     def getViolationsQuery(self) -> str:
@@ -612,7 +620,7 @@ class SubjectTypeConstraint(Constraint):
             {{
                 INCLUDE %results
                 ?entity kpp:{self.property.identifier} ?statement .
-                SERVICE wikibase:label {{ bd:serviceParam wikibase:language "{ self.wikibaseHelper.getDefaultLanguage() }" }}
+                SERVICE wikibase:label {{ bd:serviceParam wikibase:language "{ self.wikibaseConfig.getDefaultLanguage() }" }}
             }}
             GROUP BY ?entity ?entityLabel"""
 
@@ -632,9 +640,9 @@ class RequiredQualifierConstraint(Constraint):
         identifier: str,
         label: str,
         prop: Property,
-        wikibaseHelper: WikibaseHelper,
+        wikibaseConfig: WikibaseConfig,
     ) -> None:
-        super().__init__(identifier, label, prop, wikibaseHelper)
+        super().__init__(identifier, label, prop, wikibaseConfig)
         self.implemented = True
         self.validationInputCountType = ValidationInputCountType.STATEMENTS
 
@@ -653,20 +661,20 @@ class RequiredQualifierConstraint(Constraint):
             SELECT DISTINCT ?prop ?propLabel
             WHERE
             {{
-                ?statement kpps:{self.wikibaseHelper.getPropertyConstraintPid()} kp:{self.identifier} .
-                kp:{self.property.identifier} kpp:{self.wikibaseHelper.getPropertyConstraintPid()} ?statement .
+                ?statement kpps:{self.wikibaseConfig.getPropertyConstraintPid()} kp:{self.identifier} .
+                kp:{self.property.identifier} kpp:{self.wikibaseConfig.getPropertyConstraintPid()} ?statement .
                 OPTIONAL
                 {{
                     ?statement ?propertyQualifier ?prop .
                     BIND (IRI(replace(str(?propertyQualifier), str(kppq:), str(kp:)))  AS ?propertyQualifierEntity) .
                     SERVICE wikibase:label
                     {{
-                        bd:serviceParam wikibase:language "en,{self.wikibaseHelper.getDefaultLanguage()}".
+                        bd:serviceParam wikibase:language "en,{self.wikibaseConfig.getDefaultLanguage()}".
                         ?propertyQualifierEntity rdfs:label ?propertyQualifierLabel .
                     }}
                     FILTER (str(?propertyQualifierLabel) = "property")
                 }}
-                SERVICE wikibase:label {{ bd:serviceParam wikibase:language "{ self.wikibaseHelper.getDefaultLanguage() }" . }}
+                SERVICE wikibase:label {{ bd:serviceParam wikibase:language "{ self.wikibaseConfig.getDefaultLanguage() }" . }}
             }}
         """
 
@@ -721,7 +729,7 @@ class RequiredQualifierConstraint(Constraint):
             WHERE
             {{
                 INCLUDE %results
-                SERVICE wikibase:label {{ bd:serviceParam wikibase:language "{ self.wikibaseHelper.getDefaultLanguage() }" }}
+                SERVICE wikibase:label {{ bd:serviceParam wikibase:language "{ self.wikibaseConfig.getDefaultLanguage() }" }}
             }}"""
 
     def updateViolations(self, result: Sequence[Sequence[str]]) -> None:
@@ -740,9 +748,9 @@ class AllowedQualifiersConstraint(Constraint):
         identifier: str,
         label: str,
         prop: Property,
-        wikibaseHelper: WikibaseHelper,
+        wikibaseConfig: WikibaseConfig,
     ) -> None:
-        super().__init__(identifier, label, prop, wikibaseHelper)
+        super().__init__(identifier, label, prop, wikibaseConfig)
         self.implemented = True
         self.validationInputCountType = ValidationInputCountType.STATEMENTS
 
@@ -759,20 +767,20 @@ class AllowedQualifiersConstraint(Constraint):
             SELECT DISTINCT ?prop ?propLabel
             WHERE
             {{
-                ?statement kpps:{self.wikibaseHelper.getPropertyConstraintPid()} kp:{self.identifier} .
-                kp:{self.property.identifier} kpp:{self.wikibaseHelper.getPropertyConstraintPid()} ?statement .
+                ?statement kpps:{self.wikibaseConfig.getPropertyConstraintPid()} kp:{self.identifier} .
+                kp:{self.property.identifier} kpp:{self.wikibaseConfig.getPropertyConstraintPid()} ?statement .
                 OPTIONAL
                 {{
                     ?statement ?propertyQualifier ?prop .
                     BIND (IRI(replace(str(?propertyQualifier), str(kppq:), str(kp:)))  AS ?propertyQualifierEntity) .
                     SERVICE wikibase:label
                     {{
-                        bd:serviceParam wikibase:language "en,{self.wikibaseHelper.getDefaultLanguage()}".
+                        bd:serviceParam wikibase:language "en,{self.wikibaseConfig.getDefaultLanguage()}".
                         ?propertyQualifierEntity rdfs:label ?propertyQualifierLabel .
                     }}
                     FILTER (str(?propertyQualifierLabel) = "property")
                 }}
-                SERVICE wikibase:label {{ bd:serviceParam wikibase:language "{ self.wikibaseHelper.getDefaultLanguage() }" . }}
+                SERVICE wikibase:label {{ bd:serviceParam wikibase:language "{ self.wikibaseConfig.getDefaultLanguage() }" . }}
             }}
         """
 
@@ -828,7 +836,7 @@ class AllowedQualifiersConstraint(Constraint):
             {{
                 INCLUDE %results
                 ?entity kpp:{self.property.identifier} ?statement
-                SERVICE wikibase:label {{ bd:serviceParam wikibase:language "{ self.wikibaseHelper.getDefaultLanguage() }" }}
+                SERVICE wikibase:label {{ bd:serviceParam wikibase:language "{ self.wikibaseConfig.getDefaultLanguage() }" }}
             }}"""
 
     def updateViolations(self, result: Sequence[Sequence[str]]) -> None:
@@ -847,9 +855,9 @@ class ConflictsWithConstraint(Constraint):
         identifier: str,
         label: str,
         prop: Property,
-        wikibaseHelper: WikibaseHelper,
+        wikibaseConfig: WikibaseConfig,
     ) -> None:
-        super().__init__(identifier, label, prop, wikibaseHelper)
+        super().__init__(identifier, label, prop, wikibaseConfig)
         self.implemented = True
         self.validationInputCountType = ValidationInputCountType.ENTITIES
         self.conflictingStatements: Sequence[tuple[Property, Optional[Item]]] = []
@@ -865,15 +873,15 @@ class ConflictsWithConstraint(Constraint):
             SELECT DISTINCT ?prop ?propLabel ?value ?valueLabel
             WHERE
             {{
-                ?statement kpps:{self.wikibaseHelper.getPropertyConstraintPid()} kp:{self.identifier} .
-                kp:{self.property.identifier} kpp:{self.wikibaseHelper.getPropertyConstraintPid()} ?statement .
+                ?statement kpps:{self.wikibaseConfig.getPropertyConstraintPid()} kp:{self.identifier} .
+                kp:{self.property.identifier} kpp:{self.wikibaseConfig.getPropertyConstraintPid()} ?statement .
                 OPTIONAL
                 {{
                     ?statement ?propertyQualifier ?prop .
                     BIND (IRI(replace(str(?propertyQualifier), str(kppq:), str(kp:)))  AS ?propertyQualifierEntity) .
                     SERVICE wikibase:label
                     {{
-                        bd:serviceParam wikibase:language "en,{self.wikibaseHelper.getDefaultLanguage()}".
+                        bd:serviceParam wikibase:language "en,{self.wikibaseConfig.getDefaultLanguage()}".
                         ?propertyQualifierEntity rdfs:label ?propertyQualifierLabel .
                     }}
                     FILTER (str(?propertyQualifierLabel) = "property")
@@ -884,12 +892,12 @@ class ConflictsWithConstraint(Constraint):
                     BIND (IRI(replace(str(?valueQualifier), str(kppq:), str(kp:)))  AS ?valueQualifierEntity) .
                     SERVICE wikibase:label
                     {{
-                        bd:serviceParam wikibase:language "en,{self.wikibaseHelper.getDefaultLanguage()}".
+                        bd:serviceParam wikibase:language "en,{self.wikibaseConfig.getDefaultLanguage()}".
                         ?valueQualifierEntity rdfs:label ?valueQualifierLabel .
                     }}
                     FILTER (str(?valueQualifierLabel) = "item of property constraint")
                 }}
-                SERVICE wikibase:label {{ bd:serviceParam wikibase:language "{ self.wikibaseHelper.getDefaultLanguage() }" . }}
+                SERVICE wikibase:label {{ bd:serviceParam wikibase:language "{ self.wikibaseConfig.getDefaultLanguage() }" . }}
             }}
         """
 
@@ -949,7 +957,7 @@ class ConflictsWithConstraint(Constraint):
             {{
                 INCLUDE %results
                 ?entity kpp:{self.property.identifier} ?statement
-                SERVICE wikibase:label {{ bd:serviceParam wikibase:language "{ self.wikibaseHelper.getDefaultLanguage() }" }}
+                SERVICE wikibase:label {{ bd:serviceParam wikibase:language "{ self.wikibaseConfig.getDefaultLanguage() }" }}
             }}
             GROUP BY ?entity ?entityLabel"""
 
@@ -969,9 +977,9 @@ class DistinctValuesConstraint(Constraint):
         identifier: str,
         label: str,
         prop: Property,
-        wikibaseHelper: WikibaseHelper,
+        wikibaseConfig: WikibaseConfig,
     ) -> None:
-        super().__init__(identifier, label, prop, wikibaseHelper)
+        super().__init__(identifier, label, prop, wikibaseConfig)
         self.implemented = True
         self.validationInputCountType = ValidationInputCountType.STATEMENTS
 
@@ -988,17 +996,17 @@ class DistinctValuesConstraint(Constraint):
             SELECT DISTINCT ?separator ?separatorLabel
             WHERE
             {{
-                ?statement kpps:{self.wikibaseHelper.getPropertyConstraintPid()} kp:{self.identifier} .
-                kp:{self.property.identifier} kpp:{self.wikibaseHelper.getPropertyConstraintPid()} ?statement .
+                ?statement kpps:{self.wikibaseConfig.getPropertyConstraintPid()} kp:{self.identifier} .
+                kp:{self.property.identifier} kpp:{self.wikibaseConfig.getPropertyConstraintPid()} ?statement .
                 ?statement ?qualifier ?separator .
                 BIND (IRI(replace(str(?qualifier), str(kppq:), str(kp:)))  AS ?qualifierEntity)
                 SERVICE wikibase:label
                 {{
-                    bd:serviceParam wikibase:language "en,{self.wikibaseHelper.getDefaultLanguage()}".
+                    bd:serviceParam wikibase:language "en,{self.wikibaseConfig.getDefaultLanguage()}".
                     ?qualifierEntity rdfs:label ?qualifierLabel .
                 }}
                 FILTER (str(?qualifierLabel) = "separator")
-                SERVICE wikibase:label {{ bd:serviceParam wikibase:language "{ self.wikibaseHelper.getDefaultLanguage() }" . }}
+                SERVICE wikibase:label {{ bd:serviceParam wikibase:language "{ self.wikibaseConfig.getDefaultLanguage() }" . }}
             }}
         """
 
@@ -1073,7 +1081,7 @@ class DistinctValuesConstraint(Constraint):
                 INCLUDE %results
                 ?statement kpps:{self.property.identifier} ?value .
                 ?entity kpp:{self.property.identifier} ?statement .
-                SERVICE wikibase:label {{ bd:serviceParam wikibase:language "{ self.wikibaseHelper.getDefaultLanguage() }" . }}
+                SERVICE wikibase:label {{ bd:serviceParam wikibase:language "{ self.wikibaseConfig.getDefaultLanguage() }" . }}
             }}"""
 
     def updateViolations(self, result: Sequence[Sequence[str]]) -> None:
@@ -1093,9 +1101,9 @@ class FormatConstraint(Constraint):
         identifier: str,
         label: str,
         prop: Property,
-        wikibaseHelper: WikibaseHelper,
+        wikibaseConfig: WikibaseConfig,
     ) -> None:
-        super().__init__(identifier, label, prop, wikibaseHelper)
+        super().__init__(identifier, label, prop, wikibaseConfig)
         self.implemented = True
         self.validationInputCountType = ValidationInputCountType.STATEMENTS
 
@@ -1112,13 +1120,13 @@ class FormatConstraint(Constraint):
             SELECT DISTINCT ?format
             WHERE
             {{
-                ?statement kpps:{self.wikibaseHelper.getPropertyConstraintPid()} kp:{self.identifier} .
-                kp:{self.property.identifier} kpp:{self.wikibaseHelper.getPropertyConstraintPid()} ?statement .
+                ?statement kpps:{self.wikibaseConfig.getPropertyConstraintPid()} kp:{self.identifier} .
+                kp:{self.property.identifier} kpp:{self.wikibaseConfig.getPropertyConstraintPid()} ?statement .
                 ?statement ?formatQualifier ?format .
                 BIND (IRI(replace(str(?formatQualifier), str(kppq:), str(kp:)))  AS ?formatQualifierEntity) .
                 SERVICE wikibase:label
                 {{
-                    bd:serviceParam wikibase:language "en,{self.wikibaseHelper.getDefaultLanguage()}".
+                    bd:serviceParam wikibase:language "en,{self.wikibaseConfig.getDefaultLanguage()}".
                     ?formatQualifierEntity rdfs:label ?formatQualifierLabel .
                 }}
                 FILTER (str(?formatQualifierLabel) = "format as a regular expression")
@@ -1172,7 +1180,7 @@ class FormatConstraint(Constraint):
             {{
                 INCLUDE %results
                 ?entity kpp:{self.property.identifier} ?statement .
-                SERVICE wikibase:label {{ bd:serviceParam wikibase:language "{ self.wikibaseHelper.getDefaultLanguage() }" }}
+                SERVICE wikibase:label {{ bd:serviceParam wikibase:language "{ self.wikibaseConfig.getDefaultLanguage() }" }}
             }}"""
 
     def updateViolations(self, result: Sequence[Sequence[str]]) -> None:
@@ -1197,9 +1205,9 @@ class ItemRequiresStatementConstraint(Constraint):
         identifier: str,
         label: str,
         prop: Property,
-        wikibaseHelper: WikibaseHelper,
+        wikibaseConfig: WikibaseConfig,
     ) -> None:
-        super().__init__(identifier, label, prop, wikibaseHelper)
+        super().__init__(identifier, label, prop, wikibaseConfig)
         self.implemented = True
         self.validationInputCountType = ValidationInputCountType.ENTITIES
         self.requiredStatements: dict[str, tuple[Property, list[Item]]] = {}
@@ -1215,15 +1223,15 @@ class ItemRequiresStatementConstraint(Constraint):
             SELECT DISTINCT ?prop ?propLabel ?value ?valueLabel
             WHERE
             {{
-                ?statement kpps:{self.wikibaseHelper.getPropertyConstraintPid()} kp:{self.identifier} .
-                kp:{self.property.identifier} kpp:{self.wikibaseHelper.getPropertyConstraintPid()} ?statement .
+                ?statement kpps:{self.wikibaseConfig.getPropertyConstraintPid()} kp:{self.identifier} .
+                kp:{self.property.identifier} kpp:{self.wikibaseConfig.getPropertyConstraintPid()} ?statement .
                 OPTIONAL
                 {{
                     ?statement ?propertyQualifier ?prop .
                     BIND (IRI(replace(str(?propertyQualifier), str(kppq:), str(kp:)))  AS ?propertyQualifierEntity) .
                     SERVICE wikibase:label
                     {{
-                        bd:serviceParam wikibase:language "en,{self.wikibaseHelper.getDefaultLanguage()}".
+                        bd:serviceParam wikibase:language "en,{self.wikibaseConfig.getDefaultLanguage()}".
                         ?propertyQualifierEntity rdfs:label ?propertyQualifierLabel .
                     }}
                     FILTER (str(?propertyQualifierLabel) = "property")
@@ -1234,12 +1242,12 @@ class ItemRequiresStatementConstraint(Constraint):
                     BIND (IRI(replace(str(?valueQualifier), str(kppq:), str(kp:)))  AS ?valueQualifierEntity) .
                     SERVICE wikibase:label
                     {{
-                        bd:serviceParam wikibase:language "en,{self.wikibaseHelper.getDefaultLanguage()}".
+                        bd:serviceParam wikibase:language "en,{self.wikibaseConfig.getDefaultLanguage()}".
                         ?valueQualifierEntity rdfs:label ?valueQualifierLabel .
                     }}
                     FILTER (str(?valueQualifierLabel) = "item of property constraint")
                 }}
-                SERVICE wikibase:label {{ bd:serviceParam wikibase:language "{ self.wikibaseHelper.getDefaultLanguage() }" . }}
+                SERVICE wikibase:label {{ bd:serviceParam wikibase:language "{ self.wikibaseConfig.getDefaultLanguage() }" . }}
             }}
         """
 
@@ -1300,7 +1308,7 @@ class ItemRequiresStatementConstraint(Constraint):
             {{
                 INCLUDE %results
                 ?entity kpp:{self.property.identifier} ?statement
-                SERVICE wikibase:label {{ bd:serviceParam wikibase:language "{ self.wikibaseHelper.getDefaultLanguage() }" }}
+                SERVICE wikibase:label {{ bd:serviceParam wikibase:language "{ self.wikibaseConfig.getDefaultLanguage() }" }}
             }}
             GROUP BY ?entity ?entityLabel"""
 
@@ -1320,9 +1328,9 @@ class ValueRequiresStatementConstraint(Constraint):
         identifier: str,
         label: str,
         prop: Property,
-        wikibaseHelper: WikibaseHelper,
+        wikibaseConfig: WikibaseConfig,
     ) -> None:
-        super().__init__(identifier, label, prop, wikibaseHelper)
+        super().__init__(identifier, label, prop, wikibaseConfig)
         self.implemented = True
         self.validationInputCountType = ValidationInputCountType.STATEMENTS
         self.requiredStatements: dict[str, tuple[Property, list[Item]]] = {}
@@ -1338,15 +1346,15 @@ class ValueRequiresStatementConstraint(Constraint):
             SELECT DISTINCT ?prop ?propLabel ?value ?valueLabel
             WHERE
             {{
-                ?statement kpps:{self.wikibaseHelper.getPropertyConstraintPid()} kp:{self.identifier} .
-                kp:{self.property.identifier} kpp:{self.wikibaseHelper.getPropertyConstraintPid()} ?statement .
+                ?statement kpps:{self.wikibaseConfig.getPropertyConstraintPid()} kp:{self.identifier} .
+                kp:{self.property.identifier} kpp:{self.wikibaseConfig.getPropertyConstraintPid()} ?statement .
                 OPTIONAL
                 {{
                     ?statement ?propertyQualifier ?prop .
                     BIND (IRI(replace(str(?propertyQualifier), str(kppq:), str(kp:)))  AS ?propertyQualifierEntity) .
                     SERVICE wikibase:label
                     {{
-                        bd:serviceParam wikibase:language "en,{self.wikibaseHelper.getDefaultLanguage()}".
+                        bd:serviceParam wikibase:language "en,{self.wikibaseConfig.getDefaultLanguage()}".
                         ?propertyQualifierEntity rdfs:label ?propertyQualifierLabel .
                     }}
                     FILTER (str(?propertyQualifierLabel) = "property")
@@ -1357,12 +1365,12 @@ class ValueRequiresStatementConstraint(Constraint):
                     BIND (IRI(replace(str(?valueQualifier), str(kppq:), str(kp:)))  AS ?valueQualifierEntity) .
                     SERVICE wikibase:label
                     {{
-                        bd:serviceParam wikibase:language "en,{self.wikibaseHelper.getDefaultLanguage()}".
+                        bd:serviceParam wikibase:language "en,{self.wikibaseConfig.getDefaultLanguage()}".
                         ?valueQualifierEntity rdfs:label ?valueQualifierLabel .
                     }}
                     FILTER (str(?valueQualifierLabel) = "item of property constraint")
                 }}
-                SERVICE wikibase:label {{ bd:serviceParam wikibase:language "{ self.wikibaseHelper.getDefaultLanguage() }" . }}
+                SERVICE wikibase:label {{ bd:serviceParam wikibase:language "{ self.wikibaseConfig.getDefaultLanguage() }" . }}
             }}
         """
 
@@ -1422,7 +1430,7 @@ class ValueRequiresStatementConstraint(Constraint):
             WHERE
             {{
                 INCLUDE %results
-                SERVICE wikibase:label {{ bd:serviceParam wikibase:language "{ self.wikibaseHelper.getDefaultLanguage() }" }}
+                SERVICE wikibase:label {{ bd:serviceParam wikibase:language "{ self.wikibaseConfig.getDefaultLanguage() }" }}
             }}"""
 
     def updateViolations(self, result: Sequence[Sequence[str]]) -> None:
@@ -1458,12 +1466,17 @@ class ConstraintAnalyzer(QObject):
     focusedPropertyConstraintViolationsUpdated = Signal()
     validateAllDone = Signal()
 
-    def __init__(self, wikibaseHelper: WikibaseHelper) -> None:
+    def __init__(
+        self, wikibaseConfig: WikibaseConfig, wikibaseQueryRunner: WikibaseQueryRunner
+    ) -> None:
         super().__init__()
 
-        self.wikibaseHelper = wikibaseHelper
+        self.wikibaseConfig = wikibaseConfig
+        self.wikibaseQueryRunner = wikibaseQueryRunner
 
-        self.constraintHelper = ConstraintHelper(self.wikibaseHelper)
+        self.constraintHelper = ConstraintHelper(
+            self.wikibaseConfig, self.wikibaseQueryRunner
+        )
         self.constraintHelper.inputCountUpdated.connect(self.onInputCountUpdated)
         self.constraintHelper.qualifiersUpdated.connect(self.onQualifiersUpdated)
         self.constraintHelper.violationsUpdated.connect(self.onViolationsUpdated)
@@ -1478,8 +1491,8 @@ class ConstraintAnalyzer(QObject):
         self.validatingQueue = False
 
     def updateConstraints(self) -> None:
-        defaultLanguage = self.wikibaseHelper.getDefaultLanguage()
-        constraintPid = self.wikibaseHelper.getPropertyConstraintPid()
+        defaultLanguage = self.wikibaseConfig.getDefaultLanguage()
+        constraintPid = self.wikibaseConfig.getPropertyConstraintPid()
         if defaultLanguage == "en":
             query = f"""
                 SELECT ?subject ?subjectLabel ?object ?objectLabel
@@ -1509,10 +1522,12 @@ class ConstraintAnalyzer(QObject):
                     }}
                 }}
                 """
-        self.wikibaseHelper.queueQueryForExecution(query, self._updateConstraintsResult)
+        self.wikibaseQueryRunner.queueQueryForExecution(
+            query, self._updateConstraintsResult
+        )
 
     def _updateConstraintsResult(self) -> None:
-        result = self.wikibaseHelper.queryResult
+        result = self.wikibaseQueryRunner.queryResult
         if not result:
             return
         self.constraints = {}
@@ -1525,7 +1540,7 @@ class ConstraintAnalyzer(QObject):
                     constType = Constraint
 
                 constraint = constType(
-                    consId, consLabel, Property(propId, propLabel), self.wikibaseHelper
+                    consId, consLabel, Property(propId, propLabel), self.wikibaseConfig
                 )
 
                 self.constraints[consId, propId] = constraint
