@@ -44,6 +44,8 @@ class WikibaseConfig(QObject):
         self._subclassOfPid = stringOrDefault(
             wbiConfigPairs.get(ExtraWikibaseConfigKey.SUBCLASS_OF_PID, "")
         )
+        
+        self.wikibaseConfigChanged.emit()
 
     def getPropertyConstraintPid(self) -> str:
         return stringOrDefault(config[WbiConfigKey.PROPERTY_CONSTRAINT_PID])
