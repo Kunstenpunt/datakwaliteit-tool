@@ -1,6 +1,6 @@
 from enum import StrEnum
 from itertools import chain
-from typing import Mapping
+from typing import Mapping, Type
 
 from PySide6.QtCore import Signal, QObject, QSettings
 
@@ -36,6 +36,9 @@ class ExtraWikibaseConfigKey(StrEnum):
 CONFIG_KEY_TYPES = [WbiConfigKey, ExtraWikibaseConfigKey]
 
 
+ConfigMapping = Mapping[str, str | int | bool | None]
+
+
 class ConfigHandler(QObject):
     configChanged = Signal()
 
@@ -45,7 +48,7 @@ class ConfigHandler(QObject):
         self._settings = QSettings(ORGANISATION_NAME, APPLICATION_NAME)
         self._modified = False
 
-    def getWikibaseConfigPairs(self) -> Mapping[str, str | int | bool | None]:
+    def getWikibaseConfigPairs(self) -> ConfigMapping:
         self._settings.beginGroup(WBI_CONFIGURATION_KEY)
         configPairs = {
             key: self._settings.value(key)
@@ -55,10 +58,7 @@ class ConfigHandler(QObject):
         self._settings.endGroup()
         return configPairs
 
-    def setWikibaseConfigPairs(
-        self, newConfigPairs: Mapping[str, str | int | bool | None]
-    ) -> None:
-
+    def setWikibaseConfigPairs(self, newConfigPairs: ConfigMapping) -> None:
         self._modified = False
         self._settings.beginGroup(WBI_CONFIGURATION_KEY)
         for keyType in CONFIG_KEY_TYPES:
@@ -69,8 +69,8 @@ class ConfigHandler(QObject):
 
     def _setSettingsValuesForKeyType(
         self,
-        newConfigPairs: Mapping[str, str | int | bool | None],
-        keyType: type[StrEnum],
+        newConfigPairs: ConfigMapping,
+        keyType: Type[StrEnum],
     ) -> None:
         for key in keyType:
             if key in newConfigPairs:
