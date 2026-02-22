@@ -1,6 +1,6 @@
 from enum import StrEnum
 from itertools import chain
-from typing import Mapping, Type
+from typing import Mapping
 
 from PySide6.QtCore import Signal, QObject, QSettings
 
@@ -70,7 +70,7 @@ class ConfigHandler(QObject):
     def _setSettingsValuesForKeyType(
         self,
         newConfigPairs: ConfigMapping,
-        keyType: Type[StrEnum],
+        keyType: type[StrEnum],
     ) -> None:
         for key in keyType:
             if key in newConfigPairs:
