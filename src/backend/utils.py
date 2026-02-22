@@ -23,13 +23,13 @@ def queryResultToTable(queryResult: Any) -> Optional[Table[str]]:
     return result
 
 
-def stripUrlPartFromTable(url: str, table: Table[str]) -> Table[str]:
+def stripUrlPartFromTable(baseUrl: str, table: Table[str]) -> Table[str]:
     return [
-        [IdFromUrl(el) if el.startswith(url) else el for el in row] for row in table
+        [idFromUrl(el) if el.startswith(baseUrl) else el for el in row] for row in table
     ]
 
 
-def IdFromUrl(url: str) -> str:
+def idFromUrl(url: str) -> str:
     return url.rsplit("/", 1)[-1]
 
 

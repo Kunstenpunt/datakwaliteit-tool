@@ -4,7 +4,7 @@ from typing import Optional, Self, Sequence
 
 from PySide6.QtCore import Signal, QObject
 
-from .utils import IdFromUrl
+from .utils import idFromUrl
 from .wikibasehelper import WikibaseConfig, WikibaseQueryRunner
 
 # idee: eis dat alle entiteiten en properties die mappen op properties van wikidata hetzelfde label hebben in het Engels -> op die manier steeds correcte mapping
@@ -314,7 +314,7 @@ class SingleValueConstraint(Constraint):
     def updateQualifiers(self, result: Sequence[Sequence[str]]) -> None:
         try:
             self.separators = [
-                Property(IdFromUrl(identifier), label)
+                Property(idFromUrl(identifier), label)
                 for [identifier, label] in result[1:]
             ]
         except:
@@ -372,7 +372,7 @@ class SingleValueConstraint(Constraint):
     def updateViolations(self, result: Sequence[Sequence[str]]) -> None:
         try:
             self.violations = [
-                [IdFromUrl(s), IdFromUrl(e), eL, v] for [s, e, eL, v] in result
+                [idFromUrl(s), idFromUrl(e), eL, v] for [s, e, eL, v] in result
             ]
         except:
             return
@@ -439,8 +439,8 @@ class ValueTypeConstraint(Constraint):
 
         try:
             for [classId, classLabel, relationId, relationLabel] in result[1:]:
-                classId = IdFromUrl(classId)
-                relationId = IdFromUrl(relationId)
+                classId = idFromUrl(classId)
+                relationId = idFromUrl(relationId)
                 if relationLabel != "instance of":
                     print(
                         f'ValueTypeConstraint for relation "{relationLabel}" is currently unsupported.'
@@ -499,7 +499,7 @@ class ValueTypeConstraint(Constraint):
     def updateViolations(self, result: Sequence[Sequence[str]]) -> None:
         try:
             self.violations = [
-                [IdFromUrl(s), IdFromUrl(e), eL, IdFromUrl(v), vL]
+                [idFromUrl(s), idFromUrl(e), eL, idFromUrl(v), vL]
                 for [s, e, eL, v, vL] in result
             ]
         except:
@@ -566,8 +566,8 @@ class SubjectTypeConstraint(Constraint):
         classes = []
         try:
             for [classId, classLabel, relationId, relationLabel] in result[1:]:
-                classId = IdFromUrl(classId)
-                relationId = IdFromUrl(relationId)
+                classId = idFromUrl(classId)
+                relationId = idFromUrl(relationId)
                 if relationLabel != "instance of":
                     print(
                         f'SubjectTypeConstraint for relation "{relationLabel}" is currently unsupported.'
@@ -627,7 +627,7 @@ class SubjectTypeConstraint(Constraint):
     def updateViolations(self, result: Sequence[Sequence[str]]) -> None:
         try:
             self.violations = [
-                [IdFromUrl(s), IdFromUrl(e), eL] for [s, e, eL] in result
+                [idFromUrl(s), idFromUrl(e), eL] for [s, e, eL] in result
             ]
         except:
             return
@@ -681,7 +681,7 @@ class RequiredQualifierConstraint(Constraint):
     def updateQualifiers(self, result: Sequence[Sequence[str]]) -> None:
         try:
             self.requiredQualifiers = [
-                Property(IdFromUrl(propId), propLabel)
+                Property(idFromUrl(propId), propLabel)
                 for [propId, propLabel] in result[1:]
             ]
         except:
@@ -735,7 +735,7 @@ class RequiredQualifierConstraint(Constraint):
     def updateViolations(self, result: Sequence[Sequence[str]]) -> None:
         try:
             self.violations = [
-                [IdFromUrl(s), IdFromUrl(e), eL] for [s, e, eL] in result
+                [idFromUrl(s), idFromUrl(e), eL] for [s, e, eL] in result
             ]
         except:
             return
@@ -787,7 +787,7 @@ class AllowedQualifiersConstraint(Constraint):
     def updateQualifiers(self, result: Sequence[Sequence[str]]) -> None:
         try:
             self.allowedQualifiers = [
-                Property(IdFromUrl(propId), propLabel)
+                Property(idFromUrl(propId), propLabel)
                 for [propId, propLabel] in result[1:]
             ]
         except:
@@ -842,7 +842,7 @@ class AllowedQualifiersConstraint(Constraint):
     def updateViolations(self, result: Sequence[Sequence[str]]) -> None:
         try:
             self.violations = [
-                [IdFromUrl(s), IdFromUrl(e), eL] for [s, e, eL] in result
+                [idFromUrl(s), idFromUrl(e), eL] for [s, e, eL] in result
             ]
         except:
             return
@@ -905,7 +905,7 @@ class ConflictsWithConstraint(Constraint):
         try:
             self.conflictingStatements = [
                 (
-                    Property(IdFromUrl(propId), propLabel),
+                    Property(idFromUrl(propId), propLabel),
                     Item(valueId, valueLabel) if valueId else None,
                 )
                 for [propId, propLabel, valueId, valueLabel] in result[1:]
@@ -964,7 +964,7 @@ class ConflictsWithConstraint(Constraint):
     def updateViolations(self, result: Sequence[Sequence[str]]) -> None:
         try:
             self.violations = [
-                [IdFromUrl(s), IdFromUrl(e), eL] for [s, e, eL] in result
+                [idFromUrl(s), idFromUrl(e), eL] for [s, e, eL] in result
             ]
         except:
             return
@@ -1013,7 +1013,7 @@ class DistinctValuesConstraint(Constraint):
     def updateQualifiers(self, result: Sequence[Sequence[str]]) -> None:
         try:
             self.separators = [
-                Property(IdFromUrl(identifier), label)
+                Property(idFromUrl(identifier), label)
                 for [identifier, label] in result[1:]
             ]
         except:
@@ -1087,7 +1087,7 @@ class DistinctValuesConstraint(Constraint):
     def updateViolations(self, result: Sequence[Sequence[str]]) -> None:
         try:
             self.violations = [
-                [IdFromUrl(s), IdFromUrl(e), e_l, IdFromUrl(v), v_l]
+                [idFromUrl(s), idFromUrl(e), e_l, idFromUrl(v), v_l]
                 for [s, e, e_l, v, v_l] in result
             ]
         except:
@@ -1187,8 +1187,8 @@ class FormatConstraint(Constraint):
         try:
             self.violations = [
                 [
-                    IdFromUrl(s),
-                    IdFromUrl(e),
+                    idFromUrl(s),
+                    idFromUrl(e),
                     e_l,
                     v,
                 ]
@@ -1255,11 +1255,11 @@ class ItemRequiresStatementConstraint(Constraint):
         self.requiredStatements = {}
         try:
             for [propId, propLabel, valueId, valueLabel] in result[1:]:
-                prop = Property(IdFromUrl(propId), propLabel)
+                prop = Property(idFromUrl(propId), propLabel)
                 if not (prop.identifier in self.requiredStatements):
                     self.requiredStatements[prop.identifier] = (prop, [])
                 if valueId != None:
-                    value = Item(IdFromUrl(valueId), valueLabel)
+                    value = Item(idFromUrl(valueId), valueLabel)
                     self.requiredStatements[prop.identifier][1].append(value)
         except:
             return
@@ -1315,7 +1315,7 @@ class ItemRequiresStatementConstraint(Constraint):
     def updateViolations(self, result: Sequence[Sequence[str]]) -> None:
         try:
             self.violations = [
-                [IdFromUrl(s), IdFromUrl(e), eL] for [s, e, eL] in result
+                [idFromUrl(s), idFromUrl(e), eL] for [s, e, eL] in result
             ]
         except:
             return
@@ -1378,11 +1378,11 @@ class ValueRequiresStatementConstraint(Constraint):
         self.requiredStatements = {}
         try:
             for [propId, propLabel, valueId, valueLabel] in result[1:]:
-                prop = Property(IdFromUrl(propId), propLabel)
+                prop = Property(idFromUrl(propId), propLabel)
                 if not (prop.identifier in self.requiredStatements):
                     self.requiredStatements[prop.identifier] = (prop, [])
                 if valueId != None:
-                    value = Item(IdFromUrl(valueId), valueLabel)
+                    value = Item(idFromUrl(valueId), valueLabel)
                     self.requiredStatements[prop.identifier][1].append(value)
         except:
             return
@@ -1436,7 +1436,7 @@ class ValueRequiresStatementConstraint(Constraint):
     def updateViolations(self, result: Sequence[Sequence[str]]) -> None:
         try:
             self.violations = [
-                [IdFromUrl(s), IdFromUrl(e), eL] for [s, e, eL] in result
+                [idFromUrl(s), idFromUrl(e), eL] for [s, e, eL] in result
             ]
         except:
             return
@@ -1533,8 +1533,8 @@ class ConstraintAnalyzer(QObject):
         self.constraints = {}
         try:
             for [propId, propLabel, consId, consLabel] in result[1:]:
-                propId = IdFromUrl(propId)
-                consId = IdFromUrl(consId)
+                propId = idFromUrl(propId)
+                consId = idFromUrl(consId)
                 constType = CONSTRAINT_MAP.get(consLabel)
                 if not constType:
                     constType = Constraint
