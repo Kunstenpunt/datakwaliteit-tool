@@ -1,5 +1,5 @@
 import re
-from typing import Any, Callable, Optional, Sequence
+from typing import Any, Callable, Optional
 
 from PySide6.QtCore import Signal, QMetaObject, QObject, QThread
 
@@ -7,6 +7,7 @@ from wikibaseintegrator.wbi_config import config
 from wikibaseintegrator.wbi_helpers import execute_sparql_query
 
 from .configuration import ConfigHandler, ExtraWikibaseConfigKey, WbiConfigKey
+from .types import Table
 from .utils import queryResultToTable, stringOrDefault
 
 
@@ -79,7 +80,7 @@ class QueryThread(QThread):
         super().__init__(parent)
         self._query = query
         self._prefixes = None if self.prefixesPresentInQuery() else defaultPrefixes
-        self.resultTable: Optional[Sequence[Sequence[str]]] = None
+        self.resultTable: Optional[Table[str]] = None
 
     def prefixesPresentInQuery(self) -> bool:
         return bool(self._prefixPattern.search(self._query))
@@ -117,7 +118,7 @@ class WikibaseQueryRunner(QObject):
 
         self.callbackData: Optional[object] = None
         self.mostRecentQuery = ""
-        self.queryResult: Optional[Sequence[Sequence[str]]] = None
+        self.queryResult: Optional[Table[str]] = None
 
         self._connectSignals()
 

@@ -6,8 +6,13 @@ import xlsxwriter as xlsx
 from PySide6.QtCore import QObject
 
 from .constraints import Constraint, ValidationState
+from .types import T, Table
 from .utils import urlFromId
 from .wikibasehelper import WikibaseConfig
+
+
+SheetName = str
+Sheet = tuple[SheetName, Table[T]]
 
 
 class Exporter(QObject):
@@ -17,9 +22,21 @@ class Exporter(QObject):
 
         self.wikibaseConfig = wikibaseConfig
 
-    def _getSheetData(
-        self, constraint: Constraint, exportUrl: bool
-    ) -> tuple[str, Sequence[Sequence[str]]]:
+    def exportSingleConstraint(
+        self, constraint: Constraint, fileName: str, exportUrl: bool
+    ) -> None:
+        sheets = [self._getSheetData(constraint, exportUrl)]
+        self._writeSheetsToFile(sheets, fileName)
+
+    def exportMultipleConstraints(
+        self, constraints: Sequence[Constraint], fileName: str, exportUrl: bool
+    ) -> None:
+        sheets = [self._getInfoSheetData(constraints)] + [
+            self._getSheetData(c, exportUrl) for c in constraints
+        ]
+        self._writeSheetsToFile(sheets, fileName)
+
+    def _getSheetData(self, constraint: Constraint, exportUrl: bool) -> Sheet[str]:
         sheetName = f"{constraint.property.identifier}-{constraint.identifier}"
         sheetData = constraint.violations or []
         if exportUrl:
@@ -29,45 +46,9 @@ class Exporter(QObject):
             ]
         return (sheetName, sheetData)
 
-    def _addSheetOds(
-        self,
-        odsFile: ods.ODSWriter,
-        sheetName: str,
-        sheetData: Sequence[Sequence[str | int]],
-    ) -> None:
-        sheet = odsFile.new_sheet(sheetName)  # type: ignore
-        for row in sheetData:
-            sheet.writerow(row)
-
-    def _addSheetXlsx(
-        self,
-        xlsxData: xlsx.Workbook,
-        sheetName: str,
-        sheetData: Sequence[Sequence[str | int]],
-    ) -> None:
-        sheet = xlsxData.add_worksheet(sheetName)
-        for i, row in enumerate(sheetData):
-            sheet.write_row(i, 0, row)
-
-    def exportSingleConstraint(
-        self, constraint: Constraint, fileName: str, exportUrl: bool
-    ) -> None:
-        sheetName, sheetData = self._getSheetData(constraint, exportUrl)
-        if fileName.endswith(".ods"):
-            with open(fileName, "wb") as f:
-                with ods.writer(f) as odsFile:  # type: ignore
-                    self._addSheetOds(odsFile, sheetName, sheetData)
-        if fileName.endswith(".xlsx"):
-            xlsxData = xlsx.Workbook(fileName, {"constant_memory": True})
-            self._addSheetXlsx(xlsxData, sheetName, sheetData)
-            xlsxData.close()
-
-    def _getInfoSheetData(
-        self, constraints: Sequence[Constraint]
-    ) -> tuple[str, Sequence[Sequence[str | int]]]:
+    def _getInfoSheetData(self, constraints: Sequence[Constraint]) -> Sheet[str | int]:
         sheetName = "Info"
-        sheetData: list[list[str | int]] = []
-        sheetData.append(
+        sheetData: Table[str | int] = [
             [
                 "Prop ID",
                 "Prop Label",
@@ -76,9 +57,7 @@ class Exporter(QObject):
                 "Violations",
                 "Completeness",
             ]
-        )
-        sheetData += [
-            [
+            + [
                 c.property.identifier,
                 c.property.label,
                 c.identifier,
@@ -93,22 +72,39 @@ class Exporter(QObject):
             for c in constraints
             if c.violations is not None
         ]
+
         return (sheetName, sheetData)
 
-    def exportMultipleConstraints(
-        self, constraints: Sequence[Constraint], fileName: str, exportUrl: bool
+    def _writeSheetsToFile(
+        self, sheets: Sequence[Sheet[str | int]], fileName: str
     ) -> None:
-        infoSheetName, infoSheetData = self._getInfoSheetData(constraints)
-        dataSheets = [self._getSheetData(c, exportUrl) for c in constraints]
         if fileName.endswith(".ods"):
             with open(fileName, "wb") as f:
                 with ods.writer(f) as odsFile:  # type: ignore
-                    self._addSheetOds(odsFile, infoSheetName, infoSheetData)
-                    for s in dataSheets:
-                        self._addSheetOds(odsFile, s[0], s[1])
+                    for s in sheets:
+                        self._addSheetOds(odsFile, s)
         if fileName.endswith(".xlsx"):
             xlsxData = xlsx.Workbook(fileName, {"constant_memory": True})
-            self._addSheetXlsx(xlsxData, infoSheetName, infoSheetData)
-            for s in dataSheets:
-                self._addSheetXlsx(xlsxData, s[0], s[1])
+            for s in sheets:
+                self._addSheetXlsx(xlsxData, s)
             xlsxData.close()
+
+    def _addSheetOds(
+        self,
+        odsFile: ods.ODSWriter,
+        sheet: Sheet[str | int],
+    ) -> None:
+        (sheetName, sheetData) = sheet
+        odsSheet = odsFile.new_sheet(sheetName)  # type: ignore
+        for row in sheetData:
+            odsSheet.writerow(row)
+
+    def _addSheetXlsx(
+        self,
+        xlsxData: xlsx.Workbook,
+        sheet: Sheet[str | int],
+    ) -> None:
+        (sheetName, sheetData) = sheet
+        xlsxSheet = xlsxData.add_worksheet(sheetName)
+        for i, row in enumerate(sheetData):
+            xlsxSheet.write_row(i, 0, row)

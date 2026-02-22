@@ -3,6 +3,7 @@ from typing import Optional, Sequence
 
 from PySide6.QtCore import QObject, Signal
 
+from .types import Table
 from .utils import stripUrlPartFromTable
 from .wikibasehelper import WikibaseConfig, WikibaseQueryRunner
 
@@ -20,7 +21,7 @@ class BatchEditor(QObject):
         self.wikibaseConfig = wikibaseConfig
         self.wikibaseQueryRunner = wikibaseQueryRunner
 
-        self.inputData: Optional[Sequence[Sequence[str]]] = None
+        self.inputData: Optional[Table[str]] = None
         self.query = ""
         self.recipe = ""
         self.generatedStatements = ""

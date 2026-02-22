@@ -1,8 +1,10 @@
 import re
-from typing import Any, Optional, Sequence
+from typing import Any, Optional
+
+from .types import Table
 
 
-def queryResultToTable(queryResult: Any) -> Optional[Sequence[Sequence[str]]]:
+def queryResultToTable(queryResult: Any) -> Optional[Table[str]]:
     try:
         header = queryResult["head"]["vars"]
         result = [header]
@@ -21,9 +23,7 @@ def queryResultToTable(queryResult: Any) -> Optional[Sequence[Sequence[str]]]:
     return result
 
 
-def stripUrlPartFromTable(
-    url: str, table: Sequence[Sequence[str]]
-) -> Sequence[Sequence[str]]:
+def stripUrlPartFromTable(url: str, table: Table[str]) -> Table[str]:
     return [
         [IdFromUrl(el) if el.startswith(url) else el for el in row] for row in table
     ]
