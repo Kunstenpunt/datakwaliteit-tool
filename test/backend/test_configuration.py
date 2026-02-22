@@ -2,7 +2,16 @@ import random
 import sys
 import uuid
 
+import pytest
+
+from PySide6.QtCore import QSettings
+
 from src.backend.configuration import ConfigHandler
+from src.backend.configuration import (
+    ORGANISATION_NAME,
+    APPLICATION_NAME,
+    WBI_CONFIGURATION_KEY,
+)
 
 validWbiConfigKeys = [
     "DEFAULT_LANGUAGE",
@@ -22,7 +31,20 @@ validExtraWikibaseConfigKeys = [
 invalidKey = "UNKNOWN KEY"
 
 
-def test_configHandler(qtbot):
+@pytest.fixture
+def configBackup():
+    qSettings = QSettings(ORGANISATION_NAME, APPLICATION_NAME)
+    qSettings.beginGroup(WBI_CONFIGURATION_KEY)
+    configPairs = {k: qSettings.value(k) for k in qSettings.allKeys()}
+    qSettings.endGroup()
+    yield
+    qSettings.beginGroup(WBI_CONFIGURATION_KEY)
+    for k, v in configPairs.items():
+        qSettings.setValue(k, v)
+    qSettings.endGroup()
+
+
+def test_configHandler(configBackup, qtbot):
     configHandler = ConfigHandler()
 
     newKeys = validWbiConfigKeys + validExtraWikibaseConfigKeys + [invalidKey]
