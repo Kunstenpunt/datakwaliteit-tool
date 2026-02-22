@@ -33,6 +33,50 @@ def test_idFromUrlStatement():
     assert id == STATEMENT_ID
 
 
+def test_queryResultToTableCorrect():
+    queryResult = {
+        "head": {"vars": ["x", "y"]},
+        "results": {
+            "bindings": [
+                {"x": {"value": "1"}},
+                {"y": {"value": "2"}, "x": {"value": "3"}, "z": {"value": "4"}},
+                {},
+            ]
+        },
+    }
+    table = queryResultToTable(queryResult)
+    correctTable = [["x", "y"], ["1", None], ["3", "2"], [None, None]]
+    assert table == correctTable
+
+
+def test_queryResultToTableIncorrect(subtests):
+    invalidQueryResults = [
+        {
+            "head": {"?": ["x", "y"]},
+            "results": {
+                "bindings": [
+                    {"x": {"value": "1"}},
+                ]
+            },
+        },
+        None,
+        {
+            "head": {"vars": ["x", "y"]},
+            "results": {
+                "wrong": [
+                    {"x": {"value": "1"}},
+                ]
+            },
+        },
+        ["list", "of", "things"],
+    ]
+
+    for queryResult in invalidQueryResults:
+        with subtests.test(queryResult=queryResult):
+            table = queryResultToTable(queryResult)
+            assert table is None
+
+
 def test_stringOrDefaultString():
     result = stringOrDefault("hello", "default")
     assert result == "hello"
