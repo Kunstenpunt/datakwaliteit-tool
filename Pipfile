@@ -9,13 +9,16 @@ pyside6 = "*"
 odswriter = "*"
 xlsxwriter = "*"
 imageio = "*"
+
+[dev-packages]
 black = "*"
 mypy = "*"
 pytest = "*"
 coverage = "*"
 pytest-qt = "*"
-
-[dev-packages]
+pyexcel_xlsx = "*"
+ezodf = "*"
+lxml = "*"
 
 [requires]
 python_version = "3.13"
