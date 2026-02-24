@@ -1,6 +1,5 @@
 from itertools import product
 import os
-from unittest.mock import Mock
 
 import ezodf
 import pyexcel_xlsx
@@ -8,6 +7,7 @@ import pytest
 
 from src.backend.constraints import Constraint, Property, ValidationState
 from src.backend.export import Exporter
+from test.backend.mocks import mock_wikibaseConfig
 
 constraintRecipes = {}
 correctSheets = {}
@@ -38,8 +38,8 @@ correctSheets["validated_with_ids_with_url"] = (
     "P1-Q1",
     [
         ["var1A", "var1B", "var1C"],
-        ["base.url/entity/Q11", "2", "base.url/entity/P12"],
-        ["base.url/entity/Q12", "4", "base.url/entity/P12"],
+        ["https://base.url/entity/Q11", "2", "https://base.url/entity/P12"],
+        ["https://base.url/entity/Q12", "4", "https://base.url/entity/P12"],
     ],
 )
 
@@ -104,13 +104,6 @@ def cleanupGeneratedFiles():
     for item in os.listdir():
         if item.endswith(".ods") or item.endswith(".xlsx"):
             os.remove(item)
-
-
-@pytest.fixture
-def mock_wikibaseConfig():
-    wikibaseConfigMock = Mock()
-    wikibaseConfigMock.getBaseUrl.return_value = "base.url"
-    return wikibaseConfigMock
 
 
 def test_exportSingleConstraintValid(
