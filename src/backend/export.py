@@ -32,7 +32,9 @@ class Exporter(QObject):
         self, constraints: Sequence[Constraint], fileName: str, exportUrl: bool
     ) -> None:
         sheets = [self._getInfoSheetData(constraints)] + [
-            self._getSheetData(c, exportUrl) for c in constraints
+            self._getSheetData(c, exportUrl)
+            for c in constraints
+            if c.violations is not None
         ]
         self._writeSheetsToFile(sheets, fileName)
 
@@ -57,7 +59,8 @@ class Exporter(QObject):
                 "Violations",
                 "Completeness",
             ]
-            + [
+        ] + [
+            [
                 c.property.identifier,
                 c.property.label,
                 c.identifier,
