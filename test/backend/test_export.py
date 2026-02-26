@@ -7,7 +7,7 @@ import pytest
 
 from src.backend.constraints import Constraint, Property, ValidationState
 from src.backend.export import Exporter
-from test.backend.mocks import mock_wikibaseConfig
+from test.backend.stubs import WikibaseConfigStub
 
 constraintRecipes = {}
 correctSheets = {}
@@ -107,7 +107,7 @@ def cleanupGeneratedFiles():
 
 
 def test_exportSingleConstraintValid(
-    cleanupGeneratedFiles, mock_wikibaseConfig, subtests
+    cleanupGeneratedFiles, subtests
 ):
     constraintRecipeNames = [
         "validated_with_ids",
@@ -122,10 +122,11 @@ def test_exportSingleConstraintValid(
             exportUrl=exportUrl,
             constraintRecipeName=constraintRecipeName,
         ):
-            exporter = Exporter(mock_wikibaseConfig)
+            wikibaseConfigStub = WikibaseConfigStub()
+            exporter = Exporter(wikibaseConfigStub)
 
             recipe = constraintRecipes[constraintRecipeName]
-            constraint = buildConstraint(**recipe, wikibaseConfig=mock_wikibaseConfig)
+            constraint = buildConstraint(**recipe, wikibaseConfig=wikibaseConfigStub)
 
             filename = (
                 "single_constraint_export_test_"
@@ -142,16 +143,17 @@ def test_exportSingleConstraintValid(
 
 
 def test_exportMultipleConstraintOds(
-    cleanupGeneratedFiles, mock_wikibaseConfig, subtests
+    cleanupGeneratedFiles, subtests
 ):
     for fileExtension, exportUrl in product([".xlsx", ".ods"], [True, False]):
         with subtests.test(fileExtension=fileExtension, exportUrl=exportUrl):
-            exporter = Exporter(mock_wikibaseConfig)
+            wikibaseConfigStub = WikibaseConfigStub()
+            exporter = Exporter(wikibaseConfigStub)
 
             constraints = [
                 buildConstraint(
                     **constraintRecipes[recipe],
-                    wikibaseConfig=mock_wikibaseConfig,
+                    wikibaseConfig=wikibaseConfigStub,
                 )
                 for recipe in [
                     "validated_with_ids",
