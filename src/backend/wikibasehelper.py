@@ -1,7 +1,7 @@
 import re
 from typing import Any, Callable, Optional
 
-from PySide6.QtCore import Signal, QMetaObject, QObject, QThread
+from PySide6.QtCore import QMetaObject, QObject, QThread, Signal
 
 from wikibaseintegrator.wbi_config import config
 from wikibaseintegrator.wbi_helpers import execute_sparql_query
@@ -79,10 +79,10 @@ class QueryThread(QThread):
     def __init__(self, parent: QObject, query: str, defaultPrefixes: str) -> None:
         super().__init__(parent)
         self._query = query
-        self._prefixes = None if self.prefixesPresentInQuery() else defaultPrefixes
+        self._prefixes = None if self._prefixesPresentInQuery() else defaultPrefixes
         self.resultTable: Optional[Table[str]] = None
 
-    def prefixesPresentInQuery(self) -> bool:
+    def _prefixesPresentInQuery(self) -> bool:
         return bool(self._prefixPattern.search(self._query))
 
     def run(self) -> None:
