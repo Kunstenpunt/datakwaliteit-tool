@@ -1,0 +1,76 @@
+from time import sleep
+
+from PySide6.QtCore import QObject, QThread, Signal
+
+
+class QueryThreadStub(QThread):
+    THREAD_EXECUTION_TIME_SECONDS = 0.1
+
+    resultReady = Signal()
+
+    predefinedResultTables = []
+    predefinedResultIndex = 0
+
+    def __init__(self, parent, query, defaultPrefixes) -> None:
+        super().__init__(parent)
+
+    def run(self) -> None:
+        sleep(self.THREAD_EXECUTION_TIME_SECONDS)
+        self.resultTable = QueryThreadStub.predefinedResultTables[
+            QueryThreadStub.predefinedResultIndex
+        ]
+        QueryThreadStub.predefinedResultIndex += 1
+        self.resultReady.emit()
+
+
+class WikibaseConfigStub(QObject):
+    wikibaseConfigChanged = Signal()
+
+    def __init__(self, configHandler=None) -> None:
+        super().__init__()
+        self.baseUrl = "https://base.url"
+        self.defaultLanguage = "nl"
+        self.instanceOfPid = "P31"
+        self.propertyConstraintPid = "P2301"
+        self.pureUrl = "base.url"
+        self.subclassOfPid = "P279"
+
+    def getBaseUrl(self):
+        return self.baseUrl
+
+    def getDefaultLanguage(self):
+        return self.defaultLanguage
+
+    def getInstanceOfPid(self):
+        return self.instanceOfPid
+
+    def getPropertyConstraintPid(self):
+        return self.propertyConstraintPid
+
+    def getPureUrl(self):
+        return self.pureUrl
+
+    def getSubclassOfPid(self):
+        return self.subclassOfPid
+
+
+class WikibaseQueryRunnerStub(QObject):
+    queryStarted = Signal()
+    queryDone = Signal()
+
+    def __init__(self, wikibaseConfig=None) -> None:
+        super().__init__()
+        self.queueQueryForExecutionCalls = []
+
+        self.callbackData = None
+        self.mostRecentQuery = ""
+        self.queryResult = None
+
+    def queueQueryForExecution(self, queryString, callback, data=None):
+        self.queueQueryForExecutionCalls += (queryString, callback, data)
+
+        self.callbackData = self.callbackData
+        self.mostRecentQuery = queryString
+
+        callback()
+        self.queryDone.emit()

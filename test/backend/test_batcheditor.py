@@ -1,6 +1,6 @@
 from src.backend.batcheditor import BatchEditor
 
-from .mocks import mock_wikibaseConfig, mock_wikibaseQueryRunner
+from .stubs import WikibaseConfigStub, WikibaseQueryRunnerStub
 
 query = "some query"
 queryResult = [
@@ -21,9 +21,11 @@ Q5\tP1\tQ2
 Q2\tP3\t"value\""""
 
 
-def test_BatchEditor(mock_wikibaseConfig, mock_wikibaseQueryRunner, qtbot):
-    batchEditor = BatchEditor(mock_wikibaseConfig, mock_wikibaseQueryRunner)
-    mock_wikibaseQueryRunner.queryResult = queryResult
+def test_BatchEditor(qtbot):
+    wikibaseConfigStub = WikibaseConfigStub()
+    wikibaseQueryRunnerStub = WikibaseQueryRunnerStub()
+    wikibaseQueryRunnerStub.queryResult = queryResult
+    batchEditor = BatchEditor(wikibaseConfigStub, wikibaseQueryRunnerStub)
 
     def check_statements():
         return batchEditor.generatedStatements == expectedStatements
