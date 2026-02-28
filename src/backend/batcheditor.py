@@ -13,7 +13,9 @@ class BatchEditor(QObject):
     statementGenerationDone = Signal()
 
     def __init__(
-        self, wikibaseConfig: WikibaseConfig, wikibaseQueryRunner: WikibaseQueryRunner
+        self,
+        wikibaseConfig: WikibaseConfig,
+        wikibaseQueryRunner: WikibaseQueryRunner,
     ) -> None:
         super().__init__()
 
@@ -73,7 +75,10 @@ class BatchEditor(QObject):
             recipeFormatStr = recipeFormatStr.replace("?" + varName, f"{{{i}}}")
         return recipeFormatStr
 
-    def _applyRecipeFormatStr(self, recipeFormatStr):
+    def _applyRecipeFormatStr(self, recipeFormatStr: str) -> None:
+        if not self.inputData:
+            return
+
         result = []
         for row in self.inputData[1:]:
             result += [recipeFormatStr.format(*row)]

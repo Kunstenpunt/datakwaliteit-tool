@@ -5,7 +5,11 @@ from ..backend.model import Model
 from ..backend.utils import stripUrlPartFromTable
 
 from .designer.querytab import Ui_QueryTab
-from .simpletablemodel import headerResizeNeatly, SimpleTableModel, TableClickHandler
+from .simpletablemodel import (
+    headerResizeNeatly,
+    SimpleTableModel,
+    TableClickHandler,
+)
 
 
 class QueryTab(QWidget, Ui_QueryTab):

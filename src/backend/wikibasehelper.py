@@ -44,7 +44,7 @@ class WikibaseConfig(QObject):
         self._subclassOfPid = stringOrDefault(
             wbiConfigPairs.get(ExtraWikibaseConfigKey.SUBCLASS_OF_PID, "")
         )
-        
+
         self.wikibaseConfigChanged.emit()
 
     def getPropertyConstraintPid(self) -> str:
@@ -136,7 +136,10 @@ class WikibaseQueryRunner(QObject):
         """
 
     def queueQueryForExecution(
-        self, queryString: str, callback: Callable[[], None], data: object = None
+        self,
+        queryString: str,
+        callback: Callable[[], None],
+        data: object = None,
     ) -> None:
         self._queryQueue.append((queryString, callback, data))
         if len(self._queryQueue) == 1 and not self._executingQuery:
@@ -145,7 +148,7 @@ class WikibaseQueryRunner(QObject):
     def _handleNextQueryInQueue(self) -> None:
         if not self._queryQueue:
             return
-        (queryString, callback, data) = self._queryQueue.pop(0)
+        queryString, callback, data = self._queryQueue.pop(0)
         self._executeQueryOnThread(queryString, callback, data)
 
     def _executeQueryOnThread(

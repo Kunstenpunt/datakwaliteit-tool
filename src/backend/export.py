@@ -10,7 +10,6 @@ from .types import T, Table
 from .utils import urlFromId
 from .wikibasehelper import WikibaseConfig
 
-
 SheetName = str
 Sheet = tuple[SheetName, Table[T]]
 
@@ -97,7 +96,7 @@ class Exporter(QObject):
         odsFile: ods.ODSWriter,
         sheet: Sheet[str | int],
     ) -> None:
-        (sheetName, sheetData) = sheet
+        sheetName, sheetData = sheet
         odsSheet = odsFile.new_sheet(sheetName)  # type: ignore
         for row in sheetData:
             odsSheet.writerow(row)
@@ -107,7 +106,7 @@ class Exporter(QObject):
         xlsxData: xlsx.Workbook,
         sheet: Sheet[str | int],
     ) -> None:
-        (sheetName, sheetData) = sheet
+        sheetName, sheetData = sheet
         xlsxSheet = xlsxData.add_worksheet(sheetName)
         for i, row in enumerate(sheetData):
             xlsxSheet.write_row(i, 0, row)

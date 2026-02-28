@@ -25,7 +25,10 @@ class Item:
         try:
             return int(self.identifier[1:]) < int(other.identifier[1:])
         except:
-            return (self.identifier, self.label) < (other.identifier, other.label)
+            return (self.identifier, self.label) < (
+                other.identifier,
+                other.label,
+            )
 
     def __str__(self) -> str:
         if self.identifier == None and self.label == None:
@@ -124,7 +127,9 @@ class ConstraintHelper(QObject):
     validationStateUpdated = Signal()
 
     def __init__(
-        self, wikibaseConfig: WikibaseConfig, wikibaseQueryRunner: WikibaseQueryRunner
+        self,
+        wikibaseConfig: WikibaseConfig,
+        wikibaseQueryRunner: WikibaseQueryRunner,
     ) -> None:
         super().__init__()
         self.constraint: Optional[Constraint] = None
@@ -1467,7 +1472,9 @@ class ConstraintAnalyzer(QObject):
     validateAllDone = Signal()
 
     def __init__(
-        self, wikibaseConfig: WikibaseConfig, wikibaseQueryRunner: WikibaseQueryRunner
+        self,
+        wikibaseConfig: WikibaseConfig,
+        wikibaseQueryRunner: WikibaseQueryRunner,
     ) -> None:
         super().__init__()
 
@@ -1536,11 +1543,14 @@ class ConstraintAnalyzer(QObject):
                 propId = idFromUrl(propId)
                 consId = idFromUrl(consId)
                 constType = CONSTRAINT_MAP.get(consLabel)
-                if not constType:
+                if constType is None:
                     constType = Constraint
 
                 constraint = constType(
-                    consId, consLabel, Property(propId, propLabel), self.wikibaseConfig
+                    consId,
+                    consLabel,
+                    Property(propId, propLabel),
+                    self.wikibaseConfig,
                 )
 
                 self.constraints[consId, propId] = constraint
@@ -1575,7 +1585,11 @@ class ConstraintAnalyzer(QObject):
             self.constraintHelper.queryInputCount(constraint)
 
     def validateFocusedConstraint(
-        self, validationMode: ValidationMode, limit: int, offset: int, sort: bool
+        self,
+        validationMode: ValidationMode,
+        limit: int,
+        offset: int,
+        sort: bool,
     ) -> None:
         if self.focusedConstraint is None:
             return
