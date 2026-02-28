@@ -5,7 +5,7 @@ ui_dir = r"./src/ui/designer"
 ui_files = []
 
 
-def add_type_ignore_comments(filename):
+def add_type_ignore_comments(filename: str) -> None:
     triggers = {
         "setupUi(": " # type: ignore",
         "retranslateUi(": " # type: ignore",

@@ -1,4 +1,9 @@
-from PySide6.QtCore import QFileInfo, QModelIndex, QSortFilterProxyModel, QStandardPaths
+from PySide6.QtCore import (
+    QFileInfo,
+    QModelIndex,
+    QSortFilterProxyModel,
+    QStandardPaths,
+)
 from PySide6.QtWidgets import QFileDialog, QWidget
 
 from ..backend.constraints import ValidationMode, ValidationState
@@ -6,7 +11,11 @@ from ..backend.export import Exporter
 from ..backend.model import Model
 
 from .designer.constrainttab import Ui_ConstraintTab
-from .simpletablemodel import headerResizeNeatly, SimpleTableModel, TableClickHandler
+from .simpletablemodel import (
+    headerResizeNeatly,
+    SimpleTableModel,
+    TableClickHandler,
+)
 
 
 class ConstraintsTab(QWidget, Ui_ConstraintTab):
