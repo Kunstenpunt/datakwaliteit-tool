@@ -4,15 +4,19 @@ from PySide6.QtCore import QObject, QThread, Signal
 
 
 class QueryThreadStub(QThread):
-    THREAD_EXECUTION_TIME_SECONDS = 0.1
+    THREAD_EXECUTION_TIME_SECONDS = 0.01
 
     resultReady = Signal()
 
     predefinedResultTables = []
     predefinedResultIndex = 0
+    latestQuery = ""
+    latestDefaultPrefixes = ""
 
     def __init__(self, parent, query, defaultPrefixes) -> None:
         super().__init__(parent)
+        QueryThreadStub.latestQuery = query
+        QueryThreadStub.latestDefaultPrefixes = defaultPrefixes
 
     def run(self) -> None:
         sleep(self.THREAD_EXECUTION_TIME_SECONDS)
