@@ -2,6 +2,22 @@ from time import sleep
 
 from PySide6.QtCore import QObject, QThread, Signal
 
+class ConfigHandlerStub(QObject):
+    configChanged = Signal()
+
+    configPairs = {}
+
+    def __init__(self) -> None:
+        super().__init__()
+
+    def getWikibaseConfigPairs(self):
+        return ConfigHandlerStub.configPairs
+
+    def setWikibaseConfigPairs(self, newConfigPairs) -> None:
+        if ConfigHandlerStub.configPairs != newConfigPairs:
+            ConfigHandlerStub.configPairs = newConfigPairs.copy()
+            self.configChanged.emit()
+
 
 class QueryThreadStub(QThread):
     THREAD_EXECUTION_TIME_SECONDS = 0.01

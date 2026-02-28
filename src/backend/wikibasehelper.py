@@ -28,9 +28,8 @@ class WikibaseConfig(QObject):
         wbiConfigPairs = self._configHandler.getWikibaseConfigPairs()
         allWbiKeysObtained = True
         for key in WbiConfigKey:
-            value = wbiConfigPairs.get(key)
-            if value:
-                config[key] = value
+            if key in wbiConfigPairs:
+                config[key] = wbiConfigPairs[key]
             else:
                 allWbiKeysObtained = False
 
