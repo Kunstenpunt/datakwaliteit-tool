@@ -106,9 +106,7 @@ def cleanupGeneratedFiles():
             os.remove(item)
 
 
-def test_exportSingleConstraintValid(
-    cleanupGeneratedFiles, subtests
-):
+def test_exportSingleConstraintValid(cleanupGeneratedFiles, subtests):
     constraintRecipeNames = [
         "validated_with_ids",
         "validated_no_ids",
@@ -142,9 +140,7 @@ def test_exportSingleConstraintValid(
             checkFileContents(filename, correctBook)
 
 
-def test_exportMultipleConstraintOds(
-    cleanupGeneratedFiles, subtests
-):
+def test_exportMultipleConstraintOds(cleanupGeneratedFiles, subtests):
     for fileExtension, exportUrl in product([".xlsx", ".ods"], [True, False]):
         with subtests.test(fileExtension=fileExtension, exportUrl=exportUrl):
             wikibaseConfigStub = WikibaseConfigStub()

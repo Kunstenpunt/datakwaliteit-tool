@@ -5,7 +5,6 @@ from PySide6.QtCore import QObject
 
 from src.backend.wikibasehelper import QueryThread
 
-
 correctMockReturn = {
     "head": {"vars": ["x"]},
     "results": {"bindings": [{"x": {"value": "1"}}]},
