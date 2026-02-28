@@ -16,7 +16,7 @@ class ConfigHandlerStub(QObject):
 
     def setWikibaseConfigPairs(self, newConfigPairs) -> None:
         if ConfigHandlerStub.configPairs != newConfigPairs:
-            ConfigHandlerStub.configPairs = newConfigPairs.copy()
+            ConfigHandlerStub.configPairs = newConfigPairs[:]
             self.configChanged.emit()
 
 
