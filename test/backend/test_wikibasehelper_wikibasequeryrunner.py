@@ -1,12 +1,15 @@
 from time import sleep
 from unittest.mock import patch
 
-from src.backend.wikibasehelper import config, WbiConfigKey, WikibaseQueryRunner
+from src.backend.wikibasehelper import (
+    config,
+    WbiConfigKey,
+    WikibaseQueryRunner,
+)
 from test.backend.stubs import QueryThreadStub, WikibaseConfigStub
 
-
 queries = ["query 1", "query 2", "query 3", "query 4", "query 5"]
-resultTables = [[["a"],["aa"],["aaa"]], [["b"]], [["c"]], None, [["d"]]]
+resultTables = [[["a"], ["aa"], ["aaa"]], [["b"]], [["c"]], None, [["d"]]]
 callbackData = [1, 2, None, "hello", 5]
 
 
@@ -29,16 +32,13 @@ class CallbackChecker:
         assert self.wikibaseQueryRunner.callbackData == expectedCallbackData
         assert self.wikibaseQueryRunner.mostRecentQuery == expectedQuery
         assert QueryThreadStub.latestQuery == expectedQuery
-        assert (
-            QueryThreadStub.latestDefaultPrefixes
-            == f"""
+        assert QueryThreadStub.latestDefaultPrefixes == f"""
             PREFIX kp:<{expectedWikibaseUrl}/entity/>
             PREFIX kpt:<{expectedWikibaseUrl}/prop/direct/>
             PREFIX kpp:<{expectedWikibaseUrl}/prop/>
             PREFIX kpps:<{expectedWikibaseUrl}/prop/statement/>
             PREFIX kppq:<{expectedWikibaseUrl}/prop/qualifier/>
         """
-        )
 
     def generateCallback(
         self,
@@ -108,7 +108,10 @@ def test_WikibaseQueryRunnerConfigChange(qtbot):
     # Only the first and final query should actually be executed if the test runs correctly.
     # The last query should have an updated default prefix.
     wikibaseConfigStub = WikibaseConfigStub()
-    QueryThreadStub.predefinedResultTables = [resultTables[0], resultTables[-1]]
+    QueryThreadStub.predefinedResultTables = [
+        resultTables[0],
+        resultTables[-1],
+    ]
     QueryThreadStub.predefinedResultIndex = 0
 
     with patch("src.backend.wikibasehelper.QueryThread", QueryThreadStub):

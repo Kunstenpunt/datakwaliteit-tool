@@ -2,6 +2,7 @@ from time import sleep
 
 from PySide6.QtCore import QObject, QThread, Signal
 
+
 class ConfigHandlerStub(QObject):
     configChanged = Signal()
 

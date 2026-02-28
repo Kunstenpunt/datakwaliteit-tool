@@ -111,7 +111,10 @@ def test_WikibaseConfigIncomplete(configBackup, qtbot):
         wikibaseConfig.getPropertyConstraintPid()
         == config[WbiConfigKey.PROPERTY_CONSTRAINT_PID]
     )
-    assert wikibaseConfig.getDefaultLanguage() == configPairs[WbiConfigKey.DEFAULT_LANGUAGE]
+    assert (
+        wikibaseConfig.getDefaultLanguage()
+        == configPairs[WbiConfigKey.DEFAULT_LANGUAGE]
+    )
     assert wikibaseConfig.getBaseUrl() == configPairs[WbiConfigKey.WIKIBASE_URL]
     assert wikibaseConfig.getInstanceOfPid() == ""
     assert wikibaseConfig.getSubclassOfPid() == ""

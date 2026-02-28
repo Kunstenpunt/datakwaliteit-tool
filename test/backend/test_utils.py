@@ -39,7 +39,11 @@ def test_queryResultToTableCorrect():
         "results": {
             "bindings": [
                 {"x": {"value": "1"}},
-                {"y": {"value": "2"}, "x": {"value": "3"}, "z": {"value": "4"}},
+                {
+                    "y": {"value": "2"},
+                    "x": {"value": "3"},
+                    "z": {"value": "4"},
+                },
                 {},
             ]
         },
@@ -95,7 +99,10 @@ def test_stringOrDefaultList():
 def test_stripUrlPartFromTable():
     table = [[ENTITY_URL, PROPERTY_URL], [STATEMENT_URL, "NOT A URL"]]
     strippedTable = stripUrlPartFromTable(BASE_URL, table)
-    correctStrippedTable = [[ENTITY_ID, PROPERTY_ID], [STATEMENT_ID, "NOT A URL"]]
+    correctStrippedTable = [
+        [ENTITY_ID, PROPERTY_ID],
+        [STATEMENT_ID, "NOT A URL"],
+    ]
     assert strippedTable == correctStrippedTable
 
 
