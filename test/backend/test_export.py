@@ -5,7 +5,7 @@ import ezodf
 import pyexcel_xlsx
 import pytest
 
-from src.backend.constraints import Constraint, Property, ValidationState
+from src.backend.constraint.base import Constraint, Property, ValidationState
 from src.backend.export import Exporter
 from test.backend.stubs import WikibaseConfigStub
 

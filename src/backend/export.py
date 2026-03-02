@@ -5,7 +5,7 @@ import xlsxwriter as xlsx
 
 from PySide6.QtCore import QObject
 
-from .constraints import Constraint, ValidationState
+from .constraint.base import Constraint, ValidationState
 from .types import T, Table
 from .utils import urlFromId
 from .wikibasehelper import WikibaseConfig
