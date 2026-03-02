@@ -63,7 +63,7 @@ def checkWbiConfig(expectedConfigPairs):
 
 
 def test_WikibaseConfigStandard(configBackup, qtbot):
-    ConfigHandlerStub.configPairs = INITIAL_CONFIG_PAIRS[:]
+    ConfigHandlerStub.configPairs = INITIAL_CONFIG_PAIRS.copy()
     configHandlerStub = ConfigHandlerStub()
 
     wikibaseConfig = WikibaseConfig(configHandlerStub)
@@ -99,7 +99,7 @@ def test_WikibaseConfigStandard(configBackup, qtbot):
 
 
 def test_WikibaseConfigIncomplete(configBackup, qtbot):
-    ConfigHandlerStub.configPairs = INCOMPLETE_CONFIG_PAIRS[:]
+    ConfigHandlerStub.configPairs = INCOMPLETE_CONFIG_PAIRS.copy()
     configHandlerStub = ConfigHandlerStub()
 
     configPairs = getWbiConfig()
