@@ -10,7 +10,7 @@ from PySide6.QtCore import (
 from PySide6.QtGui import QBrush, QColor, QDesktopServices
 from PySide6.QtWidgets import QHeaderView
 
-from ..backend.constraints import ValidationState
+from ..backend.constraint.base import ValidationState
 from ..backend.utils import urlFromId
 
 MAXIMUM_AUTO_TABLE_SECTION_WIDTH = 200

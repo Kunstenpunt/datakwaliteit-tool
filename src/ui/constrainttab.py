@@ -6,7 +6,7 @@ from PySide6.QtCore import (
 )
 from PySide6.QtWidgets import QFileDialog, QWidget
 
-from ..backend.constraints import ValidationMode, ValidationState
+from ..backend.constraint.base import ValidationMode, ValidationState
 from ..backend.export import Exporter
 from ..backend.model import Model
 
@@ -51,30 +51,30 @@ class ConstraintsTab(QWidget, Ui_ConstraintTab):
         self.violationsTableView.doubleClicked.connect(
             self.tableClickHandler.onTableDoubleClicked
         )
-        self.model.constraintAnalyzer.constrainedPropertiesUpdated.connect(
+        self.model.constraintCheckModel.constrainedPropertiesUpdated.connect(
             self.onConstrainedPropertiesUpdated
         )
-        self.model.constraintAnalyzer.constrainedPropertyValidationStateChanged.connect(
+        self.model.constraintCheckModel.constrainedPropertyValidationStateChanged.connect(
             self.onConstrainedPropertyValidationStateChanged
         )
-        self.model.constraintAnalyzer.focusedPropertyConstraintUpdated.connect(
+        self.model.constraintCheckModel.focusedPropertyConstraintUpdated.connect(
             self.onFocusedPropertyConstraintUpdated
         )
-        self.model.constraintAnalyzer.focusedPropertyConstraintInputCountUpdated.connect(
+        self.model.constraintCheckModel.focusedPropertyConstraintInputCountUpdated.connect(
             self.updateFocusedPropertyConstraintInputCount
         )
-        self.model.constraintAnalyzer.focusedPropertyConstraintQualifiersUpdated.connect(
+        self.model.constraintCheckModel.focusedPropertyConstraintQualifiersUpdated.connect(
             self.updateFocusedPropertyConstraintLabel
         )
-        self.model.constraintAnalyzer.focusedPropertyConstraintViolationsUpdated.connect(
+        self.model.constraintCheckModel.focusedPropertyConstraintViolationsUpdated.connect(
             self.updateViolationsTableView
         )
-        self.model.constraintAnalyzer.validateAllDone.connect(
+        self.model.constraintCheckModel.validateAllDone.connect(
             self.updateValidateAllLabel
         )
 
     def updateConstraints(self) -> None:
-        self.model.constraintAnalyzer.updateConstraints()
+        self.model.constraintCheckModel.updateConstraints()
 
     def onConstrainedPropertiesUpdated(self) -> None:
         headerLabels = [
@@ -85,7 +85,7 @@ class ConstraintsTab(QWidget, Ui_ConstraintTab):
             "Implemented",
             "Validated",
         ]
-        data = [headerLabels] + self.model.constraintAnalyzer.getConstraintsListFull()
+        data = [headerLabels] + self.model.constraintCheckModel.getConstraintsListFull()
         sortableDataModel = QSortFilterProxyModel()
         sortableDataModel.setSourceModel(SimpleTableModel(data))
         self.propertiesTableView.setModel(sortableDataModel)
@@ -98,7 +98,7 @@ class ConstraintsTab(QWidget, Ui_ConstraintTab):
             self.propertiesTableView.selectRow(0)
 
     def onConstrainedPropertyValidationStateChanged(self) -> None:
-        data = self.model.constraintAnalyzer.getConstraintsListFull()
+        data = self.model.constraintCheckModel.getConstraintsListFull()
         model = self.propertiesTableView.model()
         if not isinstance(model, QSortFilterProxyModel):
             return
@@ -115,10 +115,10 @@ class ConstraintsTab(QWidget, Ui_ConstraintTab):
         tableModel = current.model()
         propId = tableModel.data(tableModel.index(current.row(), 0))
         constraintId = tableModel.data(tableModel.index(current.row(), 2))
-        self.model.constraintAnalyzer.setFocusedConstraint(propId, constraintId)
+        self.model.constraintCheckModel.setFocusedConstraint(propId, constraintId)
 
     def onFocusedPropertyConstraintUpdated(self) -> None:
-        focusedPropertyConstraint = self.model.constraintAnalyzer.focusedConstraint
+        focusedPropertyConstraint = self.model.constraintCheckModel.focusedConstraint
         if not focusedPropertyConstraint:
             return
         self.updateFocusedPropertyConstraintLabel()
@@ -133,13 +133,13 @@ class ConstraintsTab(QWidget, Ui_ConstraintTab):
         self.updateViolationsTableView()
 
     def updateFocusedPropertyConstraintLabel(self) -> None:
-        constraint = self.model.constraintAnalyzer.focusedConstraint
+        constraint = self.model.constraintCheckModel.focusedConstraint
         if not constraint:
             return
         self.labelRight.setText(constraint.pretty())
 
     def updateFocusedPropertyConstraintInputCount(self) -> None:
-        constraint = self.model.constraintAnalyzer.focusedConstraint
+        constraint = self.model.constraintCheckModel.focusedConstraint
         if not constraint:
             return
         if constraint.inputCount != -1:
@@ -168,16 +168,16 @@ class ConstraintsTab(QWidget, Ui_ConstraintTab):
         self.pageSpinBox.setValue(1)
 
     def validateAll(self) -> None:
-        if not self.model.constraintAnalyzer.validatingAll():
-            self.model.constraintAnalyzer.validateAll()
+        if not self.model.constraintCheckModel.validatingAll():
+            self.model.constraintCheckModel.validateAll()
         else:
-            self.model.constraintAnalyzer.stopValidatingAll()
+            self.model.constraintCheckModel.stopValidatingAll()
         self.updateValidateAllLabel()
 
     def updateValidateAllLabel(self) -> None:
         self.validateAllButton.setText(
             "Stop Validating All"
-            if self.model.constraintAnalyzer.validatingAll()
+            if self.model.constraintCheckModel.validatingAll()
             else "Validate All"
         )
 
@@ -187,12 +187,12 @@ class ConstraintsTab(QWidget, Ui_ConstraintTab):
         limit = self.limitSpinBox.value()
         page = self.pageSpinBox.value()
         offset = (page - 1) * limit
-        self.model.constraintAnalyzer.validateFocusedConstraint(
+        self.model.constraintCheckModel.validateFocusedConstraint(
             limitMode, limit, offset, sort
         )
 
     def updateViolationsTableView(self) -> None:
-        constraint = self.model.constraintAnalyzer.focusedConstraint
+        constraint = self.model.constraintCheckModel.focusedConstraint
         if not constraint:
             return
         data = constraint.violations
@@ -213,7 +213,7 @@ class ConstraintsTab(QWidget, Ui_ConstraintTab):
         )
 
     def exportSingleConstraint(self) -> None:
-        constraint = self.model.constraintAnalyzer.focusedConstraint
+        constraint = self.model.constraintCheckModel.focusedConstraint
         if not constraint:
             return
         defaultFileName = f"constraint_violations_{constraint.property.identifier}_{constraint.identifier}"
@@ -241,7 +241,7 @@ class ConstraintsTab(QWidget, Ui_ConstraintTab):
         validatedConstraints = sorted(
             [
                 c
-                for c in self.model.constraintAnalyzer.constraints.values()
+                for c in self.model.constraintCheckModel.constraints.values()
                 if c.validationState
                 in [ValidationState.VALIDATED, ValidationState.PARTIAL]
             ]
