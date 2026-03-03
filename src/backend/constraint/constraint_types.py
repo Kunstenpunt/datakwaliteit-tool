@@ -42,7 +42,7 @@ class SingleValueConstraint(Constraint):
                 for [identifier, label] in result[1:]
             ]
         except:
-            return
+            raise ValueError("{result} is an invalid value for updating qualifiers")
 
         self.qualifiersObtained = True
 
@@ -61,7 +61,7 @@ class SingleValueConstraint(Constraint):
                 ORDER BY ?entity ?statement ?value"""
                     if self.sort else ""
                 }
-                LIMIT {self.limit} OFFSET {self.offset}"""
+                LIMIT {self.limit} OFFSET {self._offset}"""
                     if self.validationMode == ValidationMode.LIMIT_INPUT else ""
                 }
             }} AS %input
@@ -80,7 +80,7 @@ class SingleValueConstraint(Constraint):
                 ORDER BY ?entity ?value"""
                     if self.sort else ""
                 }
-                LIMIT {self.limit} OFFSET {self.offset}""" 
+                LIMIT {self.limit} OFFSET {self._offset}""" 
                     if self.validationMode == ValidationMode.LIMIT_OUTPUT else ""
                 }
             }} AS %results
@@ -115,7 +115,7 @@ class ValueTypeConstraint(Constraint):
         self.implemented = True
         self.validationInputCountType = ValidationInputCountType.STATEMENTS
 
-        self.classes: Sequence[Property] = []
+        self.classes: Sequence[Item] = []
         self.relation = ""
 
     def pretty(self) -> str:
@@ -136,9 +136,9 @@ class ValueTypeConstraint(Constraint):
                         f'ValueTypeConstraint for relation "{relationLabel}" is currently unsupported.'
                     )
                     return
-                classes.append(Property(classId, classLabel))
+                classes.append(Item(classId, classLabel))
         except:
-            return
+            raise ValueError("{result} is an invalid value for updating qualifiers")
 
         self.classes = classes
         self.relation = self._wikibaseConfig.getInstanceOfPid()
@@ -158,7 +158,7 @@ class ValueTypeConstraint(Constraint):
                 ORDER BY ?statement ?value"""
                     if self.sort else ""
                 }
-                LIMIT {self.limit} OFFSET {self.offset}"""
+                LIMIT {self.limit} OFFSET {self._offset}"""
                     if self.validationMode == ValidationMode.LIMIT_INPUT else ""
                 }
             }} AS %input
@@ -174,7 +174,7 @@ class ValueTypeConstraint(Constraint):
                 ORDER BY ?entity ?value"""
                     if self.sort else ""
                 }
-                LIMIT {self.limit} OFFSET {self.offset}""" 
+                LIMIT {self.limit} OFFSET {self._offset}""" 
                     if self.validationMode == ValidationMode.LIMIT_OUTPUT else ""
                 }
             }} AS %results
@@ -209,7 +209,7 @@ class SubjectTypeConstraint(Constraint):
         self.implemented = True
         self.validationInputCountType = ValidationInputCountType.ENTITIES
 
-        self.classes: Sequence[Property] = []
+        self.classes: Sequence[Item] = []
         self.relation = ""
 
     def pretty(self) -> str:
@@ -229,9 +229,9 @@ class SubjectTypeConstraint(Constraint):
                         f'SubjectTypeConstraint for relation "{relationLabel}" is currently unsupported.'
                     )
                     return
-                classes.append(Property(classId, classLabel))
+                classes.append(Item(classId, classLabel))
         except:
-            return
+            raise ValueError("{result} is an invalid value for updating qualifiers")
 
         self.classes = classes
         self.relation = self._wikibaseConfig.getInstanceOfPid()
@@ -251,7 +251,7 @@ class SubjectTypeConstraint(Constraint):
                 ORDER BY ?entity"""
                     if self.sort else ""
                 }
-                LIMIT {self.limit} OFFSET {self.offset}"""
+                LIMIT {self.limit} OFFSET {self._offset}"""
                 if self.validationMode == ValidationMode.LIMIT_INPUT else ""
                 }
             }} AS %input
@@ -267,7 +267,7 @@ class SubjectTypeConstraint(Constraint):
                 ORDER BY ?entity"""
                     if self.sort else ""
                 }
-                LIMIT {self.limit} OFFSET {self.offset}""" 
+                LIMIT {self.limit} OFFSET {self._offset}""" 
                     if self.validationMode == ValidationMode.LIMIT_OUTPUT else ""
                 }
             }} AS %results
@@ -319,7 +319,7 @@ class RequiredQualifierConstraint(Constraint):
                 for [propId, propLabel] in result[1:]
             ]
         except:
-            return
+            raise ValueError("{result} is an invalid value for updating qualifiers")
 
         self.qualifiersObtained = True
 
@@ -337,7 +337,7 @@ class RequiredQualifierConstraint(Constraint):
                 ORDER BY ?entity ?statement"""
                     if self.sort else ""
                 }
-                LIMIT {self.limit} OFFSET {self.offset}"""
+                LIMIT {self.limit} OFFSET {self._offset}"""
                     if self.validationMode == ValidationMode.LIMIT_INPUT else ""
                 }
             }} AS %input
@@ -355,7 +355,7 @@ class RequiredQualifierConstraint(Constraint):
                 ORDER BY ?entity"""
                     if self.sort else ""
                 }
-                LIMIT {self.limit} OFFSET {self.offset}""" 
+                LIMIT {self.limit} OFFSET {self._offset}""" 
                     if self.validationMode == ValidationMode.LIMIT_OUTPUT else ""
                 }
             }} AS %results
@@ -403,7 +403,7 @@ class AllowedQualifiersConstraint(Constraint):
                 for [propId, propLabel] in result[1:]
             ]
         except:
-            return
+            raise ValueError("{result} is an invalid value for updating qualifiers")
 
         self.qualifiersObtained = True
 
@@ -421,7 +421,7 @@ class AllowedQualifiersConstraint(Constraint):
                 ORDER BY ?statement"""
                     if self.sort else ""
                 }
-                LIMIT {self.limit} OFFSET {self.offset}"""
+                LIMIT {self.limit} OFFSET {self._offset}"""
                     if self.validationMode == ValidationMode.LIMIT_INPUT else ""
                 }
             }} AS %input
@@ -439,7 +439,7 @@ class AllowedQualifiersConstraint(Constraint):
                 ORDER BY ?statement"""
                     if self.sort else ""
                 }
-                LIMIT {self.limit} OFFSET {self.offset}""" 
+                LIMIT {self.limit} OFFSET {self._offset}""" 
                     if self.validationMode == ValidationMode.LIMIT_OUTPUT else ""
                 }
             }} AS %results
@@ -490,7 +490,7 @@ class ConflictsWithConstraint(Constraint):
                 for [propId, propLabel, valueId, valueLabel] in result[1:]
             ]
         except:
-            return
+            raise ValueError("{result} is an invalid value for updating qualifiers")
 
         self.qualifiersObtained = True
 
@@ -508,7 +508,7 @@ class ConflictsWithConstraint(Constraint):
                 ORDER BY ?entity"""
                     if self.sort else ""
                 }
-                LIMIT {self.limit} OFFSET {self.offset}"""
+                LIMIT {self.limit} OFFSET {self._offset}"""
                 if self.validationMode == ValidationMode.LIMIT_INPUT else ""
                 }
             }} AS %input
@@ -527,7 +527,7 @@ class ConflictsWithConstraint(Constraint):
                 ORDER BY ?entity"""
                     if self.sort else ""
                 }
-                LIMIT {self.limit} OFFSET {self.offset}""" 
+                LIMIT {self.limit} OFFSET {self._offset}""" 
                     if self.validationMode == ValidationMode.LIMIT_OUTPUT else ""
                 }
             }} AS %results
@@ -577,7 +577,7 @@ class DistinctValuesConstraint(Constraint):
                 for [identifier, label] in result[1:]
             ]
         except:
-            return
+            raise ValueError("{result} is an invalid value for updating qualifiers")
 
         if self.separators:
             print(
@@ -611,7 +611,7 @@ class DistinctValuesConstraint(Constraint):
                 ORDER BY ?statement ?value"""
                     if self.sort else ""
                 }
-                LIMIT {self.limit} OFFSET {self.offset}"""
+                LIMIT {self.limit} OFFSET {self._offset}"""
                     if self.validationMode == ValidationMode.LIMIT_INPUT else ""
                 }
             }} AS %input
@@ -630,7 +630,7 @@ class DistinctValuesConstraint(Constraint):
                 ORDER BY ?entity ?value"""
                     if self.sort else ""
                 }
-                LIMIT {self.limit} OFFSET {self.offset}""" 
+                LIMIT {self.limit} OFFSET {self._offset}""" 
                     if self.validationMode == ValidationMode.LIMIT_OUTPUT else ""
                 }
             }} AS %results
@@ -679,7 +679,7 @@ class FormatConstraint(Constraint):
         try:
             self.format = result[1][0]
         except:
-            return
+            raise ValueError("{result} is an invalid value for updating qualifiers")
 
         self.qualifiersObtained = True
 
@@ -697,7 +697,7 @@ class FormatConstraint(Constraint):
                 ORDER BY ?statement ?value"""
                     if self.sort else ""
                 }
-                LIMIT {self.limit} OFFSET {self.offset}"""
+                LIMIT {self.limit} OFFSET {self._offset}"""
                     if self.validationMode == ValidationMode.LIMIT_INPUT else ""
                 }
             }} AS %input
@@ -713,7 +713,7 @@ class FormatConstraint(Constraint):
                 ORDER BY ?entity ?value"""
                     if self.sort else ""
                 }
-                LIMIT {self.limit} OFFSET {self.offset}""" 
+                LIMIT {self.limit} OFFSET {self._offset}""" 
                     if self.validationMode == ValidationMode.LIMIT_OUTPUT else ""
                 }
             }} AS %results
@@ -771,7 +771,7 @@ class ItemRequiresStatementConstraint(Constraint):
                     value = Item(idFromUrl(valueId), valueLabel)
                     self.requiredStatements[prop.identifier][1].append(value)
         except:
-            return
+            raise ValueError("{result} is an invalid value for updating qualifiers")
 
         self.qualifiersObtained = True
 
@@ -789,7 +789,7 @@ class ItemRequiresStatementConstraint(Constraint):
                 ORDER BY ?entity"""
                     if self.sort else ""
                 }
-                LIMIT {self.limit} OFFSET {self.offset}"""
+                LIMIT {self.limit} OFFSET {self._offset}"""
                 if self.validationMode == ValidationMode.LIMIT_INPUT else ""
                 }
             }} AS %input
@@ -808,7 +808,7 @@ class ItemRequiresStatementConstraint(Constraint):
                 ORDER BY ?entity"""
                     if self.sort else ""
                 }
-                LIMIT {self.limit} OFFSET {self.offset}""" 
+                LIMIT {self.limit} OFFSET {self._offset}""" 
                     if self.validationMode == ValidationMode.LIMIT_OUTPUT else ""
                 }
             }} AS %results
@@ -861,7 +861,7 @@ class ValueRequiresStatementConstraint(Constraint):
                     value = Item(idFromUrl(valueId), valueLabel)
                     self.requiredStatements[prop.identifier][1].append(value)
         except:
-            return
+            raise ValueError("{result} is an invalid value for updating qualifiers")
 
         self.qualifiersObtained = True
 
@@ -879,7 +879,7 @@ class ValueRequiresStatementConstraint(Constraint):
                 ORDER BY ?statement ?value"""
                     if self.sort else ""
                 }
-                LIMIT {self.limit} OFFSET {self.offset}"""
+                LIMIT {self.limit} OFFSET {self._offset}"""
                     if self.validationMode == ValidationMode.LIMIT_INPUT else ""
                 }
             }} AS %input
@@ -898,7 +898,7 @@ class ValueRequiresStatementConstraint(Constraint):
                 ORDER BY ?entity"""
                     if self.sort else ""
                 }
-                LIMIT {self.limit} OFFSET {self.offset}""" 
+                LIMIT {self.limit} OFFSET {self._offset}""" 
                     if self.validationMode == ValidationMode.LIMIT_OUTPUT else ""
                 }
             }} AS %results

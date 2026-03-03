@@ -34,13 +34,12 @@ def idFromUrl(url: str) -> str:
 
 
 def urlFromId(possibleId: str, baseUrl: str) -> Optional[str]:
-    propertyRegex = re.compile(r"^P\d+$")
-    entityRegex = re.compile(r"^Q\d+$")
+    entityRegex = re.compile(r"^[QPL]\d+$")
     statementRegex = re.compile(r"^[PQ]\d+-[A-Za-z0-9\-]+$")
 
     baseUrl = baseUrl.rstrip("/")
 
-    if propertyRegex.match(possibleId) or entityRegex.match(possibleId):
+    if entityRegex.match(possibleId):
         return f"{baseUrl}/entity/{possibleId}"
     elif statementRegex.match(possibleId):
         return f"{baseUrl}/entity/statement/{possibleId}"

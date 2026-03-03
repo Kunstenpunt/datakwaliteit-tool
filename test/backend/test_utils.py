@@ -7,18 +7,18 @@ from src.backend.utils import (
 )
 
 BASE_URL = "some.url"
-ENTITY_URL = "some.url/entity/Q1234"
-ENTITY_ID = "Q1234"
+ITEM_URL = "some.url/entity/Q1234"
+ITEM_ID = "Q1234"
 PROPERTY_URL = "some.url/entity/P1234"
 PROPERTY_ID = "P1234"
 STATEMENT_URL = "some.url/entity/statement/Q158003-e7f2367a-469a-6620-a300-0ae2ebcbdc6e"
 STATEMENT_ID = "Q158003-e7f2367a-469a-6620-a300-0ae2ebcbdc6e"
 
 
-def test_idFromUrlEntity():
-    url = ENTITY_URL
+def test_idFromUrlItem():
+    url = ITEM_URL
     id = idFromUrl(url)
-    assert id == ENTITY_ID
+    assert id == ITEM_ID
 
 
 def test_idFromUrlProperty():
@@ -97,19 +97,19 @@ def test_stringOrDefaultList():
 
 
 def test_stripUrlPartFromTable():
-    table = [[ENTITY_URL, PROPERTY_URL], [STATEMENT_URL, "NOT A URL"]]
+    table = [[ITEM_URL, PROPERTY_URL], [STATEMENT_URL, "NOT A URL"]]
     strippedTable = stripUrlPartFromTable(BASE_URL, table)
     correctStrippedTable = [
-        [ENTITY_ID, PROPERTY_ID],
+        [ITEM_ID, PROPERTY_ID],
         [STATEMENT_ID, "NOT A URL"],
     ]
     assert strippedTable == correctStrippedTable
 
 
-def test_urlFromIdEntity():
-    id = ENTITY_ID
+def test_urlFromIdItem():
+    id = ITEM_ID
     url = urlFromId(id, BASE_URL)
-    assert url == ENTITY_URL
+    assert url == ITEM_URL
 
 
 def test_urlFromIdProperty():
@@ -133,6 +133,6 @@ def test_urlFromIdInvalid(subtests):
 
 
 def test_urlFromIdBaseUrlWithSlash():
-    id = ENTITY_ID
+    id = ITEM_ID
     url = urlFromId(id, BASE_URL + "/")
-    assert url == ENTITY_URL
+    assert url == ITEM_URL

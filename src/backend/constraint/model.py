@@ -266,7 +266,7 @@ class ConstraintCheckModel(QObject):
         self,
         validationMode: ValidationMode,
         limit: int,
-        offset: int,
+        page: int,
         sort: bool,
     ) -> None:
         if self.focusedConstraint is None:
@@ -274,7 +274,7 @@ class ConstraintCheckModel(QObject):
 
         self.focusedConstraint.validationMode = validationMode
         self.focusedConstraint.limit = limit
-        self.focusedConstraint.offset = offset
+        self.focusedConstraint.page = page
         self.focusedConstraint.sort = sort
         if self._validatingQueue:
             self._validationQueue.append(self.focusedConstraint)
