@@ -127,7 +127,7 @@ class ConstraintsTab(QWidget, Ui_ConstraintTab):
             focusedPropertyConstraint.validationMode.value
         )
         self.limitSpinBox.setValue(focusedPropertyConstraint.limit)
-        self.pageSpinBox.setValue(focusedPropertyConstraint.getPage())
+        self.pageSpinBox.setValue(focusedPropertyConstraint.page)
         self.sortedCheckBox.setChecked(focusedPropertyConstraint.sort)
         self.validateButton.setEnabled(focusedPropertyConstraint.implemented)
         self.updateViolationsTableView()
@@ -186,9 +186,8 @@ class ConstraintsTab(QWidget, Ui_ConstraintTab):
         sort = self.sortedCheckBox.isChecked()
         limit = self.limitSpinBox.value()
         page = self.pageSpinBox.value()
-        offset = (page - 1) * limit
         self.model.constraintCheckModel.validateFocusedConstraint(
-            limitMode, limit, offset, sort
+            limitMode, limit, page, sort
         )
 
     def updateViolationsTableView(self) -> None:
