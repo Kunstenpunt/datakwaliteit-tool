@@ -111,7 +111,7 @@ class ConstraintHelper(QObject):
             self.queryQualifiers(self.constraint)
             return
 
-        query = self.constraint.getViolationsQuery()
+        query = self._queryBuilder.buildViolationsQuery(self.constraint)
         if query is None:
             return
 
