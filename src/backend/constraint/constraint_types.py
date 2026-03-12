@@ -6,7 +6,6 @@ from .base import (
     Item,
     Property,
     ValidationInputCountType,
-    ValidationMode,
 )
 
 from ..utils import idFromUrl
@@ -45,53 +44,6 @@ class SingleValueConstraint(Constraint):
             raise ValueError("{result} is an invalid value for updating qualifiers")
 
         self.qualifiersObtained = True
-
-    def getViolationsQuery(self) -> str:
-        return f"""
-            SELECT (SAMPLE(?statement) AS ?statement) ?entity ?entityLabel ?valueCount
-
-            WITH
-            {{
-                SELECT ?entity ?statement ?value
-                WHERE
-                {{
-                    ?entity kpp:{self.property.identifier} ?statement .
-                    ?statement kpps:{self.property.identifier} ?value
-                }}{f"""{f"""
-                ORDER BY ?entity ?statement ?value"""
-                    if self.sort else ""
-                }
-                LIMIT {self.limit} OFFSET {self._offset}"""
-                    if self.validationMode == ValidationMode.LIMIT_INPUT else ""
-                }
-            }} AS %input
-
-            WITH
-            {{
-                SELECT ?entity (COUNT(?value) AS ?valueCount)
-                WHERE
-                {{
-                    INCLUDE %input{"\n".join(f"""
-                    OPTIONAL {{ ?statement kppq:{s.identifier} ?separator{i} }} .""" for (i, s) in enumerate(self.separators))
-                    }
-                }}
-                GROUP BY ?entity { f", ".join(f"?separator{i}" for i in range(len(self.separators))) }
-                HAVING(?valueCount > 1){ f"""{f"""
-                ORDER BY ?entity ?value"""
-                    if self.sort else ""
-                }
-                LIMIT {self.limit} OFFSET {self._offset}""" 
-                    if self.validationMode == ValidationMode.LIMIT_OUTPUT else ""
-                }
-            }} AS %results
-
-            WHERE
-            {{
-                INCLUDE %results
-                ?entity kpp:{self.property.identifier} ?statement
-                SERVICE wikibase:label {{ bd:serviceParam wikibase:language "{ self._wikibaseConfig.getDefaultLanguage() }" }}
-            }}
-            GROUP BY ?entity ?entityLabel ?valueCount"""
 
     def updateViolations(self, result: Sequence[Sequence[str]]) -> None:
         try:
@@ -144,48 +96,6 @@ class ValueTypeConstraint(Constraint):
         self.relation = self._wikibaseConfig.getInstanceOfPid()
         self.qualifiersObtained = True
 
-    def getViolationsQuery(self) -> str:
-        return f"""
-            SELECT ?statement ?entity ?entityLabel ?value ?valueLabel
-
-            WITH
-            {{
-                SELECT ?statement ?value
-                WHERE
-                {{
-                    ?statement kpps:{self.property.identifier} ?value
-                }}{f"""{f"""
-                ORDER BY ?statement ?value"""
-                    if self.sort else ""
-                }
-                LIMIT {self.limit} OFFSET {self._offset}"""
-                    if self.validationMode == ValidationMode.LIMIT_INPUT else ""
-                }
-            }} AS %input
-
-            WITH
-            {{
-                SELECT ?statement ?value
-                WHERE
-                {{
-                    INCLUDE %input
-                    MINUS {{ ?value kpt:{self.relation} ?x . VALUES ?x {{{" ".join(f"kp:{c.identifier}" for c in self.classes)}}} }}
-                }}{f"""{f"""
-                ORDER BY ?entity ?value"""
-                    if self.sort else ""
-                }
-                LIMIT {self.limit} OFFSET {self._offset}""" 
-                    if self.validationMode == ValidationMode.LIMIT_OUTPUT else ""
-                }
-            }} AS %results
-            
-            WHERE
-            {{
-                INCLUDE %results
-                ?entity kpp:{self.property.identifier} ?statement .
-                SERVICE wikibase:label {{ bd:serviceParam wikibase:language "{ self._wikibaseConfig.getDefaultLanguage() }" }}
-            }}"""
-
     def updateViolations(self, result: Sequence[Sequence[str]]) -> None:
         try:
             self.violations = [
@@ -237,49 +147,6 @@ class SubjectTypeConstraint(Constraint):
         self.relation = self._wikibaseConfig.getInstanceOfPid()
         self.qualifiersObtained = True
 
-    def getViolationsQuery(self) -> str:
-        return f"""
-            SELECT (SAMPLE(?statement) AS ?statement) ?entity ?entityLabel
-
-            WITH
-            {{
-                SELECT DISTINCT ?entity
-                WHERE
-                {{
-                    ?entity kpp:{self.property.identifier} []
-                }}{f"""{f"""
-                ORDER BY ?entity"""
-                    if self.sort else ""
-                }
-                LIMIT {self.limit} OFFSET {self._offset}"""
-                if self.validationMode == ValidationMode.LIMIT_INPUT else ""
-                }
-            }} AS %input
-
-            WITH
-            {{
-                SELECT ?entity
-                WHERE
-                {{
-                    INCLUDE %input
-                    MINUS {{ ?entity kpt:{self.relation} ?x . VALUES ?x {{{" ".join(f"kp:{c.identifier}" for c in self.classes)}}} }}
-                }}{f"""{f"""
-                ORDER BY ?entity"""
-                    if self.sort else ""
-                }
-                LIMIT {self.limit} OFFSET {self._offset}""" 
-                    if self.validationMode == ValidationMode.LIMIT_OUTPUT else ""
-                }
-            }} AS %results
-
-            WHERE
-            {{
-                INCLUDE %results
-                ?entity kpp:{self.property.identifier} ?statement .
-                SERVICE wikibase:label {{ bd:serviceParam wikibase:language "{ self._wikibaseConfig.getDefaultLanguage() }" }}
-            }}
-            GROUP BY ?entity ?entityLabel"""
-
     def updateViolations(self, result: Sequence[Sequence[str]]) -> None:
         try:
             self.violations = [
@@ -323,49 +190,6 @@ class RequiredQualifierConstraint(Constraint):
 
         self.qualifiersObtained = True
 
-    def getViolationsQuery(self) -> str:
-        return f"""
-            SELECT ?statement ?entity ?entityLabel
-            
-            WITH
-            {{
-                SELECT ?entity ?statement
-                WHERE
-                {{
-                    ?entity kpp:{self.property.identifier} ?statement
-                }}{f"""{f"""
-                ORDER BY ?entity ?statement"""
-                    if self.sort else ""
-                }
-                LIMIT {self.limit} OFFSET {self._offset}"""
-                    if self.validationMode == ValidationMode.LIMIT_INPUT else ""
-                }
-            }} AS %input
-
-            WITH
-            {{
-                SELECT ?entity ?statement
-                WHERE
-                {{
-                    INCLUDE %input
-                {"".join(f"""
-                    FILTER NOT EXISTS {{ ?statement kppq:{q.identifier} ?val }} .""" for q in self.requiredQualifiers)
-                }
-                }}{f"""{f"""
-                ORDER BY ?entity"""
-                    if self.sort else ""
-                }
-                LIMIT {self.limit} OFFSET {self._offset}""" 
-                    if self.validationMode == ValidationMode.LIMIT_OUTPUT else ""
-                }
-            }} AS %results
-
-            WHERE
-            {{
-                INCLUDE %results
-                SERVICE wikibase:label {{ bd:serviceParam wikibase:language "{ self._wikibaseConfig.getDefaultLanguage() }" }}
-            }}"""
-
     def updateViolations(self, result: Sequence[Sequence[str]]) -> None:
         try:
             self.violations = [
@@ -406,50 +230,6 @@ class AllowedQualifiersConstraint(Constraint):
             raise ValueError("{result} is an invalid value for updating qualifiers")
 
         self.qualifiersObtained = True
-
-    def getViolationsQuery(self) -> str:
-        return f"""
-            SELECT ?statement ?entity ?entityLabel
-
-            WITH
-            {{
-                SELECT ?statement
-                WHERE
-                {{
-                    [] kpp:{self.property.identifier} ?statement
-                }}{f"""{f"""
-                ORDER BY ?statement"""
-                    if self.sort else ""
-                }
-                LIMIT {self.limit} OFFSET {self._offset}"""
-                    if self.validationMode == ValidationMode.LIMIT_INPUT else ""
-                }
-            }} AS %input
-
-            WITH
-            {{
-                SELECT ?statement
-                WHERE
-                {{
-                    INCLUDE %input
-                    ?statement ?predicate [] .
-                    [] wikibase:qualifier ?predicate .
-                    FILTER(!(?predicate in ({", ".join(f"kppq:{q.identifier}" for q in self.allowedQualifiers)})))
-                }}{f"""{f"""
-                ORDER BY ?statement"""
-                    if self.sort else ""
-                }
-                LIMIT {self.limit} OFFSET {self._offset}""" 
-                    if self.validationMode == ValidationMode.LIMIT_OUTPUT else ""
-                }
-            }} AS %results
-
-            WHERE
-            {{
-                INCLUDE %results
-                ?entity kpp:{self.property.identifier} ?statement
-                SERVICE wikibase:label {{ bd:serviceParam wikibase:language "{ self._wikibaseConfig.getDefaultLanguage() }" }}
-            }}"""
 
     def updateViolations(self, result: Sequence[Sequence[str]]) -> None:
         try:
@@ -493,52 +273,6 @@ class ConflictsWithConstraint(Constraint):
             raise ValueError("{result} is an invalid value for updating qualifiers")
 
         self.qualifiersObtained = True
-
-    def getViolationsQuery(self) -> str:
-        return f"""
-            SELECT (SAMPLE(?statement) AS ?statement) ?entity ?entityLabel
-
-            WITH
-            {{
-                SELECT DISTINCT ?entity
-                WHERE
-                {{
-                    ?entity kpp:{self.property.identifier} []
-                }}{f"""{f"""
-                ORDER BY ?entity"""
-                    if self.sort else ""
-                }
-                LIMIT {self.limit} OFFSET {self._offset}"""
-                if self.validationMode == ValidationMode.LIMIT_INPUT else ""
-                }
-            }} AS %input
-
-            WITH
-            {{
-                SELECT ?entity
-                WHERE
-                {{
-                    INCLUDE %input
-                    FILTER({" ||".join(f"""
-                        EXISTS {{ ?entity kpt:{p.identifier} {"kp:" + v.identifier if v else "[]"} }}""" for (p,v) in self.conflictingStatements)
-                    }
-                    )
-                }}{f"""{f"""
-                ORDER BY ?entity"""
-                    if self.sort else ""
-                }
-                LIMIT {self.limit} OFFSET {self._offset}""" 
-                    if self.validationMode == ValidationMode.LIMIT_OUTPUT else ""
-                }
-            }} AS %results
-
-            WHERE
-            {{
-                INCLUDE %results
-                ?entity kpp:{self.property.identifier} ?statement
-                SERVICE wikibase:label {{ bd:serviceParam wikibase:language "{ self._wikibaseConfig.getDefaultLanguage() }" }}
-            }}
-            GROUP BY ?entity ?entityLabel"""
 
     def updateViolations(self, result: Sequence[Sequence[str]]) -> None:
         try:
@@ -585,65 +319,6 @@ class DistinctValuesConstraint(Constraint):
             )
         self.qualifiersObtained = True
 
-    def getViolationsQuery(self) -> str:
-        return f"""
-            # Note that the actual number of returned output rows will be
-            # different from the choosen number if output is limited.
-            #
-            # The output limit limits the number of violating values,
-            # so the actual number of output rows will be larger (at least
-            # double the limit, as there must be more than 1 entity for each
-            # value that offends distinct-values-constraint). We could limit
-            # the final part of the query instead, but this would yield no
-            # speed results at all as the heavy work happens in the query
-            # before it. For other constraints the final step never adds extra
-            # results, which is why there the limits do match the results.
-
-            SELECT ?statement ?entity ?entityLabel ?value ?valueLabel
-
-            WITH
-            {{
-                SELECT ?statement ?value
-                WHERE
-                {{
-                    ?statement kpps:{self.property.identifier} ?value
-                }}{f"""{f"""
-                ORDER BY ?statement ?value"""
-                    if self.sort else ""
-                }
-                LIMIT {self.limit} OFFSET {self._offset}"""
-                    if self.validationMode == ValidationMode.LIMIT_INPUT else ""
-                }
-            }} AS %input
-
-            WITH
-            {{
-                SELECT ?value (COUNT(?statement) AS ?statementCount)
-                WHERE
-                {{
-                    INCLUDE %input{"\n".join(f"""
-                    OPTIONAL {{ ?statement kppq:{s.identifier} ?separator{i} }} .""" for (i, s) in enumerate(self.separators))
-                    }
-                }}
-                GROUP BY ?value { f", ".join(f"?separator{i}" for i in range(len(self.separators))) }
-                HAVING(?statementCount > 1){ f"""{f"""
-                ORDER BY ?entity ?value"""
-                    if self.sort else ""
-                }
-                LIMIT {self.limit} OFFSET {self._offset}""" 
-                    if self.validationMode == ValidationMode.LIMIT_OUTPUT else ""
-                }
-            }} AS %results
-
-
-            WHERE
-            {{
-                INCLUDE %results
-                ?statement kpps:{self.property.identifier} ?value .
-                ?entity kpp:{self.property.identifier} ?statement .
-                SERVICE wikibase:label {{ bd:serviceParam wikibase:language "{ self._wikibaseConfig.getDefaultLanguage() }" . }}
-            }}"""
-
     def updateViolations(self, result: Sequence[Sequence[str]]) -> None:
         try:
             self.violations = [
@@ -682,48 +357,6 @@ class FormatConstraint(Constraint):
             raise ValueError("{result} is an invalid value for updating qualifiers")
 
         self.qualifiersObtained = True
-
-    def getViolationsQuery(self) -> str:
-        return f"""
-            SELECT ?statement ?entity ?entityLabel ?value
-
-            WITH
-            {{
-                SELECT ?statement ?value
-                WHERE
-                {{
-                    ?statement kpps:{self.property.identifier} ?value
-                }}{f"""{f"""
-                ORDER BY ?statement ?value"""
-                    if self.sort else ""
-                }
-                LIMIT {self.limit} OFFSET {self._offset}"""
-                    if self.validationMode == ValidationMode.LIMIT_INPUT else ""
-                }
-            }} AS %input
-
-            WITH
-            {{
-                SELECT ?statement ?value
-                WHERE
-                {{
-                    INCLUDE %input
-                    FILTER(!REGEX(STR(?value), "{self.format.replace("\\", "\\\\")}"))
-                }}{f"""{f"""
-                ORDER BY ?entity ?value"""
-                    if self.sort else ""
-                }
-                LIMIT {self.limit} OFFSET {self._offset}""" 
-                    if self.validationMode == ValidationMode.LIMIT_OUTPUT else ""
-                }
-            }} AS %results
-
-            WHERE
-            {{
-                INCLUDE %results
-                ?entity kpp:{self.property.identifier} ?statement .
-                SERVICE wikibase:label {{ bd:serviceParam wikibase:language "{ self._wikibaseConfig.getDefaultLanguage() }" }}
-            }}"""
 
     def updateViolations(self, result: Sequence[Sequence[str]]) -> None:
         try:
@@ -775,52 +408,6 @@ class ItemRequiresStatementConstraint(Constraint):
 
         self.qualifiersObtained = True
 
-    def getViolationsQuery(self) -> str:
-        return f"""
-            SELECT (SAMPLE(?statement) AS ?statement) ?entity ?entityLabel
-
-            WITH
-            {{
-                SELECT DISTINCT ?entity
-                WHERE
-                {{
-                    ?entity kpp:{self.property.identifier} []
-                }}{f"""{f"""
-                ORDER BY ?entity"""
-                    if self.sort else ""
-                }
-                LIMIT {self.limit} OFFSET {self._offset}"""
-                if self.validationMode == ValidationMode.LIMIT_INPUT else ""
-                }
-            }} AS %input
-
-            WITH
-            {{
-                SELECT ?entity
-                WHERE
-                {{
-                    INCLUDE %input
-                    FILTER({" ||".join(f"""
-                        NOT EXISTS {{ ?entity kpt:{s[0].identifier} ?v . {f"VALUES ?v {{{" ".join("kp:" + v.identifier for v in s[1])}}}" if s[1] else ""} }}""" for s in self.requiredStatements.values())
-                    }
-                    )
-                }}{f"""{f"""
-                ORDER BY ?entity"""
-                    if self.sort else ""
-                }
-                LIMIT {self.limit} OFFSET {self._offset}""" 
-                    if self.validationMode == ValidationMode.LIMIT_OUTPUT else ""
-                }
-            }} AS %results
-
-            WHERE
-            {{
-                INCLUDE %results
-                ?entity kpp:{self.property.identifier} ?statement
-                SERVICE wikibase:label {{ bd:serviceParam wikibase:language "{ self._wikibaseConfig.getDefaultLanguage() }" }}
-            }}
-            GROUP BY ?entity ?entityLabel"""
-
     def updateViolations(self, result: Sequence[Sequence[str]]) -> None:
         try:
             self.violations = [
@@ -864,50 +451,6 @@ class ValueRequiresStatementConstraint(Constraint):
             raise ValueError("{result} is an invalid value for updating qualifiers")
 
         self.qualifiersObtained = True
-
-    def getViolationsQuery(self) -> str:
-        return f"""
-            SELECT ?statement ?value ?valueLabel
-
-            WITH
-            {{
-                SELECT ?statement ?value
-                WHERE
-                {{
-                    ?statement kpps:{self.property.identifier} ?value
-                }}{f"""{f"""
-                ORDER BY ?statement ?value"""
-                    if self.sort else ""
-                }
-                LIMIT {self.limit} OFFSET {self._offset}"""
-                    if self.validationMode == ValidationMode.LIMIT_INPUT else ""
-                }
-            }} AS %input
-
-            WITH
-            {{
-                SELECT ?statement ?value
-                WHERE
-                {{
-                    INCLUDE %input
-                    FILTER({" ||".join(f"""
-                        NOT EXISTS {{ ?value kpt:{s[0].identifier} ?v . {f"VALUES ?v {{{" ".join("kp:" + v.identifier for v in s[1])}}}" if s[1] else ""} }}""" for s in self.requiredStatements.values())
-                    }
-                    )
-                }}{f"""{f"""
-                ORDER BY ?entity"""
-                    if self.sort else ""
-                }
-                LIMIT {self.limit} OFFSET {self._offset}""" 
-                    if self.validationMode == ValidationMode.LIMIT_OUTPUT else ""
-                }
-            }} AS %results
-
-            WHERE
-            {{
-                INCLUDE %results
-                SERVICE wikibase:label {{ bd:serviceParam wikibase:language "{ self._wikibaseConfig.getDefaultLanguage() }" }}
-            }}"""
 
     def updateViolations(self, result: Sequence[Sequence[str]]) -> None:
         try:
