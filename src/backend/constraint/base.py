@@ -139,6 +139,8 @@ class Constraint(Item):
         self.inputCount = -1
         self.validationInputCountType = ValidationInputCountType.OTHER
 
+        self.exceptionIds: Optional[Sequence[str]] = None
+
         self.doValidation = False
         self.implemented = False
         self.qualifiersObtained = False
