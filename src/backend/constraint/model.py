@@ -224,12 +224,15 @@ class ConstraintCheckModel(QObject):
                 if constType is None:
                     constType = Constraint
 
-                constraint = constType(
-                    consId,
-                    consLabel,
-                    Property(propId, propLabel),
-                    self._wikibaseConfig,
-                )
+                try:
+                    constraint = constType(
+                        consId,
+                        consLabel,
+                        Property(propId, propLabel),
+                    )
+                except ValueError:
+                    print(f"Wrong IDs for property-constraint pair: {propId}-{consId}")
+                    continue
 
                 self.constraints[consId, propId] = constraint
         except:

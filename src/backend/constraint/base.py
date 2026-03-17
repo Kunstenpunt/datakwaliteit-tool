@@ -129,12 +129,10 @@ class Constraint(Item):
         identifier: str,
         label: str,
         prop: Property,
-        wikibaseConfig: WikibaseConfig,
     ) -> None:
         super().__init__(identifier, label)
 
         self.property = prop
-        self._wikibaseConfig = wikibaseConfig
 
         self.inputCount = -1
         self.validationInputCountType = ValidationInputCountType.OTHER
