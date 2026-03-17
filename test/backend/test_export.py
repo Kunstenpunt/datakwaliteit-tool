@@ -124,7 +124,7 @@ def test_exportSingleConstraintValid(cleanupGeneratedFiles, subtests):
             exporter = Exporter(wikibaseConfigStub)
 
             recipe = constraintRecipes[constraintRecipeName]
-            constraint = buildConstraint(**recipe, wikibaseConfig=wikibaseConfigStub)
+            constraint = buildConstraint(**recipe)
 
             filename = (
                 "single_constraint_export_test_"
@@ -147,10 +147,7 @@ def test_exportMultipleConstraintOds(cleanupGeneratedFiles, subtests):
             exporter = Exporter(wikibaseConfigStub)
 
             constraints = [
-                buildConstraint(
-                    **constraintRecipes[recipe],
-                    wikibaseConfig=wikibaseConfigStub,
-                )
+                buildConstraint(**constraintRecipes[recipe])
                 for recipe in [
                     "validated_with_ids",
                     "validated_no_ids",
@@ -184,10 +181,9 @@ def buildConstraint(
     propertyLabel,
     violations,
     validationState,
-    wikibaseConfig,
 ):
     property = Property(propertyId, propertyLabel)
-    constraint = Constraint(constraintId, constraintLabel, property, wikibaseConfig)
+    constraint = Constraint(constraintId, constraintLabel, property)
     constraint.violations = violations
     constraint.validationState = validationState
     return constraint

@@ -162,9 +162,7 @@ def test_Lexeme():
 
 
 def test_Constraint():
-    constraint = Constraint(
-        "Q1", "constraint1", Property("P1", "prop1"), WikibaseConfigStub()
-    )
+    constraint = Constraint("Q1", "constraint1", Property("P1", "prop1"))
     assert constraint.property == Property("P1", "prop1")
 
     assert constraint.inputCount == -1
@@ -196,8 +194,6 @@ def test_Constraint():
 
 
 def test_ConstraintPretty():
-    constraint = Constraint(
-        "Q1", "constraint1", Property("P1", "prop1"), WikibaseConfigStub()
-    )
+    constraint = Constraint("Q1", "constraint1", Property("P1", "prop1"))
 
     assert constraint.pretty() == '"constraint1" (Q1)\non "prop1" (P1)'
