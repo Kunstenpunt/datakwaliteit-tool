@@ -48,7 +48,7 @@ class SingleValueConstraint(Constraint):
     def updateViolations(self, result: Sequence[Sequence[str]]) -> None:
         try:
             self.violations = [
-                [idFromUrl(s), idFromUrl(e), eL, v] for [s, e, eL, v] in result
+                [idFromUrl(s), idFromUrl(i), iL, v] for [s, i, iL, v] in result
             ]
         except:
             return
@@ -99,8 +99,8 @@ class ValueTypeConstraint(Constraint):
     def updateViolations(self, result: Sequence[Sequence[str]]) -> None:
         try:
             self.violations = [
-                [idFromUrl(s), idFromUrl(e), eL, idFromUrl(v), vL]
-                for [s, e, eL, v, vL] in result
+                [idFromUrl(s), idFromUrl(i), iL, idFromUrl(v), vL]
+                for [s, i, iL, v, vL] in result
             ]
         except:
             return
@@ -150,7 +150,7 @@ class SubjectTypeConstraint(Constraint):
     def updateViolations(self, result: Sequence[Sequence[str]]) -> None:
         try:
             self.violations = [
-                [idFromUrl(s), idFromUrl(e), eL] for [s, e, eL] in result
+                [idFromUrl(s), idFromUrl(i), iL] for [s, i, iL] in result
             ]
         except:
             return
@@ -193,7 +193,7 @@ class RequiredQualifierConstraint(Constraint):
     def updateViolations(self, result: Sequence[Sequence[str]]) -> None:
         try:
             self.violations = [
-                [idFromUrl(s), idFromUrl(e), eL] for [s, e, eL] in result
+                [idFromUrl(s), idFromUrl(i), iL] for [s, i, iL] in result
             ]
         except:
             return
@@ -234,7 +234,7 @@ class AllowedQualifiersConstraint(Constraint):
     def updateViolations(self, result: Sequence[Sequence[str]]) -> None:
         try:
             self.violations = [
-                [idFromUrl(s), idFromUrl(e), eL] for [s, e, eL] in result
+                [idFromUrl(s), idFromUrl(i), iL] for [s, i, iL] in result
             ]
         except:
             return
@@ -277,7 +277,7 @@ class ConflictsWithConstraint(Constraint):
     def updateViolations(self, result: Sequence[Sequence[str]]) -> None:
         try:
             self.violations = [
-                [idFromUrl(s), idFromUrl(e), eL] for [s, e, eL] in result
+                [idFromUrl(s), idFromUrl(i), iL] for [s, i, iL] in result
             ]
         except:
             return
@@ -322,8 +322,8 @@ class DistinctValuesConstraint(Constraint):
     def updateViolations(self, result: Sequence[Sequence[str]]) -> None:
         try:
             self.violations = [
-                [idFromUrl(s), idFromUrl(e), e_l, idFromUrl(v), v_l]
-                for [s, e, e_l, v, v_l] in result
+                [idFromUrl(s), idFromUrl(i), iL, idFromUrl(v), vL]
+                for [s, i, iL, v, vL] in result
             ]
         except:
             return
@@ -363,11 +363,11 @@ class FormatConstraint(Constraint):
             self.violations = [
                 [
                     idFromUrl(s),
-                    idFromUrl(e),
-                    e_l,
+                    idFromUrl(i),
+                    iL,
                     v,
                 ]
-                for [s, e, e_l, v] in result
+                for [s, i, iL, v] in result
             ]
         except:
             return
@@ -411,7 +411,7 @@ class ItemRequiresStatementConstraint(Constraint):
     def updateViolations(self, result: Sequence[Sequence[str]]) -> None:
         try:
             self.violations = [
-                [idFromUrl(s), idFromUrl(e), eL] for [s, e, eL] in result
+                [idFromUrl(s), idFromUrl(i), iL] for [s, i, iL] in result
             ]
         except:
             return
@@ -455,7 +455,8 @@ class ValueRequiresStatementConstraint(Constraint):
     def updateViolations(self, result: Sequence[Sequence[str]]) -> None:
         try:
             self.violations = [
-                [idFromUrl(s), idFromUrl(e), eL] for [s, e, eL] in result
+                [idFromUrl(s), idFromUrl(i), iL, idFromUrl(v), vL]
+                for [s, i, iL, v, vL] in result
             ]
         except:
             return

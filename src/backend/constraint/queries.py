@@ -489,7 +489,7 @@ class QueryBuilder:
     def _buildValueRequiresStatementConstraintViolationsQuery(
         self, constraint: ValueRequiresStatementConstraint
     ) -> str:
-        outerSelection = "?statement ?value ?valueLabel"
+        outerSelection = "?statement ?item ?itemLabel ?value ?valueLabel"
         inputPart = self._buildViolationsQueryInput(
             constraint, ViolationsQueryInputType.STATEMENT_VALUE
         )
@@ -499,12 +499,15 @@ class QueryBuilder:
                         NOT EXISTS {{ ?value kpt:{s[0].identifier} ?v . {f"VALUES ?v {{{" ".join("kp:" + v.identifier for v in s[1])}}}" if s[1] else ""} }}""" for s in constraint.requiredStatements.values())
                     }
                     )"""
+        finalConditions = f"""
+                ?item kpp:{constraint.property.identifier} ?statement ."""
         return self._buildViolationsQuery(
             constraint,
             inputPart,
             outerSelection,
             innerSelection,
             conditions,
+            finalConditions=finalConditions,
         )
 
     def _buildViolationsQueryInput(
