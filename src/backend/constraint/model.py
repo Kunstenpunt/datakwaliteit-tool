@@ -12,7 +12,7 @@ from .base import (
 )
 from .queries import QueryBuilder
 from .constraint_types import *
-from ..utils import idFromUrl
+from ..utils import idFromUrl, stripUrlPartFromTable
 from ..wikibasehelper import WikibaseConfig, WikibaseQueryRunner
 
 # idee: eis dat alle entiteiten en properties die mappen op properties van wikidata hetzelfde label hebben in het Engels -> op die manier steeds correcte mapping
@@ -22,6 +22,7 @@ class ConstraintHelper(QObject):
     qualifiersUpdated = Signal()
     violationsUpdated = Signal()
 
+    exceptionsUpdated = Signal()
     inputCountUpdated = Signal()
     validationStateUpdated = Signal()
 
@@ -65,6 +66,34 @@ class ConstraintHelper(QObject):
         except:
             return
         self.inputCountUpdated.emit()
+
+    def queryExceptions(self, c: Constraint) -> None:
+        query = self._queryBuilder.buildExceptionIdsQuery(c)
+
+        self._wikibaseQueryRunner.queueQueryForExecution(
+            query, self._queryExceptionsResult, c
+        )
+
+    def _queryExceptionsResult(self) -> None:
+        if not isinstance(self._wikibaseQueryRunner.callbackData, Constraint):
+            return
+
+        self.constraint = self._wikibaseQueryRunner.callbackData
+
+        result = self._wikibaseQueryRunner.queryResult
+        # This checks both if result is None or if result is empty list
+        if not result:
+            return
+
+        resultStripped = stripUrlPartFromTable(
+            self._wikibaseConfig.getBaseUrl(), result
+        )
+        try:
+            self.constraint.exceptionIds = [row[0] for row in resultStripped[1:]]
+        except:
+            return
+
+        self.exceptionsUpdated.emit()
 
     def queryQualifiers(self, c: Constraint) -> None:
         if c.qualifiersObtained:
@@ -264,6 +293,7 @@ class ConstraintCheckModel(QObject):
             self.focusedPropertyConstraintUpdated.emit()
             self._constraintHelper.queryQualifiers(constraint)
             self._constraintHelper.queryInputCount(constraint)
+            self._constraintHelper.queryExceptions(constraint)
 
     def validateFocusedConstraint(
         self,
