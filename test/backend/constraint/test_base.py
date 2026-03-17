@@ -170,6 +170,8 @@ def test_Constraint():
     assert constraint.inputCount == -1
     assert constraint.validationInputCountType == ValidationInputCountType.OTHER
 
+    assert constraint.exceptionIds == None
+
     assert constraint.doValidation == False
     assert constraint.implemented == False
     assert constraint.qualifiersObtained == False
