@@ -80,6 +80,27 @@ class QueryBuilder:
         else:
             return None
 
+    def buildExceptionIdsQuery(self, constraint: Constraint) -> str:
+        return f"""
+            SELECT ?exception
+            WHERE
+            {{
+                kp:{constraint.property.identifier} kpp:{self._wikibaseConfig.getPropertyConstraintPid()} ?statement .
+                ?statement kpps:{self._wikibaseConfig.getPropertyConstraintPid()} kp:{constraint.identifier} .
+                ?statement ?exceptionQualifier ?exception .
+
+                BIND (IRI(replace(str(?exceptionQualifier), str(kppq:), str(kp:)))  AS ?exceptionQualifierItem) .
+                SERVICE wikibase:label
+                {{
+                    bd:serviceParam wikibase:language "en,{self._wikibaseConfig.getDefaultLanguage()}".
+                    ?exceptionQualifierItem rdfs:label ?exceptionQualifierLabel .
+                }}
+                FILTER (str(?exceptionQualifierLabel) = "exception to constraint")
+
+                SERVICE wikibase:label {{ bd:serviceParam wikibase:language "{ self._wikibaseConfig.getDefaultLanguage() }" . }}
+            }}
+        """
+
     def buildQualifiersQuery(self, constraint: Constraint) -> Optional[str]:
         qualifiersQueryMapping = {
             SingleValueConstraint: self._buildSeparatorQuery,
