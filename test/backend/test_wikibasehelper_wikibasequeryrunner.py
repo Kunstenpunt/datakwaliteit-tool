@@ -32,13 +32,16 @@ class CallbackChecker:
         assert self.wikibaseQueryRunner.callbackData == expectedCallbackData
         assert self.wikibaseQueryRunner.mostRecentQuery == expectedQuery
         assert QueryThreadStub.latestQuery == expectedQuery
-        assert QueryThreadStub.latestDefaultPrefixes == f"""
+        assert (
+            QueryThreadStub.latestDefaultPrefixes
+            == f"""
             PREFIX kp:<{expectedWikibaseUrl}/entity/>
             PREFIX kpt:<{expectedWikibaseUrl}/prop/direct/>
             PREFIX kpp:<{expectedWikibaseUrl}/prop/>
             PREFIX kpps:<{expectedWikibaseUrl}/prop/statement/>
             PREFIX kppq:<{expectedWikibaseUrl}/prop/qualifier/>
         """
+        )
 
     def generateCallback(
         self,

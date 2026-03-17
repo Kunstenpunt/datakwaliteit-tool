@@ -243,7 +243,7 @@ class QueryBuilder:
 
         constraintType = type(constraint)
         if constraintType in violationsQueryMapping:
-            return violationsQueryMapping[constraintType](constraint) #type: ignore
+            return violationsQueryMapping[constraintType](constraint)  # type: ignore
         else:
             print(f"Querying violations not implemented for {constraint}")
             return None
