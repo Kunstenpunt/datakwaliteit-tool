@@ -1,3 +1,4 @@
+from enum import auto, Enum
 from typing import Optional, Sequence
 
 
@@ -9,7 +10,13 @@ from .base import (
 )
 
 from ..utils import idFromUrl
-from ..wikibasehelper import WikibaseConfig
+
+
+class RelationType(Enum):
+    INSTANCE_OF = auto()
+    SUBCLASS_OF = auto()
+    INSTANCE_OR_SUBCLASS_OF = auto()
+    UNKNOWN = auto()
 
 
 # https://www.wikidata.org/wiki/Help:Property_constraints_portal/Single_value
@@ -20,9 +27,8 @@ class SingleValueConstraint(Constraint):
         identifier: str,
         label: str,
         prop: Property,
-        wikibaseConfig: WikibaseConfig,
     ) -> None:
-        super().__init__(identifier, label, prop, wikibaseConfig)
+        super().__init__(identifier, label, prop)
         self.implemented = True
         self.validationInputCountType = ValidationInputCountType.STATEMENTS
 
@@ -61,14 +67,13 @@ class ValueTypeConstraint(Constraint):
         identifier: str,
         label: str,
         prop: Property,
-        wikibaseConfig: WikibaseConfig,
     ) -> None:
-        super().__init__(identifier, label, prop, wikibaseConfig)
+        super().__init__(identifier, label, prop)
         self.implemented = True
         self.validationInputCountType = ValidationInputCountType.STATEMENTS
 
         self.classes: Sequence[Item] = []
-        self.relation = ""
+        self.relation = RelationType.UNKNOWN
 
     def pretty(self) -> str:
         label = super().pretty()
@@ -93,7 +98,7 @@ class ValueTypeConstraint(Constraint):
             raise ValueError("{result} is an invalid value for updating qualifiers")
 
         self.classes = classes
-        self.relation = self._wikibaseConfig.getInstanceOfPid()
+        self.relation = RelationType.INSTANCE_OF
         self.qualifiersObtained = True
 
     def updateViolations(self, result: Sequence[Sequence[str]]) -> None:
@@ -113,14 +118,13 @@ class SubjectTypeConstraint(Constraint):
         identifier: str,
         label: str,
         prop: Property,
-        wikibaseConfig: WikibaseConfig,
     ) -> None:
-        super().__init__(identifier, label, prop, wikibaseConfig)
+        super().__init__(identifier, label, prop)
         self.implemented = True
         self.validationInputCountType = ValidationInputCountType.ENTITIES
 
         self.classes: Sequence[Item] = []
-        self.relation = ""
+        self.relation = RelationType.UNKNOWN
 
     def pretty(self) -> str:
         label = super().pretty()
@@ -144,7 +148,7 @@ class SubjectTypeConstraint(Constraint):
             raise ValueError("{result} is an invalid value for updating qualifiers")
 
         self.classes = classes
-        self.relation = self._wikibaseConfig.getInstanceOfPid()
+        self.relation = RelationType.INSTANCE_OF
         self.qualifiersObtained = True
 
     def updateViolations(self, result: Sequence[Sequence[str]]) -> None:
@@ -163,9 +167,8 @@ class RequiredQualifierConstraint(Constraint):
         identifier: str,
         label: str,
         prop: Property,
-        wikibaseConfig: WikibaseConfig,
     ) -> None:
-        super().__init__(identifier, label, prop, wikibaseConfig)
+        super().__init__(identifier, label, prop)
         self.implemented = True
         self.validationInputCountType = ValidationInputCountType.STATEMENTS
 
@@ -206,9 +209,8 @@ class AllowedQualifiersConstraint(Constraint):
         identifier: str,
         label: str,
         prop: Property,
-        wikibaseConfig: WikibaseConfig,
     ) -> None:
-        super().__init__(identifier, label, prop, wikibaseConfig)
+        super().__init__(identifier, label, prop)
         self.implemented = True
         self.validationInputCountType = ValidationInputCountType.STATEMENTS
 
@@ -247,9 +249,8 @@ class ConflictsWithConstraint(Constraint):
         identifier: str,
         label: str,
         prop: Property,
-        wikibaseConfig: WikibaseConfig,
     ) -> None:
-        super().__init__(identifier, label, prop, wikibaseConfig)
+        super().__init__(identifier, label, prop)
         self.implemented = True
         self.validationInputCountType = ValidationInputCountType.ENTITIES
         self.conflictingStatements: Sequence[tuple[Property, Optional[Item]]] = []
@@ -290,9 +291,8 @@ class DistinctValuesConstraint(Constraint):
         identifier: str,
         label: str,
         prop: Property,
-        wikibaseConfig: WikibaseConfig,
     ) -> None:
-        super().__init__(identifier, label, prop, wikibaseConfig)
+        super().__init__(identifier, label, prop)
         self.implemented = True
         self.validationInputCountType = ValidationInputCountType.STATEMENTS
 
@@ -336,9 +336,8 @@ class FormatConstraint(Constraint):
         identifier: str,
         label: str,
         prop: Property,
-        wikibaseConfig: WikibaseConfig,
     ) -> None:
-        super().__init__(identifier, label, prop, wikibaseConfig)
+        super().__init__(identifier, label, prop)
         self.implemented = True
         self.validationInputCountType = ValidationInputCountType.STATEMENTS
 
@@ -380,9 +379,8 @@ class ItemRequiresStatementConstraint(Constraint):
         identifier: str,
         label: str,
         prop: Property,
-        wikibaseConfig: WikibaseConfig,
     ) -> None:
-        super().__init__(identifier, label, prop, wikibaseConfig)
+        super().__init__(identifier, label, prop)
         self.implemented = True
         self.validationInputCountType = ValidationInputCountType.ENTITIES
         self.requiredStatements: dict[str, tuple[Property, list[Item]]] = {}
@@ -424,9 +422,8 @@ class ValueRequiresStatementConstraint(Constraint):
         identifier: str,
         label: str,
         prop: Property,
-        wikibaseConfig: WikibaseConfig,
     ) -> None:
-        super().__init__(identifier, label, prop, wikibaseConfig)
+        super().__init__(identifier, label, prop)
         self.implemented = True
         self.validationInputCountType = ValidationInputCountType.STATEMENTS
         self.requiredStatements: dict[str, tuple[Property, list[Item]]] = {}
