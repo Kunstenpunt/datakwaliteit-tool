@@ -165,16 +165,17 @@ def test_Constraint():
     constraint = Constraint("Q1", "constraint1", Property("P1", "prop1"))
     assert constraint.property == Property("P1", "prop1")
 
+    assert constraint.violations == None
+    assert constraint.hiddenViolations == None
+    assert constraint.exceptionIds == None
+
     assert constraint.inputCount == -1
     assert constraint.validationInputCountType == ValidationInputCountType.OTHER
-
-    assert constraint.exceptionIds == None
 
     assert constraint.doValidation == False
     assert constraint.implemented == False
     assert constraint.qualifiersObtained == False
     assert constraint.validationState == ValidationState.UNVALIDATED
-    assert constraint.violations == None
 
     assert constraint._offset == 0
     assert constraint.sort == False
@@ -191,6 +192,60 @@ def test_Constraint():
         constraint.page = 0
     with pytest.raises(ValueError):
         constraint.page = -1
+
+
+def test_ConstraintViolationsThenExceptions():
+    constraint = Constraint("Q1", "constraint1", Property("P1", "prop1"))
+
+    constraint.violations = [
+        ["statement", "item"],
+        ["X1", "Q4"],
+        ["X2", "Q3"],
+        ["X3", "Q1"],
+        ["X4", "Q6"],
+    ]
+    assert constraint.violations == [
+        ["statement", "item"],
+        ["X1", "Q4"],
+        ["X2", "Q3"],
+        ["X3", "Q1"],
+        ["X4", "Q6"],
+    ]
+    assert constraint.hiddenViolations == None
+    assert constraint.exceptionIds == None
+
+    constraint.exceptionIds = ["Q1", "Q5", "Q4"]
+    assert constraint.violations == [["statement", "item"], ["X2", "Q3"], ["X4", "Q6"]]
+    assert constraint.hiddenViolations == [
+        ["statement", "item"],
+        ["X1", "Q4"],
+        ["X3", "Q1"],
+    ]
+    assert constraint.exceptionIds == ["Q1", "Q5", "Q4"]
+
+
+def test_ConstraintExceptionsThenViolations():
+    constraint = Constraint("Q1", "constraint1", Property("P1", "prop1"))
+
+    constraint.exceptionIds = ["Q1", "Q5", "Q4"]
+    assert constraint.violations == None
+    assert constraint.hiddenViolations == None
+    assert constraint.exceptionIds == ["Q1", "Q5", "Q4"]
+
+    constraint.violations = [
+        ["statement", "item"],
+        ["X1", "Q4"],
+        ["X2", "Q3"],
+        ["X3", "Q1"],
+        ["X4", "Q6"],
+    ]
+    assert constraint.violations == [["statement", "item"], ["X2", "Q3"], ["X4", "Q6"]]
+    assert constraint.hiddenViolations == [
+        ["statement", "item"],
+        ["X1", "Q4"],
+        ["X3", "Q1"],
+    ]
+    assert constraint.exceptionIds == ["Q1", "Q5", "Q4"]
 
 
 def test_ConstraintPretty():
