@@ -1,8 +1,9 @@
 from enum import Enum
 from functools import total_ordering
-
+from itertools import compress
 from typing import Optional, Self, Sequence
-from ..wikibasehelper import WikibaseConfig
+
+from ..types import Table
 
 
 @total_ordering
@@ -134,16 +135,17 @@ class Constraint(Item):
 
         self.property = prop
 
+        self._violations: Optional[Table[str]] = None
+        self._hiddenViolations: Optional[Table[str]] = None
+        self._exceptionIds: Optional[Sequence[str]] = None
+
         self.inputCount = -1
         self.validationInputCountType = ValidationInputCountType.OTHER
-
-        self.exceptionIds: Optional[Sequence[str]] = None
 
         self.doValidation = False
         self.implemented = False
         self.qualifiersObtained = False
         self.validationState = ValidationState.UNVALIDATED
-        self.violations: Optional[Sequence[Sequence[str]]] = None
 
         self.limit = 100000
         self._offset = 0
@@ -159,6 +161,28 @@ class Constraint(Item):
         if value <= 0:
             raise ValueError(f"{value} is an invalid value for constraint page")
         self._offset = (value - 1) * self.limit
+
+    @property
+    def violations(self) -> Optional[Table[str]]:
+        return self._violations
+
+    @violations.setter
+    def violations(self, value: Table[str]) -> None:
+        self._violations = value
+        self._filterExceptions()
+
+    @property
+    def hiddenViolations(self) -> Optional[Table[str]]:
+        return self._hiddenViolations
+
+    @property
+    def exceptionIds(self) -> Optional[Sequence[str]]:
+        return self._exceptionIds
+
+    @exceptionIds.setter
+    def exceptionIds(self, value: Sequence[str]) -> None:
+        self._exceptionIds = value
+        self._filterExceptions()
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, Constraint):
@@ -182,3 +206,14 @@ class Constraint(Item):
 
     def updateViolations(self, result: Sequence[Sequence[str]]) -> None:
         print(f"Updating violations not implemented for {self}")
+
+    def _filterExceptions(self) -> None:
+        if self.violations is None or self.exceptionIds is None:
+            return
+
+        mask = [row[1] in self.exceptionIds for row in self.violations]
+        mask[0] = True
+        self._hiddenViolations = list(compress(self.violations, mask))
+        mask = [not value for value in mask]
+        mask[0] = True
+        self._violations = list(compress(self.violations, mask))
