@@ -6,7 +6,6 @@ from PySide6.QtCore import Signal, QObject
 from .base import (
     Constraint,
     Property,
-    ValidationInputCountType,
     ValidationMode,
     ValidationState,
 )
@@ -293,7 +292,6 @@ class ConstraintCheckModel(QObject):
             self.focusedPropertyConstraintUpdated.emit()
             self._constraintHelper.queryQualifiers(constraint)
             self._constraintHelper.queryInputCount(constraint)
-            self._constraintHelper.queryExceptions(constraint)
 
     def validateFocusedConstraint(
         self,
@@ -313,6 +311,7 @@ class ConstraintCheckModel(QObject):
             self._validationQueue.append(self.focusedConstraint)
         else:
             self._constraintHelper.queryViolations(self.focusedConstraint)
+            self._constraintHelper.queryExceptions(self.focusedConstraint)
 
     def validatingAll(self) -> bool:
         return len(self._validationQueue) != 0
@@ -342,6 +341,7 @@ class ConstraintCheckModel(QObject):
         ):
             self._validationQueue.pop()
             self._constraintHelper.queryViolations(constraint)
+            self._constraintHelper.queryExceptions(constraint)
         else:
             self._validationQueue.pop()
             self._validateNextInQueue()
