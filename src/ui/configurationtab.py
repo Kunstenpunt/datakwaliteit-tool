@@ -14,12 +14,12 @@ class ConfigurationTab(QWidget, Ui_ConfigurationTab):
         super().__init__()
         self.setupUi(self)  # type: ignore
 
-        self.model = model
+        self._model = model
 
-        self.discardButton.clicked.connect(self.loadConfig)
-        self.saveButton.clicked.connect(self.saveConfig)
+        self.discardButton.clicked.connect(self._loadConfig)
+        self.saveButton.clicked.connect(self._saveConfig)
 
-        self.lineEditsToConfigKeys = {
+        self._lineEditsToConfigKeys = {
             self.wikibaseUrlLineEdit: WbiConfigKey.WIKIBASE_URL,
             self.defaultLanguageLineEdit: WbiConfigKey.DEFAULT_LANGUAGE,
             self.mediawikiApiUrlLineEdit: WbiConfigKey.MEDIAWIKI_API_URL,
@@ -31,34 +31,38 @@ class ConfigurationTab(QWidget, Ui_ConfigurationTab):
             self.subclassOfPidLineEdit: ExtraWikibaseConfigKey.SUBCLASS_OF_PID,
         }
 
-        self.lineEditsWbiValueModified = {
-            x: False for x in self.lineEditsToConfigKeys.keys()
+        self._lineEditsWbiValueModified = {
+            x: False for x in self._lineEditsToConfigKeys.keys()
         }
 
-        for lineEdit, key in self.lineEditsToConfigKeys.items():
-            self.setupLineEdit(lineEdit, key)
+        for lineEdit, key in self._lineEditsToConfigKeys.items():
+            self._setupLineEdit(lineEdit, key)
 
-        self.loadConfig()
+        self._loadConfig()
 
-    def setupLineEdit(self, lineEdit: QLineEdit, key: str) -> None:
-        lineEdit.textEdited.connect(self.onTextEdited(lineEdit, key))
+    def _setupLineEdit(self, lineEdit: QLineEdit, key: str) -> None:
+        lineEdit.textEdited.connect(self._createTextEditedCallback(lineEdit, key))
 
-    def onTextEdited(self, lineEdit: QLineEdit, key: str) -> Callable[[str], None]:
-        def callback(text: str) -> None:
-            self.lineEditsWbiValueModified[lineEdit] = (
-                text != self.model.configHandler.getWikibaseConfigPairs().get(key)
+    def _createTextEditedCallback(
+        self, lineEdit: QLineEdit, key: str
+    ) -> Callable[[str], None]:
+        def onTextEdited(text: str) -> None:
+            self._lineEditsWbiValueModified[lineEdit] = (
+                text != self._model.configHandler.getWikibaseConfigPairs().get(key)
             )
-            self.updateFontLineEdit(lineEdit)
-            self.updateEnabledButtons()
+            self._updateLineEditFont(lineEdit)
+            self._updateEnabledButtons()
 
-        return callback
+        return onTextEdited
 
-    def updateFontLineEdit(self, lineEdit: QLineEdit) -> None:
+    def _updateLineEditFont(self, lineEdit: QLineEdit) -> None:
         font = lineEdit.font()
-        font.setBold(self.lineEditsWbiValueModified[lineEdit] and lineEdit.text() != "")
+        font.setBold(
+            self._lineEditsWbiValueModified[lineEdit] and lineEdit.text() != ""
+        )
         lineEdit.setFont(font)
 
-    def cleanUpLineEditText(self, lineEdit: QLineEdit) -> None:
+    def _cleanUpLineEditText(self, lineEdit: QLineEdit) -> None:
         text = lineEdit.text().strip()
 
         # Strip trailing "/" for correct wbi_config parameters
@@ -73,26 +77,26 @@ class ConfigurationTab(QWidget, Ui_ConfigurationTab):
 
         lineEdit.setText(text)
 
-    def loadConfig(self) -> None:
-        config = self.model.configHandler.getWikibaseConfigPairs()
-        for lineEdit, key in self.lineEditsToConfigKeys.items():
+    def _loadConfig(self) -> None:
+        config = self._model.configHandler.getWikibaseConfigPairs()
+        for lineEdit, key in self._lineEditsToConfigKeys.items():
             lineEdit.setText(stringOrDefault(config.get(key)))
-            self.lineEditsWbiValueModified[lineEdit] = False
-            self.updateFontLineEdit(lineEdit)
-        self.updateEnabledButtons()
+            self._lineEditsWbiValueModified[lineEdit] = False
+            self._updateLineEditFont(lineEdit)
+        self._updateEnabledButtons()
 
-    def saveConfig(self) -> None:
+    def _saveConfig(self) -> None:
         config: dict[str, str] = {}
-        for lineEdit, key in self.lineEditsToConfigKeys.items():
-            if self.lineEditsWbiValueModified[lineEdit]:
-                self.cleanUpLineEditText(lineEdit)
+        for lineEdit, key in self._lineEditsToConfigKeys.items():
+            if self._lineEditsWbiValueModified[lineEdit]:
+                self._cleanUpLineEditText(lineEdit)
                 config[key] = lineEdit.text()
-        self.model.configHandler.setWikibaseConfigPairs(config)
-        self.loadConfig()
+        self._model.configHandler.setWikibaseConfigPairs(config)
+        self._loadConfig()
 
-    def updateEnabledButtons(self) -> None:
-        for lineEdit in self.lineEditsToConfigKeys.keys():
-            if self.lineEditsWbiValueModified[lineEdit]:
+    def _updateEnabledButtons(self) -> None:
+        for lineEdit in self._lineEditsToConfigKeys.keys():
+            if self._lineEditsWbiValueModified[lineEdit]:
                 self.saveButton.setEnabled(True)
                 self.discardButton.setEnabled(True)
                 return
