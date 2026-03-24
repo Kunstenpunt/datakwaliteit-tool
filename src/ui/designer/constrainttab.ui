@@ -305,7 +305,7 @@ will be displayed here</string>
         </layout>
        </item>
        <item>
-        <widget class="QTableView" name="violationsTableView">
+        <widget class="ViolationsTable" name="violationsTableView">
          <property name="sortingEnabled">
           <bool>true</bool>
          </property>
@@ -371,6 +371,13 @@ will be displayed here</string>
    </item>
   </layout>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>ViolationsTable</class>
+   <extends>QTableView</extends>
+   <header>..violations_table.h</header>
+  </customwidget>
+ </customwidgets>
  <resources/>
  <connections/>
 </ui>
