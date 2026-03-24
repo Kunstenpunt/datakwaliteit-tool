@@ -12,18 +12,19 @@ from PySide6.QtWidgets import QHeaderView
 
 from ..backend.constraint.base import ValidationState
 from ..backend.utils import urlFromId
+from ..backend.wikibasehelper import WikibaseConfig
 
 MAXIMUM_AUTO_TABLE_SECTION_WIDTH = 200
 
 
 class TableClickHandler:
-    def __init__(self, baseUrl: str) -> None:
+    def __init__(self, wikibaseConfig: WikibaseConfig) -> None:
         super().__init__()
-        self.baseUrl = baseUrl
+        self._wikibaseConfig = wikibaseConfig
 
     def onTableDoubleClicked(self, index: QModelIndex) -> None:
         possibleID = index.data()
-        url = urlFromId(possibleID, self.baseUrl)
+        url = urlFromId(possibleID, self._wikibaseConfig.getBaseUrl())
         if url:
             QDesktopServices.openUrl(QUrl(url))
 
