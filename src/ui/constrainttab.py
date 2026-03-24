@@ -4,9 +4,9 @@ from PySide6.QtCore import (
     QSortFilterProxyModel,
     QStandardPaths,
 )
-from PySide6.QtWidgets import QFileDialog, QWidget
+from PySide6.QtWidgets import QFileDialog, QTableView, QWidget
 
-from ..backend.constraint.base import ValidationMode, ValidationState
+from ..backend.constraint.base import Constraint, ValidationMode, ValidationState
 from ..backend.export import Exporter
 from ..backend.model import Model
 
@@ -65,7 +65,7 @@ class ConstraintsTab(QWidget, Ui_ConstraintTab):
             self.updateFocusedPropertyConstraintLabel
         )
         self.model.constraintCheckModel.focusedPropertyConstraintViolationsUpdated.connect(
-            self.updateViolationsTableView
+            self.updateViolations
         )
         self.model.constraintCheckModel.validateAllDone.connect(
             self.updateValidateAllLabel
@@ -128,7 +128,7 @@ class ConstraintsTab(QWidget, Ui_ConstraintTab):
         self.pageSpinBox.setValue(focusedPropertyConstraint.page)
         self.sortedCheckBox.setChecked(focusedPropertyConstraint.sort)
         self.validateButton.setEnabled(focusedPropertyConstraint.implemented)
-        self.updateViolationsTableView()
+        self.updateViolations()
 
     def updateFocusedPropertyConstraintLabel(self) -> None:
         constraint = self.model.constraintCheckModel.focusedConstraint
@@ -188,26 +188,33 @@ class ConstraintsTab(QWidget, Ui_ConstraintTab):
             limitMode, limit, page, sort
         )
 
-    def updateViolationsTableView(self) -> None:
+    def updateViolations(self) -> None:
         constraint = self.model.constraintCheckModel.focusedConstraint
         if not constraint:
             return
-        data = constraint.violations
-        self.exportButton.setEnabled(data != None)
-        if data == None:
-            self.violationsTableView.setModel(None)
+
+        self.violationsTableView.updateViolations(constraint)
+        self._updateViolationsLabel(constraint)
+        self.exportButton.setEnabled(constraint.violations is not None)
+
+    def _updateViolationsLabel(self, constraint: Constraint) -> None:
+        if constraint.violations is None:
             self.violationsLabel.setText("Not Validated")
             return
-        sortableDataModel = QSortFilterProxyModel()
-        sortableDataModel.setSourceModel(SimpleTableModel(data))
-        self.violationsTableView.setModel(sortableDataModel)
-        header = self.violationsTableView.horizontalHeader()
-        headerResizeNeatly(header)
-        header.resizeSection(0, header.defaultSectionSize())
-        violations = len(data) - 1
-        self.violationsLabel.setText(
-            f"{violations} violation{"s" if violations != 1 else ""} found."
+
+        violationsCount = len(constraint.violations) - 1
+        hiddenCount = (
+            len(constraint.hiddenViolations) - 1 if constraint.hiddenViolations else 0
         )
+        violationCountText = (
+            f"{violationsCount} violation{"s" if violationsCount != 1 else ""} found"
+        )
+        exceptionCountText = (
+            f" ({hiddenCount} exception{"s" if hiddenCount != 1 else ""} hidden)"
+            if hiddenCount
+            else ""
+        )
+        self.violationsLabel.setText(f"{violationCountText}{exceptionCountText}.")
 
     def exportSingleConstraint(self) -> None:
         constraint = self.model.constraintCheckModel.focusedConstraint
