@@ -21,9 +21,7 @@ class QueryTab(QWidget, Ui_QueryTab):
 
         self.copyButton.clicked.connect(self.copy)
         self.executeButton.clicked.connect(self.onExecuteButtonClicked)
-        self.tableClickHandler = TableClickHandler(
-            self.model.wikibaseConfig.getBaseUrl()
-        )
+        self.tableClickHandler = TableClickHandler(self.model.wikibaseConfig)
         self.tableView.doubleClicked.connect(
             self.tableClickHandler.onTableDoubleClicked
         )

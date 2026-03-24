@@ -42,9 +42,7 @@ class ConstraintsTab(QWidget, Ui_ConstraintTab):
         self.changeLimitMode()
         self.sortedCheckBox.checkStateChanged.connect(self.changeLimitSorted)
         self.changeLimitSorted()
-        self.tableClickHandler = TableClickHandler(
-            self.model.wikibaseConfig.getBaseUrl()
-        )
+        self.tableClickHandler = TableClickHandler(self.model.wikibaseConfig)
         self.propertiesTableView.doubleClicked.connect(
             self.tableClickHandler.onTableDoubleClicked
         )
