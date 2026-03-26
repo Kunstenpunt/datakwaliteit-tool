@@ -195,12 +195,12 @@ CONSTRAINT_MAP = {
 
 class ConstraintCheckModel(QObject):
 
-    constrainedPropertiesUpdated = Signal()
-    constrainedPropertyValidationStateChanged = Signal()
-    focusedPropertyConstraintUpdated = Signal()
-    focusedPropertyConstraintInputCountUpdated = Signal()
-    focusedPropertyConstraintQualifiersUpdated = Signal()
-    focusedPropertyConstraintViolationsUpdated = Signal()
+    constraintsUpdated = Signal()
+    validationStateChanged = Signal()
+    focusedConstraintUpdated = Signal()
+    focusedConstraintInputCountUpdated = Signal()
+    focusedConstraintQualifiersUpdated = Signal()
+    focusedConstraintViolationsUpdated = Signal()
     validateAllDone = Signal()
 
     def __init__(
@@ -225,7 +225,7 @@ class ConstraintCheckModel(QObject):
         self._constraintHelper.violationsUpdated.connect(self._onViolationsUpdated)
         self._constraintHelper.validationStateUpdated.connect(self._validateNextInQueue)
         self._constraintHelper.validationStateUpdated.connect(
-            self.constrainedPropertyValidationStateChanged
+            self.validationStateChanged
         )
 
         self.constraints: dict[tuple[str, str], Constraint] = {}
@@ -266,7 +266,7 @@ class ConstraintCheckModel(QObject):
         except:
             return
 
-        self.constrainedPropertiesUpdated.emit()
+        self.constraintsUpdated.emit()
 
     def getConstraintsListFull(
         self,
@@ -289,7 +289,7 @@ class ConstraintCheckModel(QObject):
         constraint = self.constraints.get((constraintId, propId))
         if constraint:
             self.focusedConstraint = constraint
-            self.focusedPropertyConstraintUpdated.emit()
+            self.focusedConstraintUpdated.emit()
             self._constraintHelper.queryQualifiers(constraint)
             self._constraintHelper.queryInputCount(constraint)
 
@@ -349,14 +349,14 @@ class ConstraintCheckModel(QObject):
     def _onInputCountUpdated(self) -> None:
         c = self._constraintHelper.constraint
         if c == self.focusedConstraint:
-            self.focusedPropertyConstraintInputCountUpdated.emit()
+            self.focusedConstraintInputCountUpdated.emit()
 
     def _onQualifiersUpdated(self) -> None:
         c = self._constraintHelper.constraint
         if c == self.focusedConstraint:
-            self.focusedPropertyConstraintQualifiersUpdated.emit()
+            self.focusedConstraintQualifiersUpdated.emit()
 
     def _onViolationsUpdated(self) -> None:
         c = self._constraintHelper.constraint
         if c == self.focusedConstraint:
-            self.focusedPropertyConstraintViolationsUpdated.emit()
+            self.focusedConstraintViolationsUpdated.emit()
