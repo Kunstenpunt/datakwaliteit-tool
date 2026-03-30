@@ -48,7 +48,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.model.wikibaseQueryRunner.queryDone.connect(self.onQueryDone)
 
         # Load constrained properties on startup
-        self.model.constraintCheckModel.updateConstraints()
+        self.model.constraintCheckModel.queryConstraints()
 
     def onQueryStarted(self) -> None:
         self.queryIndicator.show()

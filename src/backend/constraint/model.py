@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, Sequence
 
 from PySide6.QtCore import Signal, QObject
 
@@ -11,6 +11,7 @@ from .base import (
 )
 from .queries import QueryBuilder
 from .constraint_types import *
+from ..sql import SqlDatabase
 from ..utils import idFromUrl, stripUrlPartFromTable
 from ..wikibasehelper import WikibaseConfig, WikibaseQueryRunner
 
@@ -23,7 +24,7 @@ class ConstraintHelper(QObject):
 
     exceptionsUpdated = Signal()
     inputCountUpdated = Signal()
-    validationStateUpdated = Signal()
+    validationStateUpdated = Signal(Constraint)
 
     def __init__(
         self,
@@ -176,7 +177,7 @@ class ConstraintHelper(QObject):
 
         if self.constraint.validationState != validationState:
             self.constraint.validationState = validationState
-            self.validationStateUpdated.emit()
+            self.validationStateUpdated.emit(self.constraint)
 
 
 CONSTRAINT_MAP = {
@@ -195,8 +196,6 @@ CONSTRAINT_MAP = {
 
 class ConstraintCheckModel(QObject):
 
-    constraintsUpdated = Signal()
-    validationStateChanged = Signal()
     focusedConstraintUpdated = Signal()
     focusedConstraintInputCountUpdated = Signal()
     focusedConstraintQualifiersUpdated = Signal()
@@ -206,12 +205,14 @@ class ConstraintCheckModel(QObject):
     def __init__(
         self,
         queryBuilder: QueryBuilder,
+        sqlDatabase: SqlDatabase,
         wikibaseConfig: WikibaseConfig,
         wikibaseQueryRunner: WikibaseQueryRunner,
     ) -> None:
         super().__init__()
 
         self._queryBuilder = queryBuilder
+        self._sqlDatabase = sqlDatabase
         self._wikibaseConfig = wikibaseConfig
         self._wikibaseQueryRunner = wikibaseQueryRunner
 
@@ -225,25 +226,25 @@ class ConstraintCheckModel(QObject):
         self._constraintHelper.violationsUpdated.connect(self._onViolationsUpdated)
         self._constraintHelper.validationStateUpdated.connect(self._validateNextInQueue)
         self._constraintHelper.validationStateUpdated.connect(
-            self.validationStateChanged
+            self._updateValidationStateSql
         )
 
-        self.constraints: dict[tuple[str, str], Constraint] = {}
+        self.constraints: Sequence[Constraint] = []
         self.focusedConstraint: Optional[Constraint] = None
         self._validationQueue: list[Constraint] = []
         self._validatingQueue = False
 
-    def updateConstraints(self) -> None:
+    def queryConstraints(self) -> None:
         query = self._queryBuilder.buildConstrainedPropertiesQuery()
         self._wikibaseQueryRunner.queueQueryForExecution(
-            query, self._updateConstraintsResult
+            query, self._queryConstraintsResult
         )
 
-    def _updateConstraintsResult(self) -> None:
+    def _queryConstraintsResult(self) -> None:
         result = self._wikibaseQueryRunner.queryResult
         if not result:
             return
-        self.constraints = {}
+        self.constraints = []
         try:
             for [propId, propLabel, consId, consLabel] in result[1:]:
                 propId = idFromUrl(propId)
@@ -262,36 +263,45 @@ class ConstraintCheckModel(QObject):
                     print(f"Wrong IDs for property-constraint pair: {propId}-{consId}")
                     continue
 
-                self.constraints[consId, propId] = constraint
+                constraint.sqlRowId = len(self.constraints)
+                self.constraints.append(constraint)
         except:
             return
 
-        self.constraintsUpdated.emit()
+        self._writeConstraintsListToSql()
 
-    def getConstraintsListFull(
-        self,
-    ) -> list[tuple[str, str, str, str, bool, ValidationState]]:
-        return sorted(
+    def _writeConstraintsListToSql(self) -> None:
+        headerLabels = [
+            "rowId",
+            "propertyIdentifier",
+            "propertyLabel",
+            "constraintIdentifier",
+            "constraintLabel",
+            "implemented",
+            "validationState",
+        ]
+        table = [headerLabels] + [
             [
-                (
-                    c.property.identifier,
-                    c.property.label,
-                    c.identifier,
-                    c.label,
-                    c.implemented,
-                    c.validationState,
-                )
-                for c in self.constraints.values()
+                c.sqlRowId,
+                c.property.identifier,
+                c.property.label,
+                c.identifier,
+                c.label,
+                str(c.implemented),
+                c.validationState.name,
             ]
-        )
+            for c in self.constraints
+        ]
+        self._sqlDatabase.addTable("constraints", table)
 
-    def setFocusedConstraint(self, propId: str, constraintId: str) -> None:
-        constraint = self.constraints.get((constraintId, propId))
-        if constraint:
-            self.focusedConstraint = constraint
-            self.focusedConstraintUpdated.emit()
-            self._constraintHelper.queryQualifiers(constraint)
-            self._constraintHelper.queryInputCount(constraint)
+    def setFocusedConstraint(self, rowId: int) -> None:
+        if not (0 <= rowId < len(self.constraints)):
+            return
+        constraint = self.constraints[rowId]
+        self.focusedConstraint = constraint
+        self.focusedConstraintUpdated.emit()
+        self._constraintHelper.queryQualifiers(constraint)
+        self._constraintHelper.queryInputCount(constraint)
 
     def validateFocusedConstraint(
         self,
@@ -313,6 +323,18 @@ class ConstraintCheckModel(QObject):
             self._constraintHelper.queryViolations(self.focusedConstraint)
             self._constraintHelper.queryExceptions(self.focusedConstraint)
 
+    def _updateValidationStateSql(self, c: Constraint) -> None:
+        if c is None:
+            raise RuntimeError(
+                "validationStateUpdated signal should only be emitted when a corresponding constraint is set."
+            )
+
+        self._sqlDatabase.updateRow(
+            "constraints",
+            ("rowId", c.sqlRowId),
+            {"validationState": c.validationState.name},
+        )
+
     def validatingAll(self) -> bool:
         return len(self._validationQueue) != 0
 
@@ -321,12 +343,11 @@ class ConstraintCheckModel(QObject):
         self.validateAllDone.emit()
 
     def validateAll(self) -> None:
-        self._validationQueue = list(self.constraints.values())
+        self._validationQueue = list(self.constraints)
         self._validatingQueue = True
         self._validateNextInQueue()
 
-    def _validateNextInQueue(self) -> None:
-        c = self._constraintHelper.constraint
+    def _validateNextInQueue(self, c: Optional[Constraint] = None) -> None:
         if c is not None and c.validationState == ValidationState.VALIDATING:
             return
 

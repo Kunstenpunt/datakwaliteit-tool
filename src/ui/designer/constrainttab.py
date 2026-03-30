@@ -62,13 +62,13 @@ class Ui_ConstraintTab(object):
 
         self.verticalLayoutLeft.addLayout(self.horizontalLayoutLeft)
 
-        self.propertiesTableView = QTableView(self.verticalLayoutWidgetLeft)
-        self.propertiesTableView.setObjectName(u"propertiesTableView")
-        self.propertiesTableView.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
-        self.propertiesTableView.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
-        self.propertiesTableView.setSortingEnabled(True)
+        self.constraintsTableView = QTableView(self.verticalLayoutWidgetLeft)
+        self.constraintsTableView.setObjectName(u"constraintsTableView")
+        self.constraintsTableView.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
+        self.constraintsTableView.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
+        self.constraintsTableView.setSortingEnabled(True)
 
-        self.verticalLayoutLeft.addWidget(self.propertiesTableView)
+        self.verticalLayoutLeft.addWidget(self.constraintsTableView)
 
         self.horizontalLayoutLeftBottom = QHBoxLayout()
         self.horizontalLayoutLeftBottom.setObjectName(u"horizontalLayoutLeftBottom")

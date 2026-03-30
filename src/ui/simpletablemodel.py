@@ -9,6 +9,7 @@ from PySide6.QtCore import (
 )
 from PySide6.QtGui import QBrush, QColor, QDesktopServices
 from PySide6.QtWidgets import QHeaderView
+from PySide6.QtSql import QSqlTableModel
 
 from ..backend.constraint.base import ValidationState
 from ..backend.utils import urlFromId
@@ -33,6 +34,67 @@ def headerResizeNeatly(header: QHeaderView) -> None:
     header.setMaximumSectionSize(MAXIMUM_AUTO_TABLE_SECTION_WIDTH)
     header.resizeSections(QHeaderView.ResizeMode.ResizeToContents)
     header.setMaximumSectionSize(-1)
+
+
+class SqlTableModel(QSqlTableModel):
+    def __init__(self) -> None:
+        super().__init__()
+
+    def data(
+        self,
+        index: QModelIndex | QPersistentModelIndex,
+        role: int = Qt.ItemDataRole.DisplayRole,
+    ) -> object:
+        data = QSqlTableModel.data(self, index, Qt.ItemDataRole.DisplayRole)
+        if role == Qt.ItemDataRole.DisplayRole:
+            match data:
+                case "True":
+                    return "✓"
+                case "False":
+                    return "✗"
+                case other:
+                    return other
+
+        if role == Qt.ItemDataRole.BackgroundRole:
+            match data:
+                case "True":
+                    return QBrush(Qt.GlobalColor.darkGreen)
+                case "False":
+                    return QBrush(Qt.GlobalColor.darkRed)
+                case ValidationState.FAILED.name:
+                    return QBrush(Qt.GlobalColor.darkRed)
+                case ValidationState.UNVALIDATED.name:
+                    return QBrush(Qt.GlobalColor.darkGray)
+                case ValidationState.VALIDATED.name:
+                    return QBrush(Qt.GlobalColor.darkGreen)
+                case ValidationState.PARTIAL.name:
+                    return QBrush(QColor(0x60, 0x80, 0))
+                case ValidationState.VALIDATING.name:
+                    return QBrush(Qt.GlobalColor.darkYellow)
+        if role == Qt.ItemDataRole.ForegroundRole:
+            if data in [
+                "True",
+                "False",
+                ValidationState.FAILED.name,
+                ValidationState.UNVALIDATED.name,
+                ValidationState.VALIDATED.name,
+                ValidationState.PARTIAL.name,
+                ValidationState.VALIDATING.name,
+            ]:
+                return QBrush(Qt.GlobalColor.white)
+
+        return None
+
+    def select(self) -> bool:
+        if not QSqlTableModel.select(self):
+            return False
+
+        self._fetchAll()
+        return True
+
+    def _fetchAll(self) -> None:
+        while self.canFetchMore():
+            self.fetchMore()
 
 
 class SimpleTableModel(QAbstractTableModel):

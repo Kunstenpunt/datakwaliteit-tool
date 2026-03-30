@@ -63,7 +63,7 @@
         </layout>
        </item>
        <item>
-        <widget class="QTableView" name="propertiesTableView">
+        <widget class="QTableView" name="constraintsTableView">
          <property name="selectionMode">
           <enum>QAbstractItemView::SelectionMode::SingleSelection</enum>
          </property>

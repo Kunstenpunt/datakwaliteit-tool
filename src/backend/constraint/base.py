@@ -152,6 +152,8 @@ class Constraint(Item):
         self.sort = False
         self.validationMode = ValidationMode.NO_LIMIT
 
+        self.sqlRowId = -1
+
     @property
     def page(self) -> int:
         return int(self._offset / self.limit) + 1 if self.limit != 0 else 1

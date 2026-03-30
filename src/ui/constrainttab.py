@@ -3,17 +3,20 @@ from PySide6.QtCore import (
     QModelIndex,
     QSortFilterProxyModel,
     QStandardPaths,
+    Qt,
 )
 from PySide6.QtWidgets import QFileDialog, QWidget
+from PySide6.QtSql import QSqlTableModel
 
 from ..backend.constraint.base import Constraint, ValidationMode, ValidationState
 from ..backend.export import Exporter
 from ..backend.model import Model
+from ..backend.sql import SqlDatabase
 
 from .designer.constrainttab import Ui_ConstraintTab
 from .simpletablemodel import (
     headerResizeNeatly,
-    SimpleTableModel,
+    SqlTableModel,
     TableClickHandler,
 )
 
@@ -43,17 +46,11 @@ class ConstraintsTab(QWidget, Ui_ConstraintTab):
         self.sortedCheckBox.checkStateChanged.connect(self._changeLimitSorted)
         self._changeLimitSorted()
         self._tableClickHandler = TableClickHandler(self._model.wikibaseConfig)
-        self.propertiesTableView.doubleClicked.connect(
+        self.constraintsTableView.doubleClicked.connect(
             self._tableClickHandler.onTableDoubleClicked
         )
         self.violationsTableView.doubleClicked.connect(
             self._tableClickHandler.onTableDoubleClicked
-        )
-        self._model.constraintCheckModel.constraintsUpdated.connect(
-            self._onConstraintsUpdated
-        )
-        self._model.constraintCheckModel.validationStateChanged.connect(
-            self._onValidationStateChanged
         )
         self._model.constraintCheckModel.focusedConstraintUpdated.connect(
             self._onFocusedConstraintUpdated
@@ -71,11 +68,25 @@ class ConstraintsTab(QWidget, Ui_ConstraintTab):
             self._updateValidateAllLabel
         )
 
-    def _updateConstraints(self) -> None:
-        self._model.constraintCheckModel.updateConstraints()
+        self._model.sqlDatabase.tableAdded.connect(self._reloadConstraintsTable)
+        self._model.sqlDatabase.tableUpdated.connect(self._updateConstraintsTable)
 
-    def _onConstraintsUpdated(self) -> None:
+        self.constraintsTableModel = SqlTableModel()
+        self.constraintsTableView.setModel(self.constraintsTableModel)
+        self.constraintsTableView.selectionModel().currentChanged.connect(
+            self._onConstraintSelectionChanged
+        )
+
+    def _updateConstraints(self) -> None:
+        self._model.constraintCheckModel.queryConstraints()
+
+    def _reloadConstraintsTable(self, table: str) -> None:
+        if table != "constraints":
+            return
+
+        self.constraintsTableModel.setTable(table)
         headerLabels = [
+            "Row ID",
             "Prop ID",
             "Prop label",
             "Constraint ID",
@@ -83,39 +94,33 @@ class ConstraintsTab(QWidget, Ui_ConstraintTab):
             "Implemented",
             "Validated",
         ]
-        table = [
-            headerLabels
-        ] + self._model.constraintCheckModel.getConstraintsListFull()
-        sortableModel = QSortFilterProxyModel()
-        sortableModel.setSourceModel(SimpleTableModel(table))
-        self.propertiesTableView.setModel(sortableModel)
-        header = self.propertiesTableView.horizontalHeader()
-        headerResizeNeatly(header)
-        self.propertiesTableView.selectionModel().currentChanged.connect(
-            self._onPropertySelectionChanged
-        )
-        if len(table) > 1:
-            self.propertiesTableView.selectRow(0)
-
-    def _onValidationStateChanged(self) -> None:
-        data = self._model.constraintCheckModel.getConstraintsListFull()
-        model = self.propertiesTableView.model()
-        if not isinstance(model, QSortFilterProxyModel):
-            return
-        sourceModel = model.sourceModel()
-        validatedColumnIndex = 5
-        for rowIndex, row in enumerate(data):
-            sourceModel.setData(
-                sourceModel.index(rowIndex, validatedColumnIndex), row[5]
+        for i, headerLabel in enumerate(headerLabels):
+            self.constraintsTableModel.setHeaderData(
+                i, Qt.Orientation.Horizontal, headerLabel
             )
+        self.constraintsTableModel.select()
+        self.constraintsTableView.hideColumn(0)
+        headerResizeNeatly(self.constraintsTableView.horizontalHeader())
 
-    def _onPropertySelectionChanged(self, current: QModelIndex, _: QModelIndex) -> None:
+        try:
+            self.constraintsTableView.selectRow(0)
+        except:
+            pass
+
+    def _updateConstraintsTable(self, table: str) -> None:
+        if table != "constraints":
+            return
+
+        self.constraintsTableModel.select()
+
+    def _onConstraintSelectionChanged(
+        self, current: QModelIndex, _: QModelIndex
+    ) -> None:
         if current == None:
             return
         tableModel = current.model()
-        propId = tableModel.data(tableModel.index(current.row(), 0))
-        constraintId = tableModel.data(tableModel.index(current.row(), 2))
-        self._model.constraintCheckModel.setFocusedConstraint(propId, constraintId)
+        rowId = tableModel.data(tableModel.index(current.row(), 0))
+        self._model.constraintCheckModel.setFocusedConstraint(rowId)
 
     def _onFocusedConstraintUpdated(self) -> None:
         focusedConstraint = self._model.constraintCheckModel.focusedConstraint
@@ -245,7 +250,7 @@ class ConstraintsTab(QWidget, Ui_ConstraintTab):
         validatedConstraints = sorted(
             [
                 c
-                for c in self._model.constraintCheckModel.constraints.values()
+                for c in self._model.constraintCheckModel.constraints
                 if c.validationState
                 in [ValidationState.VALIDATED, ValidationState.PARTIAL]
             ]
