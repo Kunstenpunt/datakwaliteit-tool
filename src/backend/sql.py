@@ -9,7 +9,7 @@ from .utils import stringOrDefault
 
 class SqlDatabase(QObject):
     tableAdded = Signal(str)
-    tableUpdated = Signal(str)
+    tableUpdated = Signal(str, int)
 
     def __init__(self) -> None:
         super().__init__()
@@ -86,4 +86,4 @@ class SqlDatabase(QObject):
                 f"failed to update row {rowId} in table {table} with values {keyValueMaping.items()}"
             )
             print(query.lastError())
-        self.tableUpdated.emit(table)
+        self.tableUpdated.emit(table, rowId[1])

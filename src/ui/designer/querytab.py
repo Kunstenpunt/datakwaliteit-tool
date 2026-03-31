@@ -15,9 +15,9 @@ from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
     QFont, QFontDatabase, QGradient, QIcon,
     QImage, QKeySequence, QLinearGradient, QPainter,
     QPalette, QPixmap, QRadialGradient, QTransform)
-from PySide6.QtWidgets import (QApplication, QHBoxLayout, QHeaderView, QLabel,
-    QPlainTextEdit, QPushButton, QSizePolicy, QSplitter,
-    QTableView, QVBoxLayout, QWidget)
+from PySide6.QtWidgets import (QAbstractItemView, QApplication, QHBoxLayout, QHeaderView,
+    QLabel, QPlainTextEdit, QPushButton, QSizePolicy,
+    QSplitter, QTableView, QVBoxLayout, QWidget)
 
 class Ui_QueryTab(object):
     def setupUi(self, QueryTab): # type: ignore
@@ -98,6 +98,7 @@ class Ui_QueryTab(object):
         self.verticalLayoutRight.setContentsMargins(0, 0, 0, 0)
         self.tableView = QTableView(self.verticalLayoutWidget2)
         self.tableView.setObjectName(u"tableView")
+        self.tableView.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         self.tableView.setSortingEnabled(True)
         self.tableView.horizontalHeader().setStretchLastSection(True)
 

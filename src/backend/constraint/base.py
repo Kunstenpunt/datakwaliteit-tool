@@ -186,6 +186,10 @@ class Constraint(Item):
         self._exceptionIds = value
         self._filterExceptions()
 
+    @property
+    def tableName(self) -> str:
+        return f"{self.property.identifier}_{self.identifier}"
+
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, Constraint):
             return NotImplemented

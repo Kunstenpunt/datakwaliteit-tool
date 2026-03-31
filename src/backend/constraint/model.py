@@ -20,7 +20,7 @@ from ..wikibasehelper import WikibaseConfig, WikibaseQueryRunner
 
 class ConstraintHelper(QObject):
     qualifiersUpdated = Signal()
-    violationsUpdated = Signal()
+    violationsUpdated = Signal(Constraint)
 
     exceptionsUpdated = Signal()
     inputCountUpdated = Signal()
@@ -167,7 +167,7 @@ class ConstraintHelper(QObject):
                 if self.constraint.validationMode == ValidationMode.NO_LIMIT
                 else ValidationState.PARTIAL
             )
-            self.violationsUpdated.emit()
+            self.violationsUpdated.emit(self.constraint)
         else:
             self._updateValidationState(ValidationState.FAILED)
 
@@ -199,7 +199,6 @@ class ConstraintCheckModel(QObject):
     focusedConstraintUpdated = Signal()
     focusedConstraintInputCountUpdated = Signal()
     focusedConstraintQualifiersUpdated = Signal()
-    focusedConstraintViolationsUpdated = Signal()
     validateAllDone = Signal()
 
     def __init__(
@@ -223,11 +222,11 @@ class ConstraintCheckModel(QObject):
         )
         self._constraintHelper.inputCountUpdated.connect(self._onInputCountUpdated)
         self._constraintHelper.qualifiersUpdated.connect(self._onQualifiersUpdated)
-        self._constraintHelper.violationsUpdated.connect(self._onViolationsUpdated)
-        self._constraintHelper.validationStateUpdated.connect(self._validateNextInQueue)
+        self._constraintHelper.violationsUpdated.connect(self._writeViolationsToSql)
         self._constraintHelper.validationStateUpdated.connect(
             self._updateValidationStateSql
         )
+        self._constraintHelper.validationStateUpdated.connect(self._validateNextInQueue)
 
         self.constraints: Sequence[Constraint] = []
         self.focusedConstraint: Optional[Constraint] = None
@@ -320,8 +319,8 @@ class ConstraintCheckModel(QObject):
         if self._validatingQueue:
             self._validationQueue.append(self.focusedConstraint)
         else:
-            self._constraintHelper.queryViolations(self.focusedConstraint)
             self._constraintHelper.queryExceptions(self.focusedConstraint)
+            self._constraintHelper.queryViolations(self.focusedConstraint)
 
     def _updateValidationStateSql(self, c: Constraint) -> None:
         if c is None:
@@ -361,8 +360,9 @@ class ConstraintCheckModel(QObject):
             and constraint.validationState == ValidationState.UNVALIDATED
         ):
             self._validationQueue.pop()
-            self._constraintHelper.queryViolations(constraint)
             self._constraintHelper.queryExceptions(constraint)
+            self._constraintHelper.queryViolations(constraint)
+
         else:
             self._validationQueue.pop()
             self._validateNextInQueue()
@@ -377,7 +377,9 @@ class ConstraintCheckModel(QObject):
         if c == self.focusedConstraint:
             self.focusedConstraintQualifiersUpdated.emit()
 
-    def _onViolationsUpdated(self) -> None:
-        c = self._constraintHelper.constraint
-        if c == self.focusedConstraint:
-            self.focusedConstraintViolationsUpdated.emit()
+    def _writeViolationsToSql(self, c: Constraint) -> None:
+        if c.violations:
+            table = [[i - 1] + list(row) for (i, row) in enumerate(c.violations)]
+            table[0][0] = "rowId"
+
+            self._sqlDatabase.addTable(c.tableName, table)

@@ -61,20 +61,27 @@ class ConstraintsTab(QWidget, Ui_ConstraintTab):
         self._model.constraintCheckModel.focusedConstraintQualifiersUpdated.connect(
             self._updateFocusedConstraintLabel
         )
-        self._model.constraintCheckModel.focusedConstraintViolationsUpdated.connect(
-            self._updateViolations
-        )
         self._model.constraintCheckModel.validateAllDone.connect(
             self._updateValidateAllLabel
         )
 
         self._model.sqlDatabase.tableAdded.connect(self._reloadConstraintsTable)
+        self._model.sqlDatabase.tableAdded.connect(self._loadViolations)
         self._model.sqlDatabase.tableUpdated.connect(self._updateConstraintsTable)
 
         self.constraintsTableModel = SqlTableModel()
         self.constraintsTableView.setModel(self.constraintsTableModel)
+        self.constraintsTableModel.selectionModel = (
+            self.constraintsTableView.selectionModel()
+        )
         self.constraintsTableView.selectionModel().currentChanged.connect(
             self._onConstraintSelectionChanged
+        )
+
+        self.violationsTableModel = SqlTableModel()
+        self.violationsTableView.setModel(self.violationsTableModel)
+        self.violationsTableModel.selectionModel = (
+            self.violationsTableView.selectionModel()
         )
 
     def _updateConstraints(self) -> None:
@@ -107,7 +114,7 @@ class ConstraintsTab(QWidget, Ui_ConstraintTab):
         except:
             pass
 
-    def _updateConstraintsTable(self, table: str) -> None:
+    def _updateConstraintsTable(self, table: str, rowId: int) -> None:
         if table != "constraints":
             return
 
@@ -133,7 +140,7 @@ class ConstraintsTab(QWidget, Ui_ConstraintTab):
         self.pageSpinBox.setValue(focusedConstraint.page)
         self.sortedCheckBox.setChecked(focusedConstraint.sort)
         self.validateButton.setEnabled(focusedConstraint.implemented)
-        self._updateViolations()
+        self._loadViolations(focusedConstraint.tableName)
 
     def _updateFocusedConstraintLabel(self) -> None:
         constraint = self._model.constraintCheckModel.focusedConstraint
@@ -193,12 +200,15 @@ class ConstraintsTab(QWidget, Ui_ConstraintTab):
             limitMode, limit, page, sort
         )
 
-    def _updateViolations(self) -> None:
+    def _loadViolations(self, table: str) -> None:
         constraint = self._model.constraintCheckModel.focusedConstraint
-        if not constraint:
+        if not constraint or constraint.tableName != table:
             return
+        self.violationsTableModel.setTable(table)
+        self.violationsTableModel.select()
+        self.violationsTableView.hideColumn(0)
+        headerResizeNeatly(self.violationsTableView.horizontalHeader())
 
-        self.violationsTableView.updateViolations(constraint)
         self._updateViolationsLabel(constraint)
         self.exportButton.setEnabled(constraint.violations is not None)
 

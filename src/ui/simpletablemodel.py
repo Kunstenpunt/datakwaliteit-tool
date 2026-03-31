@@ -1,9 +1,11 @@
-from typing import Sequence
+from typing import Optional, Sequence
 
 from PySide6.QtCore import (
     QAbstractTableModel,
     QModelIndex,
     QPersistentModelIndex,
+    QItemSelection,
+    QItemSelectionModel,
     Qt,
     QUrl,
 )
@@ -39,6 +41,8 @@ def headerResizeNeatly(header: QHeaderView) -> None:
 class SqlTableModel(QSqlTableModel):
     def __init__(self) -> None:
         super().__init__()
+
+        self.selectionModel: Optional[QItemSelectionModel] = None
 
     def data(
         self,
@@ -86,89 +90,43 @@ class SqlTableModel(QSqlTableModel):
         return None
 
     def select(self) -> bool:
+        selectedRowId = self._getSelectedRowId()
+
         if not QSqlTableModel.select(self):
             return False
 
         self._fetchAll()
+
+        self._selectRowId(selectedRowId)
+
         return True
+
+    def _getSelectedRowId(self) -> int:
+        if self.selectionModel:
+            selectedIndexes = self.selectionModel.selectedIndexes()
+            if selectedIndexes:
+                currentRow = selectedIndexes[0].row()
+                return int(self.index(currentRow, 0).data(Qt.ItemDataRole.DisplayRole))
+
+        return -1
+
+    def _selectRowId(self, rowId: int) -> None:
+        if rowId == -1 or not self.selectionModel:
+            return
+
+        start = self.index(0, 0)
+        foundIndexes = self.match(
+            start, Qt.ItemDataRole.DisplayRole, rowId, flags=Qt.MatchFlag.MatchExactly
+        )
+        if foundIndexes:
+            selection = QItemSelection(
+                foundIndexes[0],
+                foundIndexes[0].siblingAtColumn(self.columnCount() - 1),
+            )
+            self.selectionModel.select(
+                selection, QItemSelectionModel.SelectionFlag.Select
+            )
 
     def _fetchAll(self) -> None:
         while self.canFetchMore():
             self.fetchMore()
-
-
-class SimpleTableModel(QAbstractTableModel):
-    def __init__(self, data: Sequence[Sequence[object]]) -> None:
-        super().__init__()
-        self._data: list[list[object]] = [list(inner) for inner in data]
-
-    def data(
-        self,
-        index: QModelIndex | QPersistentModelIndex,
-        role: int = Qt.ItemDataRole.DisplayRole,
-    ) -> object:
-        if role == Qt.ItemDataRole.DisplayRole:
-            data = self._data[index.row() + 1][index.column()]
-            if type(data) == type(True):
-                return "✓" if data else "✗"
-            if type(data) == ValidationState:
-                return data.name
-            return data
-
-        if role == Qt.ItemDataRole.BackgroundRole:
-            data = self._data[index.row() + 1][index.column()]
-            if type(data) == type(True):
-                return (
-                    QBrush(Qt.GlobalColor.darkGreen)
-                    if data
-                    else QBrush(Qt.GlobalColor.darkRed)
-                )
-            if type(data) == ValidationState:
-                match data:
-                    case ValidationState.FAILED:
-                        return QBrush(Qt.GlobalColor.darkRed)
-                    case ValidationState.UNVALIDATED:
-                        return QBrush(Qt.GlobalColor.darkGray)
-                    case ValidationState.VALIDATED:
-                        return QBrush(Qt.GlobalColor.darkGreen)
-                    case ValidationState.PARTIAL:
-                        return QBrush(QColor(0x60, 0x80, 0))
-                    case ValidationState.VALIDATING:
-                        return QBrush(Qt.GlobalColor.darkYellow)
-        if role == Qt.ItemDataRole.ForegroundRole:
-            data = self._data[index.row() + 1][index.column()]
-            if type(data) == type(True) or type(data) == ValidationState:
-                return QBrush(Qt.GlobalColor.white)
-
-        return None
-
-    def rowCount(
-        self, parent: QModelIndex | QPersistentModelIndex = QModelIndex()
-    ) -> int:
-        return len(self._data) - 1
-
-    def columnCount(
-        self, parent: QModelIndex | QPersistentModelIndex = QModelIndex()
-    ) -> int:
-        return len(self._data[0])
-
-    def headerData(
-        self,
-        section: int,
-        orientation: Qt.Orientation,
-        role: int = Qt.ItemDataRole.DisplayRole,
-    ) -> object:
-        if role == Qt.ItemDataRole.DisplayRole:
-            if orientation == Qt.Orientation.Horizontal:
-                return self._data[0][section]
-        return None
-
-    def setData(
-        self,
-        index: QModelIndex | QPersistentModelIndex,
-        value: object,
-        role: int = Qt.ItemDataRole.DisplayRole,
-    ) -> bool:
-        self._data[index.row() + 1][index.column()] = value
-        self.dataChanged.emit(index, index)
-        return True

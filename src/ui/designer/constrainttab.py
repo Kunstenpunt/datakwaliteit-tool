@@ -20,8 +20,6 @@ from PySide6.QtWidgets import (QAbstractItemView, QApplication, QCheckBox, QComb
     QPushButton, QSizePolicy, QSpacerItem, QSpinBox,
     QSplitter, QTableView, QVBoxLayout, QWidget)
 
-from ..violations_table import ViolationsTable
-
 class Ui_ConstraintTab(object):
     def setupUi(self, ConstraintTab): # type: ignore
         if not ConstraintTab.objectName():
@@ -64,6 +62,7 @@ class Ui_ConstraintTab(object):
 
         self.constraintsTableView = QTableView(self.verticalLayoutWidgetLeft)
         self.constraintsTableView.setObjectName(u"constraintsTableView")
+        self.constraintsTableView.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         self.constraintsTableView.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
         self.constraintsTableView.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
         self.constraintsTableView.setSortingEnabled(True)
@@ -195,8 +194,9 @@ class Ui_ConstraintTab(object):
 
         self.verticalLayoutRight.addLayout(self.horizontalLayoutRight)
 
-        self.violationsTableView = ViolationsTable(self.verticalLayoutWidgetRight)
+        self.violationsTableView = QTableView(self.verticalLayoutWidgetRight)
         self.violationsTableView.setObjectName(u"violationsTableView")
+        self.violationsTableView.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         self.violationsTableView.setSortingEnabled(True)
 
         self.verticalLayoutRight.addWidget(self.violationsTableView)
