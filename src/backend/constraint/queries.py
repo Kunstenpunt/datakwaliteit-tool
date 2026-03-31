@@ -285,7 +285,7 @@ class QueryBuilder:
                     OPTIONAL {{ ?statement kppq:{s.identifier} ?separator{i} }} ."""
             for (i, s) in enumerate(constraint.separators)
         )
-        innerGroupBy = f"?item {f", ".join(f"?separator{i}" for i in range(len(constraint.separators)))}"
+        innerGroupBy = f"?item {f" ".join(f"?separator{i}" for i in range(len(constraint.separators)))}"
         innerHaving = "?valueCount > 1"
         innerOrderBy = "?item ?valueCount"
         finalConditions = f"""
@@ -437,7 +437,7 @@ class QueryBuilder:
                     OPTIONAL {{ ?statement kppq:{s.identifier} ?separator{i} }} ."""
             for (i, s) in enumerate(constraint.separators)
         )
-        innerGroupBy = f"?value {f", ".join(f"?separator{i}" for i in range(len(constraint.separators)))}"
+        innerGroupBy = f"?value {f" ".join(f"?separator{i}" for i in range(len(constraint.separators)))}"
         innerHaving = "?statementCount > 1"
         innerOrderBy = "?value ?statementCount"
         finalConditions = f"""
