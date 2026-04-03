@@ -27,7 +27,7 @@ class TableClickHandler:
 
     def onTableDoubleClicked(self, index: QModelIndex) -> None:
         possibleID = index.data()
-        url = urlFromId(possibleID, self._wikibaseConfig.getBaseUrl())
+        url = urlFromId(possibleID, self._wikibaseConfig.baseUrl)
         if url:
             QDesktopServices.openUrl(QUrl(url))
 

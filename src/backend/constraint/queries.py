@@ -20,8 +20,8 @@ class QueryBuilder:
         self._wikibaseConfig = wikibaseConfig
 
     def buildConstrainedPropertiesQuery(self) -> str:
-        defaultLanguage = self._wikibaseConfig.getDefaultLanguage()
-        constraintPid = self._wikibaseConfig.getPropertyConstraintPid()
+        defaultLanguage = self._wikibaseConfig.defaultLanguage
+        constraintPid = self._wikibaseConfig.propertyConstraintPid
         if defaultLanguage == "en":
             return f"""
                 SELECT ?subject ?subjectLabel ?object ?objectLabel
@@ -69,7 +69,7 @@ class QueryBuilder:
                 {{
                     SERVICE wikibase:mwapi
                     {{
-                        bd:serviceParam wikibase:endpoint "{self._wikibaseConfig.getPureUrl()}";
+                        bd:serviceParam wikibase:endpoint "{self._wikibaseConfig.pureUrl}";
                             wikibase:api "Search"; wikibase:limit "once" ;
                             mwapi:srsearch "haswbstatement:{constraint.property.identifier}" ;
                             mwapi:srlimit "1" ; mwapi:srprop "" ; mwapi:srsort "none" ; mwapi:srnamespace "*" .
@@ -85,19 +85,19 @@ class QueryBuilder:
             SELECT ?exception
             WHERE
             {{
-                kp:{constraint.property.identifier} kpp:{self._wikibaseConfig.getPropertyConstraintPid()} ?statement .
-                ?statement kpps:{self._wikibaseConfig.getPropertyConstraintPid()} kp:{constraint.identifier} .
+                kp:{constraint.property.identifier} kpp:{self._wikibaseConfig.propertyConstraintPid} ?statement .
+                ?statement kpps:{self._wikibaseConfig.propertyConstraintPid} kp:{constraint.identifier} .
                 ?statement ?exceptionQualifier ?exception .
 
                 BIND (IRI(replace(str(?exceptionQualifier), str(kppq:), str(kp:)))  AS ?exceptionQualifierItem) .
                 SERVICE wikibase:label
                 {{
-                    bd:serviceParam wikibase:language "en,{self._wikibaseConfig.getDefaultLanguage()}".
+                    bd:serviceParam wikibase:language "en,{self._wikibaseConfig.defaultLanguage}".
                     ?exceptionQualifierItem rdfs:label ?exceptionQualifierLabel .
                 }}
                 FILTER (str(?exceptionQualifierLabel) = "exception to constraint")
 
-                SERVICE wikibase:label {{ bd:serviceParam wikibase:language "{ self._wikibaseConfig.getDefaultLanguage() }" . }}
+                SERVICE wikibase:label {{ bd:serviceParam wikibase:language "{ self._wikibaseConfig.defaultLanguage }" . }}
             }}
         """
 
@@ -126,15 +126,15 @@ class QueryBuilder:
             SELECT DISTINCT ?class ?classLabel ?relation ?relationLabel
             WHERE
             {{
-                ?statement kpps:{self._wikibaseConfig.getPropertyConstraintPid()} kp:{constraint.identifier} .
-                kp:{constraint.property.identifier} kpp:{self._wikibaseConfig.getPropertyConstraintPid()} ?statement .
+                ?statement kpps:{self._wikibaseConfig.propertyConstraintPid} kp:{constraint.identifier} .
+                kp:{constraint.property.identifier} kpp:{self._wikibaseConfig.propertyConstraintPid} ?statement .
                 OPTIONAL
                 {{
                     ?statement ?classQualifier ?class .
                     BIND (IRI(replace(str(?classQualifier), str(kppq:), str(kp:)))  AS ?classQualifierItem) .
                     SERVICE wikibase:label
                     {{
-                        bd:serviceParam wikibase:language "en,{self._wikibaseConfig.getDefaultLanguage()}".
+                        bd:serviceParam wikibase:language "en,{self._wikibaseConfig.defaultLanguage}".
                         ?classQualifierItem rdfs:label ?classQualifierLabel .
                     }}
                     FILTER (str(?classQualifierLabel) = "class")
@@ -145,13 +145,13 @@ class QueryBuilder:
                     BIND (IRI(replace(str(?relationQualifier), str(kppq:), str(kp:)))  AS ?relationQualifierItem) .
                     SERVICE wikibase:label
                     {{
-                        bd:serviceParam wikibase:language "en,{self._wikibaseConfig.getDefaultLanguage()}".
+                        bd:serviceParam wikibase:language "en,{self._wikibaseConfig.defaultLanguage}".
                         ?relationQualifierItem rdfs:label ?relationQualifierLabel .
                         ?relation rdfs:label ?relationLabel .
                     }}
                     FILTER (str(?relationQualifierLabel) = "relation")
                 }}
-                SERVICE wikibase:label {{ bd:serviceParam wikibase:language "{ self._wikibaseConfig.getDefaultLanguage() }" . }}
+                SERVICE wikibase:label {{ bd:serviceParam wikibase:language "{ self._wikibaseConfig.defaultLanguage }" . }}
             }}
         """
 
@@ -160,13 +160,13 @@ class QueryBuilder:
             SELECT DISTINCT ?format
             WHERE
             {{
-                ?statement kpps:{self._wikibaseConfig.getPropertyConstraintPid()} kp:{constraint.identifier} .
-                kp:{constraint.property.identifier} kpp:{self._wikibaseConfig.getPropertyConstraintPid()} ?statement .
+                ?statement kpps:{self._wikibaseConfig.propertyConstraintPid} kp:{constraint.identifier} .
+                kp:{constraint.property.identifier} kpp:{self._wikibaseConfig.propertyConstraintPid} ?statement .
                 ?statement ?formatQualifier ?format .
                 BIND (IRI(replace(str(?formatQualifier), str(kppq:), str(kp:)))  AS ?formatQualifierItem) .
                 SERVICE wikibase:label
                 {{
-                    bd:serviceParam wikibase:language "en,{self._wikibaseConfig.getDefaultLanguage()}".
+                    bd:serviceParam wikibase:language "en,{self._wikibaseConfig.defaultLanguage}".
                     ?formatQualifierItem rdfs:label ?formatQualifierLabel .
                 }}
                 FILTER (str(?formatQualifierLabel) = "format as a regular expression")
@@ -178,20 +178,20 @@ class QueryBuilder:
             SELECT DISTINCT ?prop ?propLabel
             WHERE
             {{
-                ?statement kpps:{self._wikibaseConfig.getPropertyConstraintPid()} kp:{constraint.identifier} .
-                kp:{constraint.property.identifier} kpp:{self._wikibaseConfig.getPropertyConstraintPid()} ?statement .
+                ?statement kpps:{self._wikibaseConfig.propertyConstraintPid} kp:{constraint.identifier} .
+                kp:{constraint.property.identifier} kpp:{self._wikibaseConfig.propertyConstraintPid} ?statement .
                 OPTIONAL
                 {{
                     ?statement ?propertyQualifier ?prop .
                     BIND (IRI(replace(str(?propertyQualifier), str(kppq:), str(kp:)))  AS ?propertyQualifierItem) .
                     SERVICE wikibase:label
                     {{
-                        bd:serviceParam wikibase:language "en,{self._wikibaseConfig.getDefaultLanguage()}".
+                        bd:serviceParam wikibase:language "en,{self._wikibaseConfig.defaultLanguage}".
                         ?propertyQualifierItem rdfs:label ?propertyQualifierLabel .
                     }}
                     FILTER (str(?propertyQualifierLabel) = "property")
                 }}
-                SERVICE wikibase:label {{ bd:serviceParam wikibase:language "{ self._wikibaseConfig.getDefaultLanguage() }" . }}
+                SERVICE wikibase:label {{ bd:serviceParam wikibase:language "{ self._wikibaseConfig.defaultLanguage }" . }}
             }}
         """
 
@@ -200,15 +200,15 @@ class QueryBuilder:
             SELECT DISTINCT ?prop ?propLabel ?value ?valueLabel
             WHERE
             {{
-                ?statement kpps:{self._wikibaseConfig.getPropertyConstraintPid()} kp:{constraint.identifier} .
-                kp:{constraint.property.identifier} kpp:{self._wikibaseConfig.getPropertyConstraintPid()} ?statement .
+                ?statement kpps:{self._wikibaseConfig.propertyConstraintPid} kp:{constraint.identifier} .
+                kp:{constraint.property.identifier} kpp:{self._wikibaseConfig.propertyConstraintPid} ?statement .
                 OPTIONAL
                 {{
                     ?statement ?propertyQualifier ?prop .
                     BIND (IRI(replace(str(?propertyQualifier), str(kppq:), str(kp:)))  AS ?propertyQualifierItem) .
                     SERVICE wikibase:label
                     {{
-                        bd:serviceParam wikibase:language "en,{self._wikibaseConfig.getDefaultLanguage()}".
+                        bd:serviceParam wikibase:language "en,{self._wikibaseConfig.defaultLanguage}".
                         ?propertyQualifierItem rdfs:label ?propertyQualifierLabel .
                     }}
                     FILTER (str(?propertyQualifierLabel) = "property")
@@ -219,12 +219,12 @@ class QueryBuilder:
                     BIND (IRI(replace(str(?valueQualifier), str(kppq:), str(kp:)))  AS ?valueQualifierItem) .
                     SERVICE wikibase:label
                     {{
-                        bd:serviceParam wikibase:language "en,{self._wikibaseConfig.getDefaultLanguage()}".
+                        bd:serviceParam wikibase:language "en,{self._wikibaseConfig.defaultLanguage}".
                         ?valueQualifierItem rdfs:label ?valueQualifierLabel .
                     }}
                     FILTER (str(?valueQualifierLabel) = "item of property constraint")
                 }}
-                SERVICE wikibase:label {{ bd:serviceParam wikibase:language "{ self._wikibaseConfig.getDefaultLanguage() }" . }}
+                SERVICE wikibase:label {{ bd:serviceParam wikibase:language "{ self._wikibaseConfig.defaultLanguage }" . }}
             }}
         """
 
@@ -233,17 +233,17 @@ class QueryBuilder:
             SELECT DISTINCT ?separator ?separatorLabel
             WHERE
             {{
-                ?statement kpps:{self._wikibaseConfig.getPropertyConstraintPid()} kp:{constraint.identifier} .
-                kp:{constraint.property.identifier} kpp:{self._wikibaseConfig.getPropertyConstraintPid()} ?statement .
+                ?statement kpps:{self._wikibaseConfig.propertyConstraintPid} kp:{constraint.identifier} .
+                kp:{constraint.property.identifier} kpp:{self._wikibaseConfig.propertyConstraintPid} ?statement .
                 ?statement ?qualifier ?separator .
                 BIND (IRI(replace(str(?qualifier), str(kppq:), str(kp:)))  AS ?qualifierItem)
                 SERVICE wikibase:label
                 {{
-                    bd:serviceParam wikibase:language "en,{self._wikibaseConfig.getDefaultLanguage()}".
+                    bd:serviceParam wikibase:language "en,{self._wikibaseConfig.defaultLanguage}".
                     ?qualifierItem rdfs:label ?qualifierLabel .
                 }}
                 FILTER (str(?qualifierLabel) = "separator")
-                SERVICE wikibase:label {{ bd:serviceParam wikibase:language "{ self._wikibaseConfig.getDefaultLanguage() }" . }}
+                SERVICE wikibase:label {{ bd:serviceParam wikibase:language "{ self._wikibaseConfig.defaultLanguage }" . }}
             }}
         """
 
@@ -309,7 +309,7 @@ class QueryBuilder:
     ) -> str:
         if constraint.relation != RelationType.INSTANCE_OF:
             return ""
-        relation = self._wikibaseConfig.getInstanceOfPid()
+        relation = self._wikibaseConfig.instanceOfPid
         outerSelection = "?statement ?item ?itemLabel ?value ?valueLabel"
         inputPart = self._buildViolationsQueryInput(
             constraint, ViolationsQueryInputType.STATEMENT_VALUE
@@ -333,7 +333,7 @@ class QueryBuilder:
     ) -> str:
         if constraint.relation != RelationType.INSTANCE_OF:
             return ""
-        relation = self._wikibaseConfig.getInstanceOfPid()
+        relation = self._wikibaseConfig.instanceOfPid
         outerSelection = "(SAMPLE(?statement) AS ?statement) ?item ?itemLabel"
         inputPart = self._buildViolationsQueryInput(
             constraint, ViolationsQueryInputType.ITEM
@@ -612,6 +612,6 @@ class QueryBuilder:
             WHERE
             {{
                 INCLUDE %results{finalConditions}
-                SERVICE wikibase:label {{ bd:serviceParam wikibase:language "{self._wikibaseConfig.getDefaultLanguage()}" }}
+                SERVICE wikibase:label {{ bd:serviceParam wikibase:language "{self._wikibaseConfig.defaultLanguage}" }}
             }}{f"""
             GROUP BY {outerGroupBy}""" if outerGroupBy else ""}"""

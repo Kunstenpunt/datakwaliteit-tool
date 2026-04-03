@@ -122,7 +122,7 @@
          </property>
         </widget>
        </item>
-       <item row="7" column="0">
+       <item row="8" column="0">
         <widget class="QLabel" name="instanceOfPidLabel">
          <property name="text">
           <string>Instance Of PID</string>
@@ -136,7 +136,7 @@
          </property>
         </widget>
        </item>
-       <item row="7" column="1">
+       <item row="8" column="1">
         <widget class="QLineEdit" name="instanceOfPidLineEdit">
          <property name="text">
           <string/>
@@ -146,17 +146,31 @@
          </property>
         </widget>
        </item>
-       <item row="8" column="0">
+       <item row="9" column="0">
         <widget class="QLabel" name="subclassOfPidLabel">
          <property name="text">
           <string>Subclass Of PID</string>
          </property>
         </widget>
        </item>
-       <item row="8" column="1">
+       <item row="9" column="1">
         <widget class="QLineEdit" name="subclassOfPidLineEdit">
          <property name="placeholderText">
           <string>P279</string>
+         </property>
+        </widget>
+       </item>
+       <item row="7" column="0">
+        <widget class="QLabel" name="exceptionToConstraintPidLabel">
+         <property name="text">
+          <string>Exception To Constraint PID</string>
+         </property>
+        </widget>
+       </item>
+       <item row="7" column="1">
+        <widget class="QLineEdit" name="exceptionToConstraintPidLineEdit">
+         <property name="placeholderText">
+          <string>P2303</string>
          </property>
         </widget>
        </item>
@@ -165,7 +179,7 @@
      <item>
       <widget class="QLabel" name="botLoginTitleLabel">
        <property name="text">
-        <string>### Bot Login (needed for QuickStatements)</string>
+        <string>### Bot Login (needed for edits)</string>
        </property>
        <property name="textFormat">
         <enum>Qt::TextFormat::MarkdownText</enum>
@@ -181,24 +195,51 @@
          </property>
         </widget>
        </item>
-       <item row="1" column="0">
-        <widget class="QLabel" name="botPasswordLabel">
-         <property name="text">
-          <string>Bot Password</string>
-         </property>
-        </widget>
-       </item>
        <item row="0" column="1">
         <widget class="QLineEdit" name="botUsernameLineEdit">
          <property name="placeholderText">
-          <string>USERNAME@BOT</string>
+          <string>USERNAME</string>
          </property>
         </widget>
        </item>
        <item row="1" column="1">
-        <widget class="QLineEdit" name="botPasswordLineEdit">
-         <property name="placeholderText">
-          <string>PASSWORD</string>
+        <layout class="QHBoxLayout" name="horizontalLayout">
+         <item>
+          <widget class="QLineEdit" name="botPasswordLineEdit">
+           <property name="echoMode">
+            <enum>QLineEdit::EchoMode::Password</enum>
+           </property>
+           <property name="placeholderText">
+            <string>BOTNAME@PASSWORD</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QPushButton" name="botPasswordHideToggle">
+           <property name="text">
+            <string/>
+           </property>
+           <property name="icon">
+            <iconset theme="QIcon::ThemeIcon::EditFind"/>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QPushButton" name="botPasswordRemoveButton">
+           <property name="text">
+            <string/>
+           </property>
+           <property name="icon">
+            <iconset theme="QIcon::ThemeIcon::EditDelete"/>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+       <item row="1" column="0">
+        <widget class="QLabel" name="botPasswordLabel">
+         <property name="text">
+          <string>Bot Password</string>
          </property>
         </widget>
        </item>

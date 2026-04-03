@@ -15,7 +15,9 @@ from ..sql import SqlDatabase
 from ..utils import idFromUrl, stripUrlPartFromTable
 from ..wikibasehelper import WikibaseConfig, WikibaseQueryRunner
 
-# idee: eis dat alle entiteiten en properties die mappen op properties van wikidata hetzelfde label hebben in het Engels -> op die manier steeds correcte mapping
+VIOLATION_ROW_ID_COLUMN = 0
+VIOLATION_STATEMENT_COLUMN = 1
+VIOLATION_ITEM_COLUMN = 2
 
 
 class ConstraintHelper(QObject):
@@ -85,9 +87,7 @@ class ConstraintHelper(QObject):
         if not result:
             return
 
-        resultStripped = stripUrlPartFromTable(
-            self._wikibaseConfig.getBaseUrl(), result
-        )
+        resultStripped = stripUrlPartFromTable(self._wikibaseConfig.baseUrl, result)
         try:
             self.constraint.exceptionIds = [row[0] for row in resultStripped[1:]]
         except:
@@ -383,3 +383,9 @@ class ConstraintCheckModel(QObject):
             table[0][0] = "rowId"
 
             self._sqlDatabase.addTable(c.tableName, table)
+
+        if c.hiddenViolations:
+            table = [[i - 1] + list(row) for (i, row) in enumerate(c.hiddenViolations)]
+            table[0][0] = "rowId"
+
+            self._sqlDatabase.addTable(c.tableName + "_hidden", table)
