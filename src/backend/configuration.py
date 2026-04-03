@@ -1,8 +1,12 @@
 from enum import StrEnum
 from itertools import chain
-from typing import Mapping
+from typing import Any, Mapping
 
 from PySide6.QtCore import Signal, QObject, QSettings
+
+from keyring import delete_password, get_password, set_password
+
+from .utils import stringOrDefault
 
 ORGANISATION_NAME = "Kunstenpunt"
 APPLICATION_NAME = "datakwaliteit-tool"
@@ -31,6 +35,16 @@ class ExtraWikibaseConfigKey(StrEnum):
 
     INSTANCE_OF_PID = "INSTANCE_OF_PID"
     SUBCLASS_OF_PID = "SUBCLASS_OF_PID"
+    EXCEPTION_TO_CONSTRAINT_PID = "EXCEPTION_TO_CONSTRAINT_PID"
+    BOT_USERNAME = "BOT_USERNAME"
+
+
+class SensitiveConfigKey(StrEnum):
+    """
+    Extra keys for values that are sensitive and are not stored in plaintext.
+    """
+
+    BOT_PASSWORD = "BOT_PASSWORD"
 
 
 CONFIG_KEY_TYPES = [WbiConfigKey, ExtraWikibaseConfigKey]
@@ -48,6 +62,23 @@ class ConfigHandler(QObject):
         self._settings = QSettings(ORGANISATION_NAME, APPLICATION_NAME)
         self._modified = False
 
+    def removeSensitiveKey(
+        self, currentUsername: str, usernameKey: ExtraWikibaseConfigKey
+    ) -> None:
+        savedUsername = self.getSingleValue(usernameKey)
+        try:
+            delete_password(APPLICATION_NAME, savedUsername)
+            delete_password(APPLICATION_NAME, currentUsername)
+        except:
+            pass
+        self.configChanged.emit()
+
+    def getSingleValue(self, key: str) -> Any:
+        self._settings.beginGroup(WBI_CONFIGURATION_KEY)
+        value = self._settings.value(key)
+        self._settings.endGroup()
+        return value
+
     def getWikibaseConfigPairs(self) -> ConfigMapping:
         self._settings.beginGroup(WBI_CONFIGURATION_KEY)
         configPairs = {
@@ -56,6 +87,13 @@ class ConfigHandler(QObject):
             if key in chain(*CONFIG_KEY_TYPES)  # type: ignore
         }
         self._settings.endGroup()
+
+        botUsername = self.getSingleValue(ExtraWikibaseConfigKey.BOT_USERNAME)
+        if botUsername:
+            botPassword = get_password(APPLICATION_NAME, botUsername)
+            if botPassword:
+                configPairs[SensitiveConfigKey.BOT_PASSWORD] = botPassword
+
         return configPairs
 
     def setWikibaseConfigPairs(self, newConfigPairs: ConfigMapping) -> None:
@@ -64,6 +102,14 @@ class ConfigHandler(QObject):
         for keyType in CONFIG_KEY_TYPES:
             self._setSettingsValuesForKeyType(newConfigPairs, keyType)
         self._settings.endGroup()
+
+        botUsername = self.getSingleValue(ExtraWikibaseConfigKey.BOT_USERNAME)
+        botPassword = stringOrDefault(
+            newConfigPairs.get(SensitiveConfigKey.BOT_PASSWORD)
+        )
+        if botUsername and botPassword:
+            set_password(APPLICATION_NAME, botUsername, botPassword)
+            self.modified = True
 
         self._emitSignalIfNeeded()
 

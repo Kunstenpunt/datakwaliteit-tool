@@ -3,10 +3,18 @@ from typing import Any, Callable, Optional
 
 from PySide6.QtCore import QMetaObject, QObject, QThread, Signal
 
+from wikibaseintegrator import WikibaseIntegrator  # type: ignore[attr-defined]
+from wikibaseintegrator.datatypes import Item  # type: ignore[attr-defined]
 from wikibaseintegrator.wbi_config import config
 from wikibaseintegrator.wbi_helpers import execute_sparql_query
+from wikibaseintegrator.wbi_login import Login
 
-from .configuration import ConfigHandler, ExtraWikibaseConfigKey, WbiConfigKey
+from .configuration import (
+    ConfigHandler,
+    ExtraWikibaseConfigKey,
+    SensitiveConfigKey,
+    WbiConfigKey,
+)
 from .types import Table
 from .utils import queryResultToTable, stringOrDefault
 
@@ -18,8 +26,10 @@ class WikibaseConfig(QObject):
         super().__init__()
 
         self._configHandler = configHandler
+        self._exceptionToConstraintPid = ""
         self._instanceOfPid = ""
         self._subclassOfPid = ""
+        self._login: Optional[Login] = None
 
         self._configHandler.configChanged.connect(self._loadWikibaseConfig)
         self._loadWikibaseConfig()
@@ -38,36 +48,64 @@ class WikibaseConfig(QObject):
             self._configHandler.setWikibaseConfigPairs(config)
             return
 
+        botUserName = stringOrDefault(
+            wbiConfigPairs.get(ExtraWikibaseConfigKey.BOT_USERNAME)
+        )
+        botPassword = stringOrDefault(
+            wbiConfigPairs.get(SensitiveConfigKey.BOT_PASSWORD)
+        )
+        if botUserName and botPassword:
+            self._login = Login(user=botUserName, password=botPassword)
+        else:
+            self._login = None
+
         self._instanceOfPid = stringOrDefault(
-            wbiConfigPairs.get(ExtraWikibaseConfigKey.INSTANCE_OF_PID, "")
+            wbiConfigPairs.get(ExtraWikibaseConfigKey.INSTANCE_OF_PID)
         )
         self._subclassOfPid = stringOrDefault(
-            wbiConfigPairs.get(ExtraWikibaseConfigKey.SUBCLASS_OF_PID, "")
+            wbiConfigPairs.get(ExtraWikibaseConfigKey.SUBCLASS_OF_PID)
+        )
+        self._exceptionToConstraintPid = stringOrDefault(
+            wbiConfigPairs.get(ExtraWikibaseConfigKey.EXCEPTION_TO_CONSTRAINT_PID)
         )
 
         self.wikibaseConfigChanged.emit()
 
-    def getPropertyConstraintPid(self) -> str:
+    @property
+    def propertyConstraintPid(self) -> str:
         return stringOrDefault(config[WbiConfigKey.PROPERTY_CONSTRAINT_PID])
 
-    def getDefaultLanguage(self) -> str:
+    @property
+    def defaultLanguage(self) -> str:
         return stringOrDefault(config[WbiConfigKey.DEFAULT_LANGUAGE])
 
-    def getBaseUrl(self) -> str:
+    @property
+    def baseUrl(self) -> str:
         return stringOrDefault(config[WbiConfigKey.WIKIBASE_URL])
 
-    def getPureUrl(self) -> str:
+    @property
+    def pureUrl(self) -> str:
         return (
             stringOrDefault(config[WbiConfigKey.WIKIBASE_URL])
             .replace("https://", "")
             .replace("http://", "")
         )
 
-    def getInstanceOfPid(self) -> str:
+    @property
+    def instanceOfPid(self) -> str:
         return self._instanceOfPid
 
-    def getSubclassOfPid(self) -> str:
+    @property
+    def subclassOfPid(self) -> str:
         return self._subclassOfPid
+
+    @property
+    def exceptionToConstraintPid(self) -> str:
+        return self._exceptionToConstraintPid
+
+    @property
+    def login(self) -> Optional[Login]:
+        return self._login
 
 
 class QueryThread(QThread):
@@ -97,6 +135,50 @@ class QueryThread(QThread):
         except Exception as e:
             print(e)
             return None
+
+
+class WikibaseEditor(QObject):
+    def __init__(self, wikibaseConfig: WikibaseConfig) -> None:
+        super().__init__()
+
+        self._wikibaseConfig = wikibaseConfig
+        self._wbi = WikibaseIntegrator()
+
+    def updateException(
+        self,
+        propId: str,
+        constraintId: str,
+        exceptionId: str,
+        removeException: bool = False,
+    ) -> None:
+        login = self._wikibaseConfig.login
+        constraintPid = self._wikibaseConfig.propertyConstraintPid
+        exceptionPid = self._wikibaseConfig.exceptionToConstraintPid
+        if not login or not constraintPid or not exceptionPid:
+            return
+
+        prop = self._wbi.property.get(propId)
+        targetConstraintStatements = []
+        for constraintStatement in prop.claims.get(constraintPid):
+            try:
+                if (
+                    constraintStatement.mainsnak.datavalue["value"]["id"]
+                    == constraintId
+                ):
+                    targetConstraintStatements.append(constraintStatement)
+            except:
+                pass
+
+        if len(targetConstraintStatements) != 1:
+            return
+
+        targetconstraintStatement = targetConstraintStatements[0]
+        exceptionItem = Item(prop_nr=exceptionPid, value=exceptionId)
+        if removeException:
+            targetconstraintStatement.qualifiers.remove(exceptionItem)
+        else:
+            targetconstraintStatement.qualifiers.add(exceptionItem)
+        prop.write(login=login)
 
 
 class WikibaseQueryRunner(QObject):

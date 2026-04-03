@@ -42,7 +42,7 @@ class Exporter(QObject):
         sheetData = constraint.violations or []
         if exportUrl:
             sheetData = [
-                [urlFromId(el, self.wikibaseConfig.getBaseUrl()) or el for el in row]
+                [urlFromId(el, self.wikibaseConfig.baseUrl) or el for el in row]
                 for row in sheetData
             ]
         return (sheetName, sheetData)

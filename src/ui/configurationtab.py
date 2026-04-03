@@ -2,7 +2,11 @@ from typing import Callable
 
 from PySide6.QtWidgets import QLineEdit, QWidget
 
-from ..backend.configuration import ExtraWikibaseConfigKey, WbiConfigKey
+from ..backend.configuration import (
+    ExtraWikibaseConfigKey,
+    SensitiveConfigKey,
+    WbiConfigKey,
+)
 from ..backend.model import Model
 from ..backend.utils import stringOrDefault
 
@@ -18,6 +22,8 @@ class ConfigurationTab(QWidget, Ui_ConfigurationTab):
 
         self.discardButton.clicked.connect(self._loadConfig)
         self.saveButton.clicked.connect(self._saveConfig)
+        self.botPasswordHideToggle.clicked.connect(self._toggleBotPasswordReadable)
+        self.botPasswordRemoveButton.clicked.connect(self._removeBotPassword)
 
         self._lineEditsToConfigKeys = {
             self.wikibaseUrlLineEdit: WbiConfigKey.WIKIBASE_URL,
@@ -27,8 +33,11 @@ class ConfigurationTab(QWidget, Ui_ConfigurationTab):
             self.mediawikiRestUrlLineEdit: WbiConfigKey.MEDIAWIKI_REST_URL,
             self.sparqlEndpointUrlLineEdit: WbiConfigKey.SPARQL_ENDPOINT_URL,
             self.propertyConstraintPidLineEdit: WbiConfigKey.PROPERTY_CONSTRAINT_PID,
+            self.exceptionToConstraintPidLineEdit: ExtraWikibaseConfigKey.EXCEPTION_TO_CONSTRAINT_PID,
             self.instanceOfPidLineEdit: ExtraWikibaseConfigKey.INSTANCE_OF_PID,
             self.subclassOfPidLineEdit: ExtraWikibaseConfigKey.SUBCLASS_OF_PID,
+            self.botUsernameLineEdit: ExtraWikibaseConfigKey.BOT_USERNAME,
+            self.botPasswordLineEdit: SensitiveConfigKey.BOT_PASSWORD,
         }
 
         self._lineEditsWbiValueModified = {
@@ -48,7 +57,7 @@ class ConfigurationTab(QWidget, Ui_ConfigurationTab):
     ) -> Callable[[str], None]:
         def onTextEdited(text: str) -> None:
             self._lineEditsWbiValueModified[lineEdit] = (
-                text != self._model.configHandler.getWikibaseConfigPairs().get(key)
+                text != self._model.configHandler.getSingleValue(key)
             )
             self._updateLineEditFont(lineEdit)
             self._updateEnabledButtons()
@@ -102,3 +111,16 @@ class ConfigurationTab(QWidget, Ui_ConfigurationTab):
                 return
         self.saveButton.setEnabled(False)
         self.discardButton.setEnabled(False)
+
+    def _toggleBotPasswordReadable(self) -> None:
+        self.botPasswordLineEdit.setEchoMode(
+            QLineEdit.EchoMode.Password
+            if self.botPasswordLineEdit.echoMode() == QLineEdit.EchoMode.Normal
+            else QLineEdit.EchoMode.Normal
+        )
+
+    def _removeBotPassword(self) -> None:
+        self._model.configHandler.removeSensitiveKey(
+            self.botUsernameLineEdit.text().strip(), ExtraWikibaseConfigKey.BOT_USERNAME
+        )
+        self.botPasswordLineEdit.setText("")

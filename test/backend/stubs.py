@@ -56,24 +56,6 @@ class WikibaseConfigStub(QObject):
         self.pureUrl = "base.url"
         self.subclassOfPid = "P279"
 
-    def getBaseUrl(self):
-        return self.baseUrl
-
-    def getDefaultLanguage(self):
-        return self.defaultLanguage
-
-    def getInstanceOfPid(self):
-        return self.instanceOfPid
-
-    def getPropertyConstraintPid(self):
-        return self.propertyConstraintPid
-
-    def getPureUrl(self):
-        return self.pureUrl
-
-    def getSubclassOfPid(self):
-        return self.subclassOfPid
-
 
 class WikibaseQueryRunnerStub(QObject):
     queryStarted = Signal()

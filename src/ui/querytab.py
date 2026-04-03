@@ -41,7 +41,7 @@ class QueryTab(QWidget, Ui_QueryTab):
         result = self.model.wikibaseQueryRunner.queryResult
         if not result:
             return
-        result = stripUrlPartFromTable(self.model.wikibaseConfig.getBaseUrl(), result)
+        result = stripUrlPartFromTable(self.model.wikibaseConfig.baseUrl, result)
         table = [[i - 1] + list(row) for (i, row) in enumerate(result)]
         table[0][0] = "rowId"
         self.model.sqlDatabase.addTable("queryResult", table)

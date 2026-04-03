@@ -1,17 +1,17 @@
 from PySide6.QtCore import (
     QFileInfo,
     QModelIndex,
-    QSortFilterProxyModel,
+    QPoint,
     QStandardPaths,
     Qt,
 )
-from PySide6.QtWidgets import QFileDialog, QWidget
-from PySide6.QtSql import QSqlTableModel
+from PySide6.QtGui import QAction
+from PySide6.QtWidgets import QFileDialog, QMenu, QWidget
 
 from ..backend.constraint.base import Constraint, ValidationMode, ValidationState
+from ..backend.constraint.model import VIOLATION_ITEM_COLUMN, VIOLATION_ROW_ID_COLUMN
 from ..backend.export import Exporter
 from ..backend.model import Model
-from ..backend.sql import SqlDatabase
 
 from .designer.constrainttab import Ui_ConstraintTab
 from .simpletablemodel import (
@@ -83,6 +83,11 @@ class ConstraintsTab(QWidget, Ui_ConstraintTab):
         self.violationsTableModel.selectionModel = (
             self.violationsTableView.selectionModel()
         )
+        self.violationsTableView.customContextMenuRequested.connect(
+            self._violationsTableContextMenuPopup
+        )
+
+        self.violationsLabel.linkActivated.connect(self._violationsTableShowHidden)
 
     def _updateConstraints(self) -> None:
         self._model.constraintCheckModel.queryConstraints()
@@ -106,7 +111,7 @@ class ConstraintsTab(QWidget, Ui_ConstraintTab):
                 i, Qt.Orientation.Horizontal, headerLabel
             )
         self.constraintsTableModel.select()
-        self.constraintsTableView.hideColumn(0)
+        self.constraintsTableView.hideColumn(VIOLATION_ROW_ID_COLUMN)
         headerResizeNeatly(self.constraintsTableView.horizontalHeader())
 
         try:
@@ -126,7 +131,9 @@ class ConstraintsTab(QWidget, Ui_ConstraintTab):
         if current == None:
             return
         tableModel = current.model()
-        rowId = tableModel.data(tableModel.index(current.row(), 0))
+        rowId = tableModel.data(
+            tableModel.index(current.row(), VIOLATION_ROW_ID_COLUMN)
+        )
         self._model.constraintCheckModel.setFocusedConstraint(rowId)
 
     def _onFocusedConstraintUpdated(self) -> None:
@@ -204,13 +211,16 @@ class ConstraintsTab(QWidget, Ui_ConstraintTab):
         constraint = self._model.constraintCheckModel.focusedConstraint
         if not constraint or constraint.tableName != table:
             return
-        self.violationsTableModel.setTable(table)
-        self.violationsTableModel.select()
-        self.violationsTableView.hideColumn(0)
-        headerResizeNeatly(self.violationsTableView.horizontalHeader())
 
+        self._loadViolationsTable(table)
         self._updateViolationsLabel(constraint)
         self.exportButton.setEnabled(constraint.violations is not None)
+
+    def _loadViolationsTable(self, table: str) -> None:
+        self.violationsTableModel.setTable(table)
+        self.violationsTableModel.select()
+        self.violationsTableView.hideColumn(VIOLATION_ROW_ID_COLUMN)
+        headerResizeNeatly(self.violationsTableView.horizontalHeader())
 
     def _updateViolationsLabel(self, constraint: Constraint) -> None:
         if constraint.violations is None:
@@ -225,11 +235,51 @@ class ConstraintsTab(QWidget, Ui_ConstraintTab):
             f"{violationsCount} violation{"s" if violationsCount != 1 else ""} found"
         )
         exceptionCountText = (
-            f" ({hiddenCount} exception{"s" if hiddenCount != 1 else ""} hidden)"
+            f' ({hiddenCount} <a href="exceptions">exception{"s" if hiddenCount != 1 else ""}</a> hidden)'
             if hiddenCount
             else ""
         )
         self.violationsLabel.setText(f"{violationCountText}{exceptionCountText}.")
+
+    def _violationsTableShowHidden(self) -> None:
+        currentTable = self.violationsTableModel.tableName()
+        newTable = (
+            currentTable.removesuffix("_hidden")
+            if "_hidden" in currentTable
+            else currentTable + "_hidden"
+        )
+        self._loadViolationsTable(newTable)
+
+    def _violationsTableContextMenuPopup(self, pos: QPoint) -> None:
+        selectedRows = self.violationsTableView.selectionModel().selectedRows(
+            VIOLATION_ITEM_COLUMN
+        )
+        if not selectedRows:
+            return
+
+        focusedConstraint = self._model.constraintCheckModel.focusedConstraint
+        if focusedConstraint is None:
+            return
+
+        itemId = selectedRows[0].data()
+        isException = self.violationsTableModel.tableName().endswith("_hidden")
+
+        def exceptionsActionCallback(_: bool) -> None:
+            self._model.wikibaseEditor.updateException(
+                focusedConstraint.property.identifier,
+                focusedConstraint.identifier,
+                itemId,
+                isException,
+            )
+
+        exceptionsAction = QAction(
+            "Remove from Exceptions" if isException else "Add to Exceptions", self
+        )
+        exceptionsAction.triggered.connect(exceptionsActionCallback)
+
+        menu = QMenu(self)
+        menu.addAction(exceptionsAction)
+        menu.popup(self.violationsTableView.viewport().mapToGlobal(pos))
 
     def _exportSingleConstraint(self) -> None:
         constraint = self._model.constraintCheckModel.focusedConstraint

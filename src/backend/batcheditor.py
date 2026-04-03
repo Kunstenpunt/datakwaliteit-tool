@@ -59,7 +59,7 @@ class BatchEditor(QObject):
             return
 
         self.inputData = stripUrlPartFromTable(
-            self.wikibaseConfig.getBaseUrl(), self.inputData
+            self.wikibaseConfig.baseUrl, self.inputData
         )
 
         recipeFormatStr = self._generateRecipeFormatStr(self.inputData[0])

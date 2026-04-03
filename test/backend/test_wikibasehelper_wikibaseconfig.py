@@ -68,34 +68,34 @@ def test_WikibaseConfigStandard(configBackup, qtbot):
 
     wikibaseConfig = WikibaseConfig(configHandlerStub)
     checkWbiConfig(INITIAL_CONFIG_PAIRS)
-    assert wikibaseConfig.getPropertyConstraintPid() == "P2301"
-    assert wikibaseConfig.getDefaultLanguage() == "nl"
-    assert wikibaseConfig.getBaseUrl() == "https://base.url"
-    assert wikibaseConfig.getPureUrl() == "base.url"
-    assert wikibaseConfig.getInstanceOfPid() == "P31"
-    assert wikibaseConfig.getSubclassOfPid() == "P279"
+    assert wikibaseConfig.propertyConstraintPid == "P2301"
+    assert wikibaseConfig.defaultLanguage == "nl"
+    assert wikibaseConfig.baseUrl == "https://base.url"
+    assert wikibaseConfig.pureUrl == "base.url"
+    assert wikibaseConfig.instanceOfPid == "P31"
+    assert wikibaseConfig.subclassOfPid == "P279"
 
     with qtbot.waitSignal(wikibaseConfig.wikibaseConfigChanged):
         configHandlerStub.setWikibaseConfigPairs(MODIFIED_CONFIG_PAIRS)
 
     checkWbiConfig(MODIFIED_CONFIG_PAIRS)
-    assert wikibaseConfig.getPropertyConstraintPid() == "P42"
-    assert wikibaseConfig.getDefaultLanguage() == "en"
-    assert wikibaseConfig.getBaseUrl() == "https://other.url"
-    assert wikibaseConfig.getPureUrl() == "other.url"
-    assert wikibaseConfig.getInstanceOfPid() == "P43"
-    assert wikibaseConfig.getSubclassOfPid() == "P44"
+    assert wikibaseConfig.propertyConstraintPid == "P42"
+    assert wikibaseConfig.defaultLanguage == "en"
+    assert wikibaseConfig.baseUrl == "https://other.url"
+    assert wikibaseConfig.pureUrl == "other.url"
+    assert wikibaseConfig.instanceOfPid == "P43"
+    assert wikibaseConfig.subclassOfPid == "P44"
 
     with qtbot.waitSignal(wikibaseConfig.wikibaseConfigChanged):
         configHandlerStub.setWikibaseConfigPairs(STRANGE_CONFIG_PAIRS)
 
     checkWbiConfig(STRANGE_CONFIG_PAIRS)
-    assert wikibaseConfig.getPropertyConstraintPid() == ""
-    assert wikibaseConfig.getDefaultLanguage() == ""
-    assert wikibaseConfig.getBaseUrl() == ""
-    assert wikibaseConfig.getPureUrl() == ""
-    assert wikibaseConfig.getInstanceOfPid() == ""
-    assert wikibaseConfig.getSubclassOfPid() == ""
+    assert wikibaseConfig.propertyConstraintPid == ""
+    assert wikibaseConfig.defaultLanguage == ""
+    assert wikibaseConfig.baseUrl == ""
+    assert wikibaseConfig.pureUrl == ""
+    assert wikibaseConfig.instanceOfPid == ""
+    assert wikibaseConfig.subclassOfPid == ""
 
 
 def test_WikibaseConfigIncomplete(configBackup, qtbot):
@@ -108,13 +108,10 @@ def test_WikibaseConfigIncomplete(configBackup, qtbot):
     wikibaseConfig = WikibaseConfig(configHandlerStub)
     checkWbiConfig(configPairs)
     assert (
-        wikibaseConfig.getPropertyConstraintPid()
+        wikibaseConfig.propertyConstraintPid
         == config[WbiConfigKey.PROPERTY_CONSTRAINT_PID]
     )
-    assert (
-        wikibaseConfig.getDefaultLanguage()
-        == configPairs[WbiConfigKey.DEFAULT_LANGUAGE]
-    )
-    assert wikibaseConfig.getBaseUrl() == configPairs[WbiConfigKey.WIKIBASE_URL]
-    assert wikibaseConfig.getInstanceOfPid() == ""
-    assert wikibaseConfig.getSubclassOfPid() == ""
+    assert wikibaseConfig.defaultLanguage == configPairs[WbiConfigKey.DEFAULT_LANGUAGE]
+    assert wikibaseConfig.baseUrl == configPairs[WbiConfigKey.WIKIBASE_URL]
+    assert wikibaseConfig.instanceOfPid == ""
+    assert wikibaseConfig.subclassOfPid == ""

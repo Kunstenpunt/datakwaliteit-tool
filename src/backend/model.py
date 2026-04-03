@@ -3,7 +3,7 @@ from .configuration import ConfigHandler
 from .constraint.model import ConstraintCheckModel
 from .constraint.queries import QueryBuilder
 from .sql import SqlDatabase
-from .wikibasehelper import WikibaseConfig, WikibaseQueryRunner
+from .wikibasehelper import WikibaseConfig, WikibaseEditor, WikibaseQueryRunner
 
 
 class Model:
@@ -12,6 +12,7 @@ class Model:
         self.wikibaseConfig = WikibaseConfig(self.configHandler)
         self.queryBuilder = QueryBuilder(self.wikibaseConfig)
         self.wikibaseQueryRunner = WikibaseQueryRunner(self.wikibaseConfig)
+        self.wikibaseEditor = WikibaseEditor(self.wikibaseConfig)
         self.sqlDatabase = SqlDatabase()
         self.constraintCheckModel = ConstraintCheckModel(
             self.queryBuilder,

@@ -196,7 +196,9 @@ class Ui_ConstraintTab(object):
 
         self.violationsTableView = QTableView(self.verticalLayoutWidgetRight)
         self.violationsTableView.setObjectName(u"violationsTableView")
+        self.violationsTableView.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         self.violationsTableView.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+        self.violationsTableView.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
         self.violationsTableView.setSortingEnabled(True)
 
         self.verticalLayoutRight.addWidget(self.violationsTableView)

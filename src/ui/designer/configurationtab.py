@@ -105,7 +105,7 @@ class Ui_ConfigurationTab(object):
         self.instanceOfPidLabel = QLabel(ConfigurationTab)
         self.instanceOfPidLabel.setObjectName(u"instanceOfPidLabel")
 
-        self.wikibaseConfigurationFormLayout.setWidget(7, QFormLayout.ItemRole.LabelRole, self.instanceOfPidLabel)
+        self.wikibaseConfigurationFormLayout.setWidget(8, QFormLayout.ItemRole.LabelRole, self.instanceOfPidLabel)
 
         self.propertyConstraintPidLineEdit = QLineEdit(ConfigurationTab)
         self.propertyConstraintPidLineEdit.setObjectName(u"propertyConstraintPidLineEdit")
@@ -115,17 +115,27 @@ class Ui_ConfigurationTab(object):
         self.instanceOfPidLineEdit = QLineEdit(ConfigurationTab)
         self.instanceOfPidLineEdit.setObjectName(u"instanceOfPidLineEdit")
 
-        self.wikibaseConfigurationFormLayout.setWidget(7, QFormLayout.ItemRole.FieldRole, self.instanceOfPidLineEdit)
+        self.wikibaseConfigurationFormLayout.setWidget(8, QFormLayout.ItemRole.FieldRole, self.instanceOfPidLineEdit)
 
         self.subclassOfPidLabel = QLabel(ConfigurationTab)
         self.subclassOfPidLabel.setObjectName(u"subclassOfPidLabel")
 
-        self.wikibaseConfigurationFormLayout.setWidget(8, QFormLayout.ItemRole.LabelRole, self.subclassOfPidLabel)
+        self.wikibaseConfigurationFormLayout.setWidget(9, QFormLayout.ItemRole.LabelRole, self.subclassOfPidLabel)
 
         self.subclassOfPidLineEdit = QLineEdit(ConfigurationTab)
         self.subclassOfPidLineEdit.setObjectName(u"subclassOfPidLineEdit")
 
-        self.wikibaseConfigurationFormLayout.setWidget(8, QFormLayout.ItemRole.FieldRole, self.subclassOfPidLineEdit)
+        self.wikibaseConfigurationFormLayout.setWidget(9, QFormLayout.ItemRole.FieldRole, self.subclassOfPidLineEdit)
+
+        self.exceptionToConstraintPidLabel = QLabel(ConfigurationTab)
+        self.exceptionToConstraintPidLabel.setObjectName(u"exceptionToConstraintPidLabel")
+
+        self.wikibaseConfigurationFormLayout.setWidget(7, QFormLayout.ItemRole.LabelRole, self.exceptionToConstraintPidLabel)
+
+        self.exceptionToConstraintPidLineEdit = QLineEdit(ConfigurationTab)
+        self.exceptionToConstraintPidLineEdit.setObjectName(u"exceptionToConstraintPidLineEdit")
+
+        self.wikibaseConfigurationFormLayout.setWidget(7, QFormLayout.ItemRole.FieldRole, self.exceptionToConstraintPidLineEdit)
 
 
         self.verticalLayout.addLayout(self.wikibaseConfigurationFormLayout)
@@ -143,20 +153,40 @@ class Ui_ConfigurationTab(object):
 
         self.botLoginFormLayout.setWidget(0, QFormLayout.ItemRole.LabelRole, self.botUsernameLabel)
 
-        self.botPasswordLabel = QLabel(ConfigurationTab)
-        self.botPasswordLabel.setObjectName(u"botPasswordLabel")
-
-        self.botLoginFormLayout.setWidget(1, QFormLayout.ItemRole.LabelRole, self.botPasswordLabel)
-
         self.botUsernameLineEdit = QLineEdit(ConfigurationTab)
         self.botUsernameLineEdit.setObjectName(u"botUsernameLineEdit")
 
         self.botLoginFormLayout.setWidget(0, QFormLayout.ItemRole.FieldRole, self.botUsernameLineEdit)
 
+        self.horizontalLayout = QHBoxLayout()
+        self.horizontalLayout.setObjectName(u"horizontalLayout")
         self.botPasswordLineEdit = QLineEdit(ConfigurationTab)
         self.botPasswordLineEdit.setObjectName(u"botPasswordLineEdit")
+        self.botPasswordLineEdit.setEchoMode(QLineEdit.EchoMode.Password)
 
-        self.botLoginFormLayout.setWidget(1, QFormLayout.ItemRole.FieldRole, self.botPasswordLineEdit)
+        self.horizontalLayout.addWidget(self.botPasswordLineEdit)
+
+        self.botPasswordHideToggle = QPushButton(ConfigurationTab)
+        self.botPasswordHideToggle.setObjectName(u"botPasswordHideToggle")
+        icon = QIcon(QIcon.fromTheme(QIcon.ThemeIcon.EditFind))
+        self.botPasswordHideToggle.setIcon(icon)
+
+        self.horizontalLayout.addWidget(self.botPasswordHideToggle)
+
+        self.botPasswordRemoveButton = QPushButton(ConfigurationTab)
+        self.botPasswordRemoveButton.setObjectName(u"botPasswordRemoveButton")
+        icon1 = QIcon(QIcon.fromTheme(QIcon.ThemeIcon.EditDelete))
+        self.botPasswordRemoveButton.setIcon(icon1)
+
+        self.horizontalLayout.addWidget(self.botPasswordRemoveButton)
+
+
+        self.botLoginFormLayout.setLayout(1, QFormLayout.ItemRole.FieldRole, self.horizontalLayout)
+
+        self.botPasswordLabel = QLabel(ConfigurationTab)
+        self.botPasswordLabel.setObjectName(u"botPasswordLabel")
+
+        self.botLoginFormLayout.setWidget(1, QFormLayout.ItemRole.LabelRole, self.botPasswordLabel)
 
 
         self.verticalLayout.addLayout(self.botLoginFormLayout)
@@ -215,11 +245,15 @@ class Ui_ConfigurationTab(object):
         self.instanceOfPidLineEdit.setPlaceholderText(QCoreApplication.translate("ConfigurationTab", u"P31", None))
         self.subclassOfPidLabel.setText(QCoreApplication.translate("ConfigurationTab", u"Subclass Of PID", None))
         self.subclassOfPidLineEdit.setPlaceholderText(QCoreApplication.translate("ConfigurationTab", u"P279", None))
-        self.botLoginTitleLabel.setText(QCoreApplication.translate("ConfigurationTab", u"### Bot Login (needed for QuickStatements)", None))
+        self.exceptionToConstraintPidLabel.setText(QCoreApplication.translate("ConfigurationTab", u"Exception To Constraint PID", None))
+        self.exceptionToConstraintPidLineEdit.setPlaceholderText(QCoreApplication.translate("ConfigurationTab", u"P2303", None))
+        self.botLoginTitleLabel.setText(QCoreApplication.translate("ConfigurationTab", u"### Bot Login (needed for edits)", None))
         self.botUsernameLabel.setText(QCoreApplication.translate("ConfigurationTab", u"Bot Username", None))
+        self.botUsernameLineEdit.setPlaceholderText(QCoreApplication.translate("ConfigurationTab", u"USERNAME", None))
+        self.botPasswordLineEdit.setPlaceholderText(QCoreApplication.translate("ConfigurationTab", u"BOTNAME@PASSWORD", None))
+        self.botPasswordHideToggle.setText("")
+        self.botPasswordRemoveButton.setText("")
         self.botPasswordLabel.setText(QCoreApplication.translate("ConfigurationTab", u"Bot Password", None))
-        self.botUsernameLineEdit.setPlaceholderText(QCoreApplication.translate("ConfigurationTab", u"USERNAME@BOT", None))
-        self.botPasswordLineEdit.setPlaceholderText(QCoreApplication.translate("ConfigurationTab", u"PASSWORD", None))
         self.discardButton.setText(QCoreApplication.translate("ConfigurationTab", u"Discard Changes", None))
         self.saveButton.setText(QCoreApplication.translate("ConfigurationTab", u"Save", None))
     # retranslateUi
