@@ -10,6 +10,7 @@ odswriter = "*"
 xlsxwriter = "*"
 imageio = "*"
 keyring = "*"
+pywin32 = "*"
 
 [dev-packages]
 black = "*"
