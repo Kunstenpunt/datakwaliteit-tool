@@ -1,3 +1,4 @@
+from enum import StrEnum
 from typing import Optional, Sequence
 
 from PySide6.QtCore import Signal, QObject
@@ -18,6 +19,16 @@ from ..wikibasehelper import WikibaseConfig, WikibaseQueryRunner
 VIOLATION_ROW_ID_COLUMN = 0
 VIOLATION_STATEMENT_COLUMN = 1
 VIOLATION_ITEM_COLUMN = 2
+
+
+class ConstraintsTableColumn(StrEnum):
+    ROW_ID = "rowId"
+    PROPERTY_IDENTIFIER = "propertyIdentifier"
+    PROPERTY_LABEL = "propertyLabel"
+    CONSTRAINT_IDENTIFIER = "constraintIdentifier"
+    CONSTRAINT_LABEL = "constraintLabel"
+    IMPLEMENTED = "implemented"
+    VALIDATION_STATE = "validationState"
 
 
 class ConstraintHelper(QObject):
@@ -270,15 +281,8 @@ class ConstraintCheckModel(QObject):
         self._writeConstraintsListToSql()
 
     def _writeConstraintsListToSql(self) -> None:
-        headerLabels = [
-            "rowId",
-            "propertyIdentifier",
-            "propertyLabel",
-            "constraintIdentifier",
-            "constraintLabel",
-            "implemented",
-            "validationState",
-        ]
+        headerLabels = [column.value for column in ConstraintsTableColumn]
+
         table = [headerLabels] + [
             [
                 c.sqlRowId,
