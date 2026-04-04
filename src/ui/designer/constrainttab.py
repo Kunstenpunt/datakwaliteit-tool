@@ -17,8 +17,9 @@ from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
     QPalette, QPixmap, QRadialGradient, QTransform)
 from PySide6.QtWidgets import (QAbstractItemView, QApplication, QCheckBox, QComboBox,
     QGridLayout, QHBoxLayout, QHeaderView, QLabel,
-    QPushButton, QSizePolicy, QSpacerItem, QSpinBox,
-    QSplitter, QTableView, QVBoxLayout, QWidget)
+    QLineEdit, QPushButton, QSizePolicy, QSpacerItem,
+    QSpinBox, QSplitter, QTableView, QVBoxLayout,
+    QWidget)
 
 class Ui_ConstraintTab(object):
     def setupUi(self, ConstraintTab): # type: ignore
@@ -59,6 +60,11 @@ class Ui_ConstraintTab(object):
 
 
         self.verticalLayoutLeft.addLayout(self.horizontalLayoutLeft)
+
+        self.constraintsFilterLineEdit = QLineEdit(self.verticalLayoutWidgetLeft)
+        self.constraintsFilterLineEdit.setObjectName(u"constraintsFilterLineEdit")
+
+        self.verticalLayoutLeft.addWidget(self.constraintsFilterLineEdit)
 
         self.constraintsTableView = QTableView(self.verticalLayoutWidgetLeft)
         self.constraintsTableView.setObjectName(u"constraintsTableView")
@@ -247,6 +253,7 @@ class Ui_ConstraintTab(object):
         self.labelLeft.setText(QCoreApplication.translate("ConstraintTab", u"Constrained Properties", None))
         self.validateAllButton.setText(QCoreApplication.translate("ConstraintTab", u"Validate All", None))
         self.reloadButton.setText(QCoreApplication.translate("ConstraintTab", u"Reload", None))
+        self.constraintsFilterLineEdit.setPlaceholderText(QCoreApplication.translate("ConstraintTab", u"Filter", None))
         self.exportAllButton.setText(QCoreApplication.translate("ConstraintTab", u"Export All Validated", None))
         self.exportAllUrlCheckBox.setText(QCoreApplication.translate("ConstraintTab", u"Full URLs", None))
         self.labelRight.setText(QCoreApplication.translate("ConstraintTab", u"Selected Constrained Property\n"

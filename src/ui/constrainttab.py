@@ -9,7 +9,11 @@ from PySide6.QtGui import QAction
 from PySide6.QtWidgets import QFileDialog, QMenu, QWidget
 
 from ..backend.constraint.base import Constraint, ValidationMode, ValidationState
-from ..backend.constraint.model import VIOLATION_ITEM_COLUMN, VIOLATION_ROW_ID_COLUMN
+from ..backend.constraint.model import (
+    ConstraintsTableColumn,
+    VIOLATION_ITEM_COLUMN,
+    VIOLATION_ROW_ID_COLUMN,
+)
 from ..backend.export import Exporter
 from ..backend.model import Model
 
@@ -69,6 +73,7 @@ class ConstraintsTab(QWidget, Ui_ConstraintTab):
         self._model.sqlDatabase.tableAdded.connect(self._loadViolations)
         self._model.sqlDatabase.tableUpdated.connect(self._updateConstraintsTable)
 
+        self.constraintsFilterLineEdit.textEdited.connect(self._updateConstraintsFilter)
         self.constraintsTableModel = SqlTableModel()
         self.constraintsTableView.setModel(self.constraintsTableModel)
         self.constraintsTableModel.selectionModel = (
@@ -124,6 +129,24 @@ class ConstraintsTab(QWidget, Ui_ConstraintTab):
             return
 
         self.constraintsTableModel.select()
+
+    def _updateConstraintsFilter(self) -> None:
+        filterTerms = self.constraintsFilterLineEdit.text().split()
+        if not filterTerms:
+            self.constraintsTableModel.setFilter("")
+            return
+
+        filterParts = []
+        for filterTerm in filterTerms:
+            part = " OR ".join(
+                [
+                    f"{column.value} LIKE '%{filterTerm}%'"
+                    for column in ConstraintsTableColumn
+                ]
+            )
+            filterParts.append(f"({part})")
+
+        self.constraintsTableModel.setFilter(" AND ".join(filterParts))
 
     def _onConstraintSelectionChanged(
         self, current: QModelIndex, _: QModelIndex
