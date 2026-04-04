@@ -276,6 +276,7 @@ class ConstraintsTab(QWidget, Ui_ConstraintTab):
             "Remove from Exceptions" if isException else "Add to Exceptions", self
         )
         exceptionsAction.triggered.connect(exceptionsActionCallback)
+        exceptionsAction.setEnabled(self._model.wikibaseEditor.canUpdateException())
 
         menu = QMenu(self)
         menu.addAction(exceptionsAction)

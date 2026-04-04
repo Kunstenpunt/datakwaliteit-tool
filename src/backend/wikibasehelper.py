@@ -144,6 +144,12 @@ class WikibaseEditor(QObject):
         self._wikibaseConfig = wikibaseConfig
         self._wbi = WikibaseIntegrator()
 
+    def canUpdateException(self) -> bool:
+        login = self._wikibaseConfig.login
+        constraintPid = self._wikibaseConfig.propertyConstraintPid
+        exceptionPid = self._wikibaseConfig.exceptionToConstraintPid
+        return bool(login and constraintPid and exceptionPid)
+
     def updateException(
         self,
         propId: str,
