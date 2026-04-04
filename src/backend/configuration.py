@@ -109,7 +109,7 @@ class ConfigHandler(QObject):
         )
         if botUsername and botPassword:
             set_password(APPLICATION_NAME, botUsername, botPassword)
-            self.modified = True
+            self._modified = True
 
         self._emitSignalIfNeeded()
 
