@@ -10,3 +10,6 @@ format:
 .PHONY: build_ui
 build_ui:
 	python src/ui/designer/build.py
+.PHONY: release
+release: build_ui format
+	pyside6-deploy -c pysidedeploy.spec

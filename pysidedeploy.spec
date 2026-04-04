@@ -7,7 +7,7 @@ title = datakwaliteit-tool
 project_dir = .
 
 # source file entry point path. default = main.py
-input_file = app.py
+input_file = run.py
 
 # directory where the executable output is generated
 exec_directory = .
@@ -25,6 +25,7 @@ packages = Nuitka==2.7.11
 
 # buildozer = for deploying Android application
 android_packages = buildozer==1.5.0,cython==0.29.33
+python_path = /home/christophe/.local/share/virtualenvs/datakwaliteit-tool-acaqt153/bin/python
 
 [qt]
 
@@ -37,11 +38,11 @@ qml_files =
 excluded_qml_plugins = 
 
 # qt modules used. comma separated
-modules = Core,DBus,Gui,Widgets
+modules = Core,DBus,Gui,Sql,Widgets
 
 # qt plugins used by the application. only relevant for desktop deployment
 # for qt plugins used in android application see [android][plugins]
-plugins = accessiblebridge,egldeviceintegrations,generic,iconengines,imageformats,platforminputcontexts,platforms,platforms/darwin,platformthemes,styles,xcbglintegrations
+plugins = accessiblebridge,egldeviceintegrations,generic,iconengines,imageformats,platforminputcontexts,platforms,platforms/darwin,platformthemes,sqldrivers,styles,xcbglintegrations
 
 [android]
 
