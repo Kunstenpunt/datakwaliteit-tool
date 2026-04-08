@@ -55,7 +55,10 @@ class WikibaseConfig(QObject):
             wbiConfigPairs.get(SensitiveConfigKey.BOT_PASSWORD)
         )
         if botUserName and botPassword:
-            self._login = Login(user=botUserName, password=botPassword)
+            try:
+                self._login = Login(user=botUserName, password=botPassword)
+            except:
+                self._login = None
         else:
             self._login = None
 
