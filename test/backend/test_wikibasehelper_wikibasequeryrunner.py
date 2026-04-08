@@ -33,11 +33,11 @@ class CallbackChecker:
         assert self.wikibaseQueryRunner.mostRecentQuery == expectedQuery
         assert QueryThreadStub.latestQuery == expectedQuery
         assert QueryThreadStub.latestDefaultPrefixes == f"""
-            PREFIX kp:<{expectedWikibaseUrl}/entity/>
-            PREFIX kpt:<{expectedWikibaseUrl}/prop/direct/>
-            PREFIX kpp:<{expectedWikibaseUrl}/prop/>
-            PREFIX kpps:<{expectedWikibaseUrl}/prop/statement/>
-            PREFIX kppq:<{expectedWikibaseUrl}/prop/qualifier/>
+            PREFIX wd:<{expectedWikibaseUrl}/entity/>
+            PREFIX wdt:<{expectedWikibaseUrl}/prop/direct/>
+            PREFIX p:<{expectedWikibaseUrl}/prop/>
+            PREFIX ps:<{expectedWikibaseUrl}/prop/statement/>
+            PREFIX pq:<{expectedWikibaseUrl}/prop/qualifier/>
         """
 
     def generateCallback(

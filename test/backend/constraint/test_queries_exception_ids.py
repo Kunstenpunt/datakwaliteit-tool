@@ -25,11 +25,11 @@ def test_buildExceptionIdsQuery():
         SELECT ?exception
         WHERE
         {
-            kp:P1 kpp:P2301 ?statement .
-            ?statement kpps:P2301 kp:Q1 .
+            wd:P1 p:P2301 ?statement .
+            ?statement ps:P2301 wd:Q1 .
             ?statement ?exceptionQualifier ?exception .
 
-            BIND (IRI(replace(str(?exceptionQualifier), str(kppq:), str(kp:)))  AS ?exceptionQualifierItem) .
+            BIND (IRI(replace(str(?exceptionQualifier), str(pq:), str(wd:)))  AS ?exceptionQualifierItem) .
             SERVICE wikibase:label
             {
                 bd:serviceParam wikibase:language "en,nl".

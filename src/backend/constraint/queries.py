@@ -27,7 +27,7 @@ class QueryBuilder:
                 SELECT ?subject ?subjectLabel ?object ?objectLabel
                 WHERE
                 {{
-                    ?subject kpt:{constraintPid} ?object .
+                    ?subject wdt:{constraintPid} ?object .
                     SERVICE wikibase:label {{ bd:serviceParam wikibase:language "en" . }}
                 }}
                 """
@@ -38,7 +38,7 @@ class QueryBuilder:
                 SELECT ?subject ?subjectLabel ?object ?objectLabel
                 WHERE
                 {{
-                    ?subject kpt:{ constraintPid } ?object .
+                    ?subject wdt:{ constraintPid } ?object .
                     SERVICE wikibase:label
                     {{
                         bd:serviceParam wikibase:language "{defaultLanguage},en".
@@ -59,7 +59,7 @@ class QueryBuilder:
                 SELECT (COUNT(*) as ?count)
                 WHERE
                 {{
-                    ?item kpp:{constraint.property.identifier} ?statement
+                    ?item p:{constraint.property.identifier} ?statement
                 }}
             """
         elif countType == constraint.validationInputCountType.ENTITIES:
@@ -85,11 +85,11 @@ class QueryBuilder:
             SELECT ?exception
             WHERE
             {{
-                kp:{constraint.property.identifier} kpp:{self._wikibaseConfig.propertyConstraintPid} ?statement .
-                ?statement kpps:{self._wikibaseConfig.propertyConstraintPid} kp:{constraint.identifier} .
+                wd:{constraint.property.identifier} p:{self._wikibaseConfig.propertyConstraintPid} ?statement .
+                ?statement ps:{self._wikibaseConfig.propertyConstraintPid} wd:{constraint.identifier} .
                 ?statement ?exceptionQualifier ?exception .
 
-                BIND (IRI(replace(str(?exceptionQualifier), str(kppq:), str(kp:)))  AS ?exceptionQualifierItem) .
+                BIND (IRI(replace(str(?exceptionQualifier), str(pq:), str(wd:)))  AS ?exceptionQualifierItem) .
                 SERVICE wikibase:label
                 {{
                     bd:serviceParam wikibase:language "en,{self._wikibaseConfig.defaultLanguage}".
@@ -126,12 +126,12 @@ class QueryBuilder:
             SELECT DISTINCT ?class ?classLabel ?relation ?relationLabel
             WHERE
             {{
-                ?statement kpps:{self._wikibaseConfig.propertyConstraintPid} kp:{constraint.identifier} .
-                kp:{constraint.property.identifier} kpp:{self._wikibaseConfig.propertyConstraintPid} ?statement .
+                ?statement ps:{self._wikibaseConfig.propertyConstraintPid} wd:{constraint.identifier} .
+                wd:{constraint.property.identifier} p:{self._wikibaseConfig.propertyConstraintPid} ?statement .
                 OPTIONAL
                 {{
                     ?statement ?classQualifier ?class .
-                    BIND (IRI(replace(str(?classQualifier), str(kppq:), str(kp:)))  AS ?classQualifierItem) .
+                    BIND (IRI(replace(str(?classQualifier), str(pq:), str(wd:)))  AS ?classQualifierItem) .
                     SERVICE wikibase:label
                     {{
                         bd:serviceParam wikibase:language "en,{self._wikibaseConfig.defaultLanguage}".
@@ -142,7 +142,7 @@ class QueryBuilder:
                 OPTIONAL
                 {{
                     ?statement ?relationQualifier ?relation .
-                    BIND (IRI(replace(str(?relationQualifier), str(kppq:), str(kp:)))  AS ?relationQualifierItem) .
+                    BIND (IRI(replace(str(?relationQualifier), str(pq:), str(wd:)))  AS ?relationQualifierItem) .
                     SERVICE wikibase:label
                     {{
                         bd:serviceParam wikibase:language "en,{self._wikibaseConfig.defaultLanguage}".
@@ -160,10 +160,10 @@ class QueryBuilder:
             SELECT DISTINCT ?format
             WHERE
             {{
-                ?statement kpps:{self._wikibaseConfig.propertyConstraintPid} kp:{constraint.identifier} .
-                kp:{constraint.property.identifier} kpp:{self._wikibaseConfig.propertyConstraintPid} ?statement .
+                ?statement ps:{self._wikibaseConfig.propertyConstraintPid} wd:{constraint.identifier} .
+                wd:{constraint.property.identifier} p:{self._wikibaseConfig.propertyConstraintPid} ?statement .
                 ?statement ?formatQualifier ?format .
-                BIND (IRI(replace(str(?formatQualifier), str(kppq:), str(kp:)))  AS ?formatQualifierItem) .
+                BIND (IRI(replace(str(?formatQualifier), str(pq:), str(wd:)))  AS ?formatQualifierItem) .
                 SERVICE wikibase:label
                 {{
                     bd:serviceParam wikibase:language "en,{self._wikibaseConfig.defaultLanguage}".
@@ -178,12 +178,12 @@ class QueryBuilder:
             SELECT DISTINCT ?prop ?propLabel
             WHERE
             {{
-                ?statement kpps:{self._wikibaseConfig.propertyConstraintPid} kp:{constraint.identifier} .
-                kp:{constraint.property.identifier} kpp:{self._wikibaseConfig.propertyConstraintPid} ?statement .
+                ?statement ps:{self._wikibaseConfig.propertyConstraintPid} wd:{constraint.identifier} .
+                wd:{constraint.property.identifier} p:{self._wikibaseConfig.propertyConstraintPid} ?statement .
                 OPTIONAL
                 {{
                     ?statement ?propertyQualifier ?prop .
-                    BIND (IRI(replace(str(?propertyQualifier), str(kppq:), str(kp:)))  AS ?propertyQualifierItem) .
+                    BIND (IRI(replace(str(?propertyQualifier), str(pq:), str(wd:)))  AS ?propertyQualifierItem) .
                     SERVICE wikibase:label
                     {{
                         bd:serviceParam wikibase:language "en,{self._wikibaseConfig.defaultLanguage}".
@@ -200,12 +200,12 @@ class QueryBuilder:
             SELECT DISTINCT ?prop ?propLabel ?value ?valueLabel
             WHERE
             {{
-                ?statement kpps:{self._wikibaseConfig.propertyConstraintPid} kp:{constraint.identifier} .
-                kp:{constraint.property.identifier} kpp:{self._wikibaseConfig.propertyConstraintPid} ?statement .
+                ?statement ps:{self._wikibaseConfig.propertyConstraintPid} wd:{constraint.identifier} .
+                wd:{constraint.property.identifier} p:{self._wikibaseConfig.propertyConstraintPid} ?statement .
                 OPTIONAL
                 {{
                     ?statement ?propertyQualifier ?prop .
-                    BIND (IRI(replace(str(?propertyQualifier), str(kppq:), str(kp:)))  AS ?propertyQualifierItem) .
+                    BIND (IRI(replace(str(?propertyQualifier), str(pq:), str(wd:)))  AS ?propertyQualifierItem) .
                     SERVICE wikibase:label
                     {{
                         bd:serviceParam wikibase:language "en,{self._wikibaseConfig.defaultLanguage}".
@@ -216,7 +216,7 @@ class QueryBuilder:
                 OPTIONAL
                 {{
                     ?statement ?valueQualifier ?value .
-                    BIND (IRI(replace(str(?valueQualifier), str(kppq:), str(kp:)))  AS ?valueQualifierItem) .
+                    BIND (IRI(replace(str(?valueQualifier), str(pq:), str(wd:)))  AS ?valueQualifierItem) .
                     SERVICE wikibase:label
                     {{
                         bd:serviceParam wikibase:language "en,{self._wikibaseConfig.defaultLanguage}".
@@ -233,10 +233,10 @@ class QueryBuilder:
             SELECT DISTINCT ?separator ?separatorLabel
             WHERE
             {{
-                ?statement kpps:{self._wikibaseConfig.propertyConstraintPid} kp:{constraint.identifier} .
-                kp:{constraint.property.identifier} kpp:{self._wikibaseConfig.propertyConstraintPid} ?statement .
+                ?statement ps:{self._wikibaseConfig.propertyConstraintPid} wd:{constraint.identifier} .
+                wd:{constraint.property.identifier} p:{self._wikibaseConfig.propertyConstraintPid} ?statement .
                 ?statement ?qualifier ?separator .
-                BIND (IRI(replace(str(?qualifier), str(kppq:), str(kp:)))  AS ?qualifierItem)
+                BIND (IRI(replace(str(?qualifier), str(pq:), str(wd:)))  AS ?qualifierItem)
                 SERVICE wikibase:label
                 {{
                     bd:serviceParam wikibase:language "en,{self._wikibaseConfig.defaultLanguage}".
@@ -282,14 +282,14 @@ class QueryBuilder:
         innerSelection = "?item (COUNT(?value) AS ?valueCount)"
         conditions = "\n".join(
             f"""
-                    OPTIONAL {{ ?statement kppq:{s.identifier} ?separator{i} }} ."""
+                    OPTIONAL {{ ?statement pq:{s.identifier} ?separator{i} }} ."""
             for (i, s) in enumerate(constraint.separators)
         )
         innerGroupBy = f"?item {f" ".join(f"?separator{i}" for i in range(len(constraint.separators)))}"
         innerHaving = "?valueCount > 1"
         innerOrderBy = "?item ?valueCount"
         finalConditions = f"""
-                ?item kpp:{constraint.property.identifier} ?statement ."""
+                ?item p:{constraint.property.identifier} ?statement ."""
         outerGroupBy = "?item ?itemLabel ?valueCount"
         return self._buildViolationsQuery(
             constraint,
@@ -316,9 +316,9 @@ class QueryBuilder:
         )
         innerSelection = "?item ?value ?statement"
         conditions = f"""
-                    MINUS {{ ?value kpt:{relation} ?x . VALUES ?x {{{" ".join(f"kp:{c.identifier}" for c in constraint.classes)}}} }}"""
+                    MINUS {{ ?value wdt:{relation} ?x . VALUES ?x {{{" ".join(f"wd:{c.identifier}" for c in constraint.classes)}}} }}"""
         finalConditions = f"""
-                ?item kpp:{constraint.property.identifier} ?statement ."""
+                ?item p:{constraint.property.identifier} ?statement ."""
         return self._buildViolationsQuery(
             constraint,
             inputPart,
@@ -340,10 +340,10 @@ class QueryBuilder:
         )
         innerSelection = "?item"
         conditions = f"""
-                    MINUS {{ ?item kpt:{relation} ?x . VALUES ?x {{{" ".join(f"kp:{c.identifier}" for c in constraint.classes)}}} }}"""
+                    MINUS {{ ?item wdt:{relation} ?x . VALUES ?x {{{" ".join(f"wd:{c.identifier}" for c in constraint.classes)}}} }}"""
         outerGroupBy = "?item ?itemLabel"
         finalConditions = f"""
-                ?item kpp:{constraint.property.identifier} ?statement ."""
+                ?item p:{constraint.property.identifier} ?statement ."""
         return self._buildViolationsQuery(
             constraint,
             inputPart,
@@ -364,7 +364,7 @@ class QueryBuilder:
         innerSelection = "?item ?statement"
         conditions = "".join(
             f"""
-                    FILTER NOT EXISTS {{ ?statement kppq:{q.identifier} ?val }} ."""
+                    FILTER NOT EXISTS {{ ?statement pq:{q.identifier} ?val }} ."""
             for q in constraint.requiredQualifiers
         )
         return self._buildViolationsQuery(
@@ -386,9 +386,9 @@ class QueryBuilder:
         conditions = f"""
                     ?statement ?predicate [] .
                     [] wikibase:qualifier ?predicate .
-                    FILTER(!(?predicate in ({", ".join(f"kppq:{q.identifier}" for q in constraint.allowedQualifiers)})))"""
+                    FILTER(!(?predicate in ({", ".join(f"pq:{q.identifier}" for q in constraint.allowedQualifiers)})))"""
         finalConditions = f"""
-                ?item kpp:{constraint.property.identifier} ?statement ."""
+                ?item p:{constraint.property.identifier} ?statement ."""
         return self._buildViolationsQuery(
             constraint,
             inputPart,
@@ -408,11 +408,11 @@ class QueryBuilder:
         innerSelection = "?item"
         conditions = f"""
                     FILTER({" ||".join(f"""
-                        EXISTS {{ ?item kpt:{p.identifier} {"kp:" + v.identifier if v else "[]"} }}""" for (p,v) in constraint.conflictingStatements)
+                        EXISTS {{ ?item wdt:{p.identifier} {"wd:" + v.identifier if v else "[]"} }}""" for (p,v) in constraint.conflictingStatements)
                     }
                     )"""
         finalConditions = f"""
-                ?item kpp:{constraint.property.identifier} ?statement ."""
+                ?item p:{constraint.property.identifier} ?statement ."""
         outerGroupBy = "?item ?itemLabel"
         return self._buildViolationsQuery(
             constraint,
@@ -434,15 +434,15 @@ class QueryBuilder:
         innerSelection = "?value (COUNT(?statement) AS ?statementCount)"
         conditions = "\n".join(
             f"""
-                    OPTIONAL {{ ?statement kppq:{s.identifier} ?separator{i} }} ."""
+                    OPTIONAL {{ ?statement pq:{s.identifier} ?separator{i} }} ."""
             for (i, s) in enumerate(constraint.separators)
         )
         innerGroupBy = f"?value {f" ".join(f"?separator{i}" for i in range(len(constraint.separators)))}"
         innerHaving = "?statementCount > 1"
         innerOrderBy = "?value ?statementCount"
         finalConditions = f"""
-                ?statement kpps:{constraint.property.identifier} ?value .
-                ?item kpp:{constraint.property.identifier} ?statement ."""
+                ?statement ps:{constraint.property.identifier} ?value .
+                ?item p:{constraint.property.identifier} ?statement ."""
         return f"""
             # Note that the actual number of returned output rows will be
             # different from the choosen number if output is limited.
@@ -477,7 +477,7 @@ class QueryBuilder:
         conditions = f"""
                     FILTER(!REGEX(STR(?value), "{constraint.format.replace("\\", "\\\\")}"))"""
         finalConditions = f"""
-                ?item kpp:{constraint.property.identifier} ?statement ."""
+                ?item p:{constraint.property.identifier} ?statement ."""
         return self._buildViolationsQuery(
             constraint,
             inputPart,
@@ -497,11 +497,11 @@ class QueryBuilder:
         innerSelection = "?item"
         conditions = f"""
                     FILTER({" ||".join(f"""
-                        NOT EXISTS {{ ?item kpt:{s[0].identifier} ?v . {f"VALUES ?v {{{" ".join("kp:" + v.identifier for v in s[1])}}}" if s[1] else ""} }}""" for s in constraint.requiredStatements.values())
+                        NOT EXISTS {{ ?item wdt:{s[0].identifier} ?v . {f"VALUES ?v {{{" ".join("wd:" + v.identifier for v in s[1])}}}" if s[1] else ""} }}""" for s in constraint.requiredStatements.values())
                     }
                     )"""
         finalConditions = f"""
-                ?item kpp:{constraint.property.identifier} ?statement ."""
+                ?item p:{constraint.property.identifier} ?statement ."""
         outerGroupBy = "?item ?itemLabel"
         return self._buildViolationsQuery(
             constraint,
@@ -523,11 +523,11 @@ class QueryBuilder:
         innerSelection = "?statement ?value"
         conditions = f"""
                     FILTER({" ||".join(f"""
-                        NOT EXISTS {{ ?value kpt:{s[0].identifier} ?v . {f"VALUES ?v {{{" ".join("kp:" + v.identifier for v in s[1])}}}" if s[1] else ""} }}""" for s in constraint.requiredStatements.values())
+                        NOT EXISTS {{ ?value wdt:{s[0].identifier} ?v . {f"VALUES ?v {{{" ".join("wd:" + v.identifier for v in s[1])}}}" if s[1] else ""} }}""" for s in constraint.requiredStatements.values())
                     }
                     )"""
         finalConditions = f"""
-                ?item kpp:{constraint.property.identifier} ?statement ."""
+                ?item p:{constraint.property.identifier} ?statement ."""
         return self._buildViolationsQuery(
             constraint,
             inputPart,
@@ -544,20 +544,20 @@ class QueryBuilder:
         if inputType == ViolationsQueryInputType.ITEM:
             optionalDistinct = "DISTINCT "
             selection = "?item"
-            condition = f"?item kpp:{constraint.property.identifier} []"
+            condition = f"?item p:{constraint.property.identifier} []"
         elif inputType == ViolationsQueryInputType.ITEM_STATEMENT:
             selection = "?item ?statement"
-            condition = f"?item kpp:{constraint.property.identifier} ?statement"
+            condition = f"?item p:{constraint.property.identifier} ?statement"
         elif inputType == ViolationsQueryInputType.ITEM_STATEMENT_VALUE:
             selection = "?item ?statement ?value"
-            condition = f"""?item kpp:{constraint.property.identifier} ?statement .
-                    ?statement kpps:{constraint.property.identifier} ?value"""
+            condition = f"""?item p:{constraint.property.identifier} ?statement .
+                    ?statement ps:{constraint.property.identifier} ?value"""
         elif inputType == ViolationsQueryInputType.STATEMENT:
             selection = "?statement"
-            condition = f"[] kpp:{constraint.property.identifier} ?statement"
+            condition = f"[] p:{constraint.property.identifier} ?statement"
         elif inputType == ViolationsQueryInputType.STATEMENT_VALUE:
             selection = "?statement ?value"
-            condition = f"?statement kpps:{constraint.property.identifier} ?value"
+            condition = f"?statement ps:{constraint.property.identifier} ?value"
 
         return f"""WITH
             {{

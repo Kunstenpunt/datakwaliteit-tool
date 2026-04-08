@@ -219,11 +219,11 @@ class WikibaseQueryRunner(QObject):
 
     def _updatePrefixes(self) -> None:
         self.queryPrefixes = f"""
-            PREFIX kp:<{ config[WbiConfigKey.WIKIBASE_URL] }/entity/>
-            PREFIX kpt:<{ config[WbiConfigKey.WIKIBASE_URL] }/prop/direct/>
-            PREFIX kpp:<{ config[WbiConfigKey.WIKIBASE_URL] }/prop/>
-            PREFIX kpps:<{ config[WbiConfigKey.WIKIBASE_URL] }/prop/statement/>
-            PREFIX kppq:<{ config[WbiConfigKey.WIKIBASE_URL] }/prop/qualifier/>
+            PREFIX wd:<{ config[WbiConfigKey.WIKIBASE_URL] }/entity/>
+            PREFIX wdt:<{ config[WbiConfigKey.WIKIBASE_URL] }/prop/direct/>
+            PREFIX p:<{ config[WbiConfigKey.WIKIBASE_URL] }/prop/>
+            PREFIX ps:<{ config[WbiConfigKey.WIKIBASE_URL] }/prop/statement/>
+            PREFIX pq:<{ config[WbiConfigKey.WIKIBASE_URL] }/prop/qualifier/>
         """
 
     def queueQueryForExecution(
