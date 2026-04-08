@@ -277,7 +277,9 @@ class QueryBuilder:
             "(SAMPLE(?statement) AS ?statement) ?item ?itemLabel ?valueCount"
         )
         inputPart = self._buildViolationsQueryInput(
-            constraint, ViolationsQueryInputType.ITEM_STATEMENT_VALUE
+            constraint,
+            ViolationsQueryInputType.ITEM_STATEMENT_VALUE,
+            filterDeprecated=True,
         )
         innerSelection = "?item (COUNT(?value) AS ?valueCount)"
         conditions = "\n".join(
@@ -538,7 +540,10 @@ class QueryBuilder:
         )
 
     def _buildViolationsQueryInput(
-        self, constraint: Constraint, inputType: ViolationsQueryInputType
+        self,
+        constraint: Constraint,
+        inputType: ViolationsQueryInputType,
+        filterDeprecated: bool = False,
     ) -> str:
         optionalDistinct = ""
         if inputType == ViolationsQueryInputType.ITEM:
@@ -558,6 +563,10 @@ class QueryBuilder:
         elif inputType == ViolationsQueryInputType.STATEMENT_VALUE:
             selection = "?statement ?value"
             condition = f"?statement ps:{constraint.property.identifier} ?value"
+
+        if filterDeprecated:
+            condition += """ .
+                    MINUS { ?statement wikibase:rank wikibase:DeprecatedRank }"""
 
         return f"""WITH
             {{
