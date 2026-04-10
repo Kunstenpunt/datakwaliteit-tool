@@ -88,7 +88,7 @@ class ValueTypeConstraint(Constraint):
             for [classId, classLabel, relationId, relationLabel] in result[1:]:
                 classId = idFromUrl(classId)
                 classes.append(Item(classId, classLabel))
-                
+
                 if self.relation == RelationType.UNKNOWN:
                     match relationLabel:
                         case "instance of":

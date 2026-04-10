@@ -356,7 +356,7 @@ class QueryBuilder:
             finalConditions=finalConditions,
         )
 
-    def _generateSparqlPredicateForRelation(self, relation: RelationType):
+    def _generateSparqlPredicateForRelation(self, relation: RelationType) -> str:
         if relation == RelationType.INSTANCE_OF:
             return f"wdt:{self._wikibaseConfig.instanceOfPid}/wdt:{self._wikibaseConfig.subclassOfPid}*"
         elif relation == RelationType.SUBCLASS_OF:
