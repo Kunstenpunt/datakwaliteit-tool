@@ -35,7 +35,7 @@ def idFromUrl(url: str) -> str:
 
 def urlFromId(possibleId: str, baseUrl: str) -> Optional[str]:
     entityRegex = re.compile(r"^[QPL]\d+$")
-    statementRegex = re.compile(r"^[PQ]\d+-[A-Za-z0-9\-]+$")
+    statementRegex = re.compile(r"^[PQq]\d+-[A-Za-z0-9\-]+$")
 
     baseUrl = baseUrl.rstrip("/")
 
