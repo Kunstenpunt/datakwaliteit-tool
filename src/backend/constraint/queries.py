@@ -309,16 +309,16 @@ class QueryBuilder:
     def _buildValueTypeConstraintViolationsQuery(
         self, constraint: ValueTypeConstraint
     ) -> str:
-        if constraint.relation != RelationType.INSTANCE_OF:
-            return ""
-        relation = self._wikibaseConfig.instanceOfPid
+        relationPredicate = self._generateSparqlPredicateForRelation(
+            constraint.relation
+        )
         outerSelection = "?statement ?item ?itemLabel ?value ?valueLabel"
         inputPart = self._buildViolationsQueryInput(
             constraint, ViolationsQueryInputType.STATEMENT_VALUE
         )
         innerSelection = "?item ?value ?statement"
         conditions = f"""
-                    MINUS {{ ?value wdt:{relation} ?x . VALUES ?x {{{" ".join(f"wd:{c.identifier}" for c in constraint.classes)}}} }}"""
+                    MINUS {{ ?value {relationPredicate} ?x . VALUES ?x {{{" ".join(f"wd:{c.identifier}" for c in constraint.classes)}}} }}"""
         finalConditions = f"""
                 ?item p:{constraint.property.identifier} ?statement ."""
         return self._buildViolationsQuery(
@@ -333,16 +333,16 @@ class QueryBuilder:
     def _buildSubjectTypeConstraintViolationsQuery(
         self, constraint: SubjectTypeConstraint
     ) -> str:
-        if constraint.relation != RelationType.INSTANCE_OF:
-            return ""
-        relation = self._wikibaseConfig.instanceOfPid
+        relationPredicate = self._generateSparqlPredicateForRelation(
+            constraint.relation
+        )
         outerSelection = "(SAMPLE(?statement) AS ?statement) ?item ?itemLabel"
         inputPart = self._buildViolationsQueryInput(
             constraint, ViolationsQueryInputType.ITEM
         )
         innerSelection = "?item"
         conditions = f"""
-                    MINUS {{ ?item wdt:{relation} ?x . VALUES ?x {{{" ".join(f"wd:{c.identifier}" for c in constraint.classes)}}} }}"""
+                    MINUS {{ ?item {relationPredicate} ?x . VALUES ?x {{{" ".join(f"wd:{c.identifier}" for c in constraint.classes)}}} }}"""
         outerGroupBy = "?item ?itemLabel"
         finalConditions = f"""
                 ?item p:{constraint.property.identifier} ?statement ."""
@@ -355,6 +355,18 @@ class QueryBuilder:
             outerGroupBy=outerGroupBy,
             finalConditions=finalConditions,
         )
+
+    def _generateSparqlPredicateForRelation(self, relation: RelationType):
+        if relation == RelationType.INSTANCE_OF:
+            return f"wdt:{self._wikibaseConfig.instanceOfPid}/wdt:{self._wikibaseConfig.subclassOfPid}*"
+        elif relation == RelationType.SUBCLASS_OF:
+            return f"wdt:{self._wikibaseConfig.subclassOfPid}*"
+        elif relation == RelationType.INSTANCE_OR_SUBCLASS_OF:
+            return f"wdt:{self._wikibaseConfig.instanceOfPid}*/wdt:{self._wikibaseConfig.subclassOfPid}*"
+        else:
+            raise ValueError(
+                f"{relation.name} is an invalid value for relation when generating a SPARQL predicate"
+            )
 
     def _buildRequiredQualifierConstraintViolationsQuery(
         self, constraint: RequiredQualifierConstraint

@@ -78,7 +78,7 @@ class ValueTypeConstraint(Constraint):
     def pretty(self) -> str:
         label = super().pretty()
         if self.classes:
-            label += f"\nclass(es): {[str(s) for s in self.classes]}"
+            label += f"\nclass(es): {[str(s) for s in self.classes]}, relation: {self.relation.name}"
         return label
 
     def updateQualifiers(self, result: Sequence[Sequence[str]]) -> None:
@@ -87,18 +87,20 @@ class ValueTypeConstraint(Constraint):
         try:
             for [classId, classLabel, relationId, relationLabel] in result[1:]:
                 classId = idFromUrl(classId)
-                relationId = idFromUrl(relationId)
-                if relationLabel != "instance of":
-                    print(
-                        f'ValueTypeConstraint for relation "{relationLabel}" is currently unsupported.'
-                    )
-                    return
                 classes.append(Item(classId, classLabel))
+                
+                if self.relation == RelationType.UNKNOWN:
+                    match relationLabel:
+                        case "instance of":
+                            self.relation = RelationType.INSTANCE_OF
+                        case "subclass of":
+                            self.relation = RelationType.SUBCLASS_OF
+                        case "instance or subclass of":
+                            self.relation = RelationType.INSTANCE_OR_SUBCLASS_OF
         except:
             raise ValueError("{result} is an invalid value for updating qualifiers")
 
         self.classes = classes
-        self.relation = RelationType.INSTANCE_OF
         self.qualifiersObtained = True
 
     def updateViolations(self, result: Sequence[Sequence[str]]) -> None:
@@ -129,7 +131,7 @@ class SubjectTypeConstraint(Constraint):
     def pretty(self) -> str:
         label = super().pretty()
         if self.classes is not None and len(self.classes):
-            label += f"\nclass(es): {[str(s) for s in self.classes]}"
+            label += f"\nclass(es): {[str(s) for s in self.classes]}, relation: {self.relation.name}"
         return label
 
     def updateQualifiers(self, result: Sequence[Sequence[str]]) -> None:
@@ -137,18 +139,20 @@ class SubjectTypeConstraint(Constraint):
         try:
             for [classId, classLabel, relationId, relationLabel] in result[1:]:
                 classId = idFromUrl(classId)
-                relationId = idFromUrl(relationId)
-                if relationLabel != "instance of":
-                    print(
-                        f'SubjectTypeConstraint for relation "{relationLabel}" is currently unsupported.'
-                    )
-                    return
                 classes.append(Item(classId, classLabel))
+
+                if self.relation == RelationType.UNKNOWN:
+                    match relationLabel:
+                        case "instance of":
+                            self.relation = RelationType.INSTANCE_OF
+                        case "subclass of":
+                            self.relation = RelationType.SUBCLASS_OF
+                        case "instance or subclass of":
+                            self.relation = RelationType.INSTANCE_OR_SUBCLASS_OF
         except:
             raise ValueError("{result} is an invalid value for updating qualifiers")
 
         self.classes = classes
-        self.relation = RelationType.INSTANCE_OF
         self.qualifiersObtained = True
 
     def updateViolations(self, result: Sequence[Sequence[str]]) -> None:
