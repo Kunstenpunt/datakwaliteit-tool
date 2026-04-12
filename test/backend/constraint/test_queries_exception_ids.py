@@ -32,12 +32,12 @@ def test_buildExceptionIdsQuery():
             BIND (IRI(replace(str(?exceptionQualifier), str(pq:), str(wd:)))  AS ?exceptionQualifierItem) .
             SERVICE wikibase:label
             {
-                bd:serviceParam wikibase:language "en,nl".
+                bd:serviceParam wikibase:language "en,nl,mul".
                 ?exceptionQualifierItem rdfs:label ?exceptionQualifierLabel .
             }
             FILTER (str(?exceptionQualifierLabel) = "exception to constraint")
 
-            SERVICE wikibase:label { bd:serviceParam wikibase:language "nl" . }
+            SERVICE wikibase:label { bd:serviceParam wikibase:language "nl,mul" . }
         }
     """
 

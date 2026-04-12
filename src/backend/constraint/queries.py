@@ -28,7 +28,7 @@ class QueryBuilder:
                 WHERE
                 {{
                     ?subject wdt:{constraintPid} ?object .
-                    SERVICE wikibase:label {{ bd:serviceParam wikibase:language "en" . }}
+                    SERVICE wikibase:label {{ bd:serviceParam wikibase:language "en,mul" . }}
                 }}
                 """
 
@@ -41,12 +41,12 @@ class QueryBuilder:
                     ?subject wdt:{ constraintPid } ?object .
                     SERVICE wikibase:label
                     {{
-                        bd:serviceParam wikibase:language "{defaultLanguage},en".
+                        bd:serviceParam wikibase:language "{defaultLanguage},en,mul".
                         ?subject rdfs:label ?subjectLabel .
                     }}
                     SERVICE wikibase:label
                     {{
-                        bd:serviceParam wikibase:language "en,{defaultLanguage}".
+                        bd:serviceParam wikibase:language "en,{defaultLanguage},mul".
                         ?object rdfs:label ?objectLabel .
                     }}
                 }}
@@ -92,12 +92,12 @@ class QueryBuilder:
                 BIND (IRI(replace(str(?exceptionQualifier), str(pq:), str(wd:)))  AS ?exceptionQualifierItem) .
                 SERVICE wikibase:label
                 {{
-                    bd:serviceParam wikibase:language "en,{self._wikibaseConfig.defaultLanguage}".
+                    bd:serviceParam wikibase:language "en,{self._wikibaseConfig.defaultLanguage},mul".
                     ?exceptionQualifierItem rdfs:label ?exceptionQualifierLabel .
                 }}
                 FILTER (str(?exceptionQualifierLabel) = "exception to constraint")
 
-                SERVICE wikibase:label {{ bd:serviceParam wikibase:language "{ self._wikibaseConfig.defaultLanguage }" . }}
+                SERVICE wikibase:label {{ bd:serviceParam wikibase:language "{ self._wikibaseConfig.defaultLanguage },mul" . }}
             }}
         """
 
@@ -134,7 +134,7 @@ class QueryBuilder:
                     BIND (IRI(replace(str(?classQualifier), str(pq:), str(wd:)))  AS ?classQualifierItem) .
                     SERVICE wikibase:label
                     {{
-                        bd:serviceParam wikibase:language "en,{self._wikibaseConfig.defaultLanguage}".
+                        bd:serviceParam wikibase:language "en,{self._wikibaseConfig.defaultLanguage},mul".
                         ?classQualifierItem rdfs:label ?classQualifierLabel .
                     }}
                     FILTER (str(?classQualifierLabel) = "class")
@@ -145,13 +145,13 @@ class QueryBuilder:
                     BIND (IRI(replace(str(?relationQualifier), str(pq:), str(wd:)))  AS ?relationQualifierItem) .
                     SERVICE wikibase:label
                     {{
-                        bd:serviceParam wikibase:language "en,{self._wikibaseConfig.defaultLanguage}".
+                        bd:serviceParam wikibase:language "en,{self._wikibaseConfig.defaultLanguage},mul".
                         ?relationQualifierItem rdfs:label ?relationQualifierLabel .
                         ?relation rdfs:label ?relationLabel .
                     }}
                     FILTER (str(?relationQualifierLabel) = "relation")
                 }}
-                SERVICE wikibase:label {{ bd:serviceParam wikibase:language "{ self._wikibaseConfig.defaultLanguage }" . }}
+                SERVICE wikibase:label {{ bd:serviceParam wikibase:language "{ self._wikibaseConfig.defaultLanguage },mul" . }}
             }}
         """
 
@@ -166,7 +166,7 @@ class QueryBuilder:
                 BIND (IRI(replace(str(?formatQualifier), str(pq:), str(wd:)))  AS ?formatQualifierItem) .
                 SERVICE wikibase:label
                 {{
-                    bd:serviceParam wikibase:language "en,{self._wikibaseConfig.defaultLanguage}".
+                    bd:serviceParam wikibase:language "en,{self._wikibaseConfig.defaultLanguage},mul".
                     ?formatQualifierItem rdfs:label ?formatQualifierLabel .
                 }}
                 FILTER (str(?formatQualifierLabel) = "format as a regular expression")
@@ -186,12 +186,12 @@ class QueryBuilder:
                     BIND (IRI(replace(str(?propertyQualifier), str(pq:), str(wd:)))  AS ?propertyQualifierItem) .
                     SERVICE wikibase:label
                     {{
-                        bd:serviceParam wikibase:language "en,{self._wikibaseConfig.defaultLanguage}".
+                        bd:serviceParam wikibase:language "en,{self._wikibaseConfig.defaultLanguage},mul".
                         ?propertyQualifierItem rdfs:label ?propertyQualifierLabel .
                     }}
                     FILTER (str(?propertyQualifierLabel) = "property")
                 }}
-                SERVICE wikibase:label {{ bd:serviceParam wikibase:language "{ self._wikibaseConfig.defaultLanguage }" . }}
+                SERVICE wikibase:label {{ bd:serviceParam wikibase:language "{ self._wikibaseConfig.defaultLanguage },mul" . }}
             }}
         """
 
@@ -208,7 +208,7 @@ class QueryBuilder:
                     BIND (IRI(replace(str(?propertyQualifier), str(pq:), str(wd:)))  AS ?propertyQualifierItem) .
                     SERVICE wikibase:label
                     {{
-                        bd:serviceParam wikibase:language "en,{self._wikibaseConfig.defaultLanguage}".
+                        bd:serviceParam wikibase:language "en,{self._wikibaseConfig.defaultLanguage},mul".
                         ?propertyQualifierItem rdfs:label ?propertyQualifierLabel .
                     }}
                     FILTER (str(?propertyQualifierLabel) = "property")
@@ -219,12 +219,12 @@ class QueryBuilder:
                     BIND (IRI(replace(str(?valueQualifier), str(pq:), str(wd:)))  AS ?valueQualifierItem) .
                     SERVICE wikibase:label
                     {{
-                        bd:serviceParam wikibase:language "en,{self._wikibaseConfig.defaultLanguage}".
+                        bd:serviceParam wikibase:language "en,{self._wikibaseConfig.defaultLanguage},mul".
                         ?valueQualifierItem rdfs:label ?valueQualifierLabel .
                     }}
                     FILTER (str(?valueQualifierLabel) = "item of property constraint")
                 }}
-                SERVICE wikibase:label {{ bd:serviceParam wikibase:language "{ self._wikibaseConfig.defaultLanguage }" . }}
+                SERVICE wikibase:label {{ bd:serviceParam wikibase:language "{ self._wikibaseConfig.defaultLanguage },mul" . }}
             }}
         """
 
@@ -239,11 +239,11 @@ class QueryBuilder:
                 BIND (IRI(replace(str(?qualifier), str(pq:), str(wd:)))  AS ?qualifierItem)
                 SERVICE wikibase:label
                 {{
-                    bd:serviceParam wikibase:language "en,{self._wikibaseConfig.defaultLanguage}".
+                    bd:serviceParam wikibase:language "en,{self._wikibaseConfig.defaultLanguage},mul".
                     ?qualifierItem rdfs:label ?qualifierLabel .
                 }}
                 FILTER (str(?qualifierLabel) = "separator")
-                SERVICE wikibase:label {{ bd:serviceParam wikibase:language "{ self._wikibaseConfig.defaultLanguage }" . }}
+                SERVICE wikibase:label {{ bd:serviceParam wikibase:language "{ self._wikibaseConfig.defaultLanguage },mul" . }}
             }}
         """
 
@@ -633,6 +633,6 @@ class QueryBuilder:
             WHERE
             {{
                 INCLUDE %results{finalConditions}
-                SERVICE wikibase:label {{ bd:serviceParam wikibase:language "{self._wikibaseConfig.defaultLanguage}" }}
+                SERVICE wikibase:label {{ bd:serviceParam wikibase:language "{self._wikibaseConfig.defaultLanguage},mul" }}
             }}{f"""
             GROUP BY {outerGroupBy}""" if outerGroupBy else ""}"""
