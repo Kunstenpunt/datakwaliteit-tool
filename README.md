@@ -1,6 +1,10 @@
 # datakwaliteit-tool
 
-Graphical tool to help improve data quality (_datakwaliteit_ in Dutch) on a wikibase instance. Some features include:
+Graphical tool to help improve data quality (_datakwaliteit_ in Dutch) on a wikibase instance.
+
+![Screenshot](screenshots/screenshot_2026-04-12.png)
+
+Some features include:
 - Generate a list of all defined constraints on properties
 - Ability to validate constraints on properties (user can choose to limit input or output if the query takes to long) (partially implented)
 - Generate QuickStatements based on query and template for batch correction of data
