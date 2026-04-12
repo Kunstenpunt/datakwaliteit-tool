@@ -314,7 +314,7 @@ class QueryBuilder:
         )
         outerSelection = "?statement ?item ?itemLabel ?value ?valueLabel"
         inputPart = self._buildViolationsQueryInput(
-            constraint, ViolationsQueryInputType.STATEMENT_VALUE
+            constraint, ViolationsQueryInputType.STATEMENT_VALUE, filterDeprecated=True
         )
         innerSelection = "?item ?value ?statement"
         conditions = f"""
@@ -338,7 +338,7 @@ class QueryBuilder:
         )
         outerSelection = "(SAMPLE(?statement) AS ?statement) ?item ?itemLabel"
         inputPart = self._buildViolationsQueryInput(
-            constraint, ViolationsQueryInputType.ITEM
+            constraint, ViolationsQueryInputType.ITEM, filterDeprecated=True
         )
         innerSelection = "?item"
         conditions = f"""
@@ -373,7 +373,7 @@ class QueryBuilder:
     ) -> str:
         outerSelection = "?statement ?item ?itemLabel"
         inputPart = self._buildViolationsQueryInput(
-            constraint, ViolationsQueryInputType.ITEM_STATEMENT
+            constraint, ViolationsQueryInputType.ITEM_STATEMENT, filterDeprecated=True
         )
         innerSelection = "?item ?statement"
         conditions = "".join(
@@ -394,7 +394,7 @@ class QueryBuilder:
     ) -> str:
         outerSelection = "?statement ?item ?itemLabel"
         inputPart = self._buildViolationsQueryInput(
-            constraint, ViolationsQueryInputType.STATEMENT
+            constraint, ViolationsQueryInputType.STATEMENT, filterDeprecated=True
         )
         innerSelection = "?statement"
         conditions = f"""
@@ -417,7 +417,7 @@ class QueryBuilder:
     ) -> str:
         outerSelection = "(SAMPLE(?statement) AS ?statement) ?item ?itemLabel"
         inputPart = self._buildViolationsQueryInput(
-            constraint, ViolationsQueryInputType.ITEM
+            constraint, ViolationsQueryInputType.ITEM, filterDeprecated=True
         )
         innerSelection = "?item"
         conditions = f"""
@@ -443,7 +443,7 @@ class QueryBuilder:
     ) -> str:
         outerSelection = "?statement ?item ?itemLabel ?value ?valueLabel"
         inputPart = self._buildViolationsQueryInput(
-            constraint, ViolationsQueryInputType.STATEMENT_VALUE
+            constraint, ViolationsQueryInputType.STATEMENT_VALUE, filterDeprecated=True
         )
         innerSelection = "?value (COUNT(?statement) AS ?statementCount)"
         conditions = "\n".join(
@@ -506,7 +506,7 @@ class QueryBuilder:
     ) -> str:
         outerSelection = "(SAMPLE(?statement) AS ?statement) ?item ?itemLabel"
         inputPart = self._buildViolationsQueryInput(
-            constraint, ViolationsQueryInputType.ITEM
+            constraint, ViolationsQueryInputType.ITEM, filterDeprecated=True
         )
         innerSelection = "?item"
         conditions = f"""
@@ -532,7 +532,7 @@ class QueryBuilder:
     ) -> str:
         outerSelection = "?statement ?item ?itemLabel ?value ?valueLabel"
         inputPart = self._buildViolationsQueryInput(
-            constraint, ViolationsQueryInputType.STATEMENT_VALUE
+            constraint, ViolationsQueryInputType.STATEMENT_VALUE, filterDeprecated=True
         )
         innerSelection = "?statement ?value"
         conditions = f"""
@@ -561,7 +561,7 @@ class QueryBuilder:
         if inputType == ViolationsQueryInputType.ITEM:
             optionalDistinct = "DISTINCT "
             selection = "?item"
-            condition = f"?item p:{constraint.property.identifier} []"
+            condition = f"?item p:{constraint.property.identifier} ?statement"
         elif inputType == ViolationsQueryInputType.ITEM_STATEMENT:
             selection = "?item ?statement"
             condition = f"?item p:{constraint.property.identifier} ?statement"
