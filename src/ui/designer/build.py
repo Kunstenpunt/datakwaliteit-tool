@@ -40,5 +40,5 @@ for path, _, files in os.walk(ui_dir):
 
 for ui_file in ui_files:
     py_file = f"{ui_file[:-3]}.py"
-    subprocess.run(["pipenv", "run", "pyside6-uic", ui_file, "-o", py_file])
+    subprocess.run(["uv", "run", "pyside6-uic", ui_file, "-o", py_file])
     add_type_ignore_comments(py_file)

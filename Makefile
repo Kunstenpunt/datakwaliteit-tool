@@ -1,15 +1,18 @@
 .PHONY: typecheck
 typecheck:
-	mypy --strict --follow-untyped-imports src/
+	uv run mypy --strict --follow-untyped-imports src/
 .PHONY: test
 test:
-	pytest
+	uv run pytest
 .PHONY: format
 format:
-	black . --exclude "src/ui/designer"
+	uv run black ./src ./test --exclude "src/ui/designer"
 .PHONY: build_ui
 build_ui:
-	python src/ui/designer/build.py
+	uv run python src/ui/designer/build.py
+.PHONY: run
+run: build_ui format
+	uv run python run.py
 .PHONY: release
 release: build_ui format
-	pyside6-deploy -c pysidedeploy.spec
+	uv run pyside6-deploy -c pysidedeploy.spec

@@ -32,9 +32,12 @@ def test_withPrefixNoResult(qtbot, subtests):
     for mockReturnValue, mockSideEffect in product(
         [None, "wrong type"], [None, Exception()]
     ):
-        with subtests.test(
-            mockReturnValue=mockReturnValue, mockSideEffect=mockSideEffect
-        ), patch("src.backend.wikibasehelper.execute_sparql_query") as mock:
+        with (
+            subtests.test(
+                mockReturnValue=mockReturnValue, mockSideEffect=mockSideEffect
+            ),
+            patch("src.backend.wikibasehelper.execute_sparql_query") as mock,
+        ):
             parent = QObject()
             mock.reset_mock()
             mock.return_value = mockReturnValue
@@ -59,9 +62,12 @@ def test_noPrefixNoResult(qtbot, subtests):
     for mockReturnValue, mockSideEffect in product(
         [None, "wrong type"], [None, Exception()]
     ):
-        with subtests.test(
-            mockReturnValue=mockReturnValue, mockSideEffect=mockSideEffect
-        ), patch("src.backend.wikibasehelper.execute_sparql_query") as mock:
+        with (
+            subtests.test(
+                mockReturnValue=mockReturnValue, mockSideEffect=mockSideEffect
+            ),
+            patch("src.backend.wikibasehelper.execute_sparql_query") as mock,
+        ):
             parent = QObject()
             mock.return_value = mockReturnValue
             mock.side_effect = mockSideEffect

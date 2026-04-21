@@ -1,2 +1,35 @@
+[project]
+name = ""
+version = "0.0.1"
+requires-python = "~=3.13"
+dependencies = [
+    "wikibaseintegrator",
+    "pyside6",
+    "odswriter",
+    "xlsxwriter",
+    "imageio",
+    "keyring",
+]
+
 [tool.pytest.ini_options]
 qt_api="pyside6"
+
+[dependency-groups]
+dev = [
+    "black",
+    "mypy",
+    "pytest",
+    "coverage",
+    "pytest-qt",
+    "pyexcel_xlsx",
+    "ezodf",
+    "lxml",
+]
+
+[tool.uv]
+package = false
+default-groups = "all"
+
+[[tool.uv.index]]
+name = "pypi"
+url = "https://pypi.org/simple"
