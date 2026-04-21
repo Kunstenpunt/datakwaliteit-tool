@@ -1,4 +1,4 @@
-from src.backend.utils import (
+from src.datakwaliteit_tool.backend.utils import (
     idFromUrl,
     queryResultToTable,
     stringOrDefault,

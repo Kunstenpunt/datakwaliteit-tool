@@ -1,6 +1,6 @@
 import pytest
 
-from src.backend.constraint.base import (
+from src.datakwaliteit_tool.backend.constraint.base import (
     Constraint,
     Entity,
     Item,

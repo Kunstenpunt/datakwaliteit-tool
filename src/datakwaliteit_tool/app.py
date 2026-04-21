@@ -1,7 +1,8 @@
-import textwrap
+import sys, textwrap
 
 from PySide6.QtGui import QGuiApplication
 from PySide6.QtWidgets import (
+    QApplication,
     QLabel,
     QMainWindow,
     QProgressBar,
@@ -75,3 +76,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             ).lstrip()
             query = f"{prefixes}\n{query}"
         clipboard.setText(query)
+
+
+def run() -> None:
+    app = QApplication(sys.argv)
+    w = MainWindow()
+    w.show()
+    app.exec()

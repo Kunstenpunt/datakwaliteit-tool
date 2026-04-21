@@ -6,8 +6,8 @@ import pytest
 
 from PySide6.QtCore import QSettings
 
-from src.backend.configuration import ConfigHandler
-from src.backend.configuration import (
+from src.datakwaliteit_tool.backend.configuration import ConfigHandler
+from src.datakwaliteit_tool.backend.configuration import (
     ORGANISATION_NAME,
     APPLICATION_NAME,
     WBI_CONFIGURATION_KEY,

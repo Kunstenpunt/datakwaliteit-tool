@@ -1,7 +1,7 @@
 from time import sleep
 from unittest.mock import patch
 
-from src.backend.wikibasehelper import (
+from src.datakwaliteit_tool.backend.wikibasehelper import (
     config,
     WbiConfigKey,
     WikibaseQueryRunner,
@@ -76,7 +76,9 @@ def test_WikibaseQueryRunnerStandard(qtbot):
     QueryThreadStub.predefinedResultTables = resultTables
     QueryThreadStub.predefinedResultIndex = 0
 
-    with patch("src.backend.wikibasehelper.QueryThread", QueryThreadStub):
+    with patch(
+        "src.datakwaliteit_tool.backend.wikibasehelper.QueryThread", QueryThreadStub
+    ):
         wikibaseQueryRunner = WikibaseQueryRunner(wikibaseConfigStub)
         callbackChecker = CallbackChecker(wikibaseQueryRunner)
 
@@ -114,7 +116,9 @@ def test_WikibaseQueryRunnerConfigChange(qtbot):
     ]
     QueryThreadStub.predefinedResultIndex = 0
 
-    with patch("src.backend.wikibasehelper.QueryThread", QueryThreadStub):
+    with patch(
+        "src.datakwaliteit_tool.backend.wikibasehelper.QueryThread", QueryThreadStub
+    ):
         wikibaseQueryRunner = WikibaseQueryRunner(wikibaseConfigStub)
         callbackChecker = CallbackChecker(wikibaseQueryRunner)
 

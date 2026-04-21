@@ -1,4 +1,4 @@
-from src.backend.batcheditor import BatchEditor
+from src.datakwaliteit_tool.backend.batcheditor import BatchEditor
 
 from .stubs import WikibaseConfigStub, WikibaseQueryRunnerStub
 

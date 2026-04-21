@@ -3,7 +3,7 @@ from unittest.mock import patch
 
 from PySide6.QtCore import QObject
 
-from src.backend.wikibasehelper import QueryThread
+from src.datakwaliteit_tool.backend.wikibasehelper import QueryThread
 
 correctMockReturn = {
     "head": {"vars": ["x"]},
@@ -36,7 +36,9 @@ def test_withPrefixNoResult(qtbot, subtests):
             subtests.test(
                 mockReturnValue=mockReturnValue, mockSideEffect=mockSideEffect
             ),
-            patch("src.backend.wikibasehelper.execute_sparql_query") as mock,
+            patch(
+                "src.datakwaliteit_tool.backend.wikibasehelper.execute_sparql_query"
+            ) as mock,
         ):
             parent = QObject()
             mock.reset_mock()
@@ -66,7 +68,9 @@ def test_noPrefixNoResult(qtbot, subtests):
             subtests.test(
                 mockReturnValue=mockReturnValue, mockSideEffect=mockSideEffect
             ),
-            patch("src.backend.wikibasehelper.execute_sparql_query") as mock,
+            patch(
+                "src.datakwaliteit_tool.backend.wikibasehelper.execute_sparql_query"
+            ) as mock,
         ):
             parent = QObject()
             mock.return_value = mockReturnValue
@@ -88,7 +92,9 @@ def test_noPrefixNoResult(qtbot, subtests):
 
 
 def test_withPrefixCorrectResult(qtbot):
-    with patch("src.backend.wikibasehelper.execute_sparql_query") as mock:
+    with patch(
+        "src.datakwaliteit_tool.backend.wikibasehelper.execute_sparql_query"
+    ) as mock:
         parent = QObject()
         mock.return_value = correctMockReturn
 
@@ -108,7 +114,9 @@ def test_withPrefixCorrectResult(qtbot):
 
 
 def test_noPrefixCorrectResult(qtbot):
-    with patch("src.backend.wikibasehelper.execute_sparql_query") as mock:
+    with patch(
+        "src.datakwaliteit_tool.backend.wikibasehelper.execute_sparql_query"
+    ) as mock:
         parent = QObject()
         mock.return_value = correctMockReturn
 

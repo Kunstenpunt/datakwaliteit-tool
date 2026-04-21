@@ -1,7 +1,7 @@
 [project]
-name = ""
-version = "0.0.1"
-requires-python = "~=3.13"
+name = "datakwaliteit-tool"
+version = "0.4.4"
+requires-python = ">=3.13"
 dependencies = [
     "wikibaseintegrator",
     "pyside6",
@@ -26,8 +26,14 @@ dev = [
     "lxml",
 ]
 
+[project.gui-scripts]
+datakwaliteit-tool = "datakwaliteit_tool:run"
+
+[build-system]
+requires = ["uv_build>=0.11.7,<0.12"]
+build-backend = "uv_build"
+
 [tool.uv]
-package = false
 default-groups = "all"
 
 [[tool.uv.index]]

@@ -1,7 +1,7 @@
 import os
 import subprocess
 
-ui_dir = r"./src/ui/designer"
+ui_dir = r"./src/datakwaliteit_tool/ui/designer"
 ui_files = []
 
 

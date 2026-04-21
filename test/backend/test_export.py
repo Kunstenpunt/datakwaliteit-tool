@@ -5,8 +5,12 @@ import ezodf
 import pyexcel_xlsx
 import pytest
 
-from src.backend.constraint.base import Constraint, Property, ValidationState
-from src.backend.export import Exporter
+from src.datakwaliteit_tool.backend.constraint.base import (
+    Constraint,
+    Property,
+    ValidationState,
+)
+from src.datakwaliteit_tool.backend.export import Exporter
 from test.backend.stubs import WikibaseConfigStub
 
 constraintRecipes = {}

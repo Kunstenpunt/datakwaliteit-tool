@@ -1,10 +1,10 @@
 import textwrap
 
-from src.backend.constraint.base import (
+from src.datakwaliteit_tool.backend.constraint.base import (
     Constraint,
     Property,
 )
-from src.backend.constraint.queries import QueryBuilder
+from src.datakwaliteit_tool.backend.constraint.queries import QueryBuilder
 
 from test.backend.stubs import WikibaseConfigStub
 

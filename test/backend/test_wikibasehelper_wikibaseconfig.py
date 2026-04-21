@@ -1,6 +1,10 @@
 import pytest
 
-from src.backend.wikibasehelper import config, WbiConfigKey, WikibaseConfig
+from src.datakwaliteit_tool.backend.wikibasehelper import (
+    config,
+    WbiConfigKey,
+    WikibaseConfig,
+)
 from test.backend.stubs import ConfigHandlerStub
 
 INITIAL_CONFIG_PAIRS = {
