@@ -148,6 +148,7 @@ class Ui_ConfigurationTab(object):
 
         self.botLoginFormLayout = QFormLayout()
         self.botLoginFormLayout.setObjectName(u"botLoginFormLayout")
+        self.botLoginFormLayout.setFieldGrowthPolicy(QFormLayout.FieldGrowthPolicy.AllNonFixedFieldsGrow)
         self.botUsernameLabel = QLabel(ConfigurationTab)
         self.botUsernameLabel.setObjectName(u"botUsernameLabel")
 
